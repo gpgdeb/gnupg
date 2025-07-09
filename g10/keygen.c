@@ -1,7 +1,7 @@
 /* keygen.c - Generate a key pair
  * Copyright (C) 1998-2007, 2009-2011  Free Software Foundation, Inc.
  * Copyright (C) 2014, 2015, 2016, 2017, 2018  Werner Koch
- * Copyright (C) 2020 g10 Code GmbH
+ * Copyright (C) 2020, 2024 g10 Code GmbH
  *
  * This file is part of GnuPG.
  *
@@ -48,11 +48,15 @@
 
 
 /* The default algorithms.  If you change them, you should ensure the
-   value is inside the bounds enforced by ask_keysize and gen_xxx.
-   See also get_keysize_range which encodes the allowed ranges.  The
-   default answer in ask_algo also needs to be adjusted.  */
+ * value is inside the bounds enforced by ask_keysize and gen_xxx.
+ * See also get_keysize_range which encodes the allowed ranges.  The
+ * default answer in ask_algo also needs to be adjusted.  For Kyber
+ * keep the values set in generate_subkeypair in sync.  */
 #define DEFAULT_STD_KEY_PARAM  "ed25519/cert,sign+cv25519/encr"
 #define FUTURE_STD_KEY_PARAM   "ed25519/cert,sign+cv25519/encr"
+#define PQC_STD_KEY_PARAM_PRI  "bp384/cert,sign"
+#define PQC_STD_KEY_PARAM_SUB  "kyber768_bp256/encr"
+#define PQC_STD_KEY_PARAM      PQC_STD_KEY_PARAM_PRI "+" PQC_STD_KEY_PARAM_SUB
 
 /* When generating keys using the streamlined key generation dialog,
    use this as a default expiration interval.  */
@@ -141,8 +145,21 @@ struct common_gen_cb_parm_s
    * may take a copy of this so that the result can be used after we
    * are back from the deep key generation call stack.  */
   gcry_sexp_t genkey_result;
+  /* For a dual algorithms the result of the second algorithm
+   * (e.g. Kyber). */
+  gcry_sexp_t genkey_result2;
 };
 typedef struct common_gen_cb_parm_s *common_gen_cb_parm_t;
+
+
+/* A communication object to help adding certain notations to a key
+ * binding signature.  */
+struct opaque_data_usage_and_pk
+{
+  unsigned int usage;
+  const char *cpl_notation;
+  PKT_public_key *pk;
+};
 
 
 /* FIXME: These globals vars are ugly.  And using MAX_PREFS even for
@@ -178,6 +195,9 @@ static gpg_error_t gen_card_key (int keyno, int algo, int is_primary,
                                  u32 expireval, int *keygen_flags);
 static unsigned int get_keysize_range (int algo,
                                        unsigned int *min, unsigned int *max);
+static void do_add_notation (PKT_signature *sig,
+                             const char *name, const char *value,
+                             int critical);
 
 
 
@@ -376,6 +396,20 @@ keygen_add_key_flags_and_expire (PKT_signature *sig, void *opaque)
 }
 
 
+/* This is only used to write the key binding signature.  It is not
+ * used for the primary key.  */
+static int
+keygen_add_key_flags_from_oduap (PKT_signature *sig, void *opaque)
+{
+  struct opaque_data_usage_and_pk *oduap = opaque;
+
+  do_add_key_flags (sig, oduap->usage);
+  if (oduap->cpl_notation)
+    do_add_notation (sig, "cpl@gnupg.org", oduap->cpl_notation, 0);
+  return keygen_add_key_expire (sig, oduap->pk);
+}
+
+
 static int
 set_one_pref (int val, int type, const char *item, byte *buf, int *nbuf)
 {
@@ -414,6 +448,7 @@ set_one_pref (int val, int type, const char *item, byte *buf, int *nbuf)
  * "pref" (something like: "S10 S3 H3 H2 Z2 Z1") or the actual
  * cipher/hash/compress names.  Use NULL to set the default
  * preferences.  Returns: 0 = okay
+ * PERSONAL is either 0 or one PREFTYPE_*
  */
 int
 keygen_set_std_prefs (const char *string,int personal)
@@ -981,6 +1016,44 @@ keygen_add_keyserver_url(PKT_signature *sig, void *opaque)
   return 0;
 }
 
+
+/* This function is used to add a notations to a signature.  In
+ * general the caller should have cleared exiting notations before
+ * adding new ones.  For example by calling:
+ *
+ *  delete_sig_subpkt(sig->hashed,SIGSUBPKT_NOTATION);
+ *  delete_sig_subpkt(sig->unhashed,SIGSUBPKT_NOTATION);
+ *
+ * Only human readable notaions may be added.  NAME and value are
+ * expected to be UTF-* strings.
+ */
+static void
+do_add_notation (PKT_signature *sig, const char *name, const char *value,
+                 int critical)
+{
+  unsigned char *buf;
+  unsigned int n1,n2;
+
+  n1 = strlen (name);
+  n2 = strlen (value);
+
+  buf = xmalloc (8 + n1 + n2);
+
+  buf[0] = 0x80; /* human readable.  */
+  buf[1] = buf[2] = buf[3] = 0;
+  buf[4] = n1 >> 8;
+  buf[5] = n1;
+  buf[6] = n2 >> 8;
+  buf[7] = n2;
+  memcpy (buf+8, name, n1);
+  memcpy (buf+8+n1, value, n2);
+  build_sig_subpkt (sig,
+                    (SIGSUBPKT_NOTATION|(critical?SIGSUBPKT_FLAG_CRITICAL:0)),
+                    buf, 8+n1+n2 );
+  xfree (buf);
+}
+
+
 int
 keygen_add_notations(PKT_signature *sig,void *opaque)
 {
@@ -1029,6 +1102,7 @@ keygen_add_notations(PKT_signature *sig,void *opaque)
 
   return 0;
 }
+
 
 int
 keygen_add_revkey (PKT_signature *sig, void *opaque)
@@ -1331,6 +1405,7 @@ write_keybinding (ctrl_t ctrl, kbnode_t root,
   PKT_signature *sig;
   KBNODE node;
   PKT_public_key *pri_pk, *sub_pk;
+  struct opaque_data_usage_and_pk oduap;
 
   if (opt.verbose)
     log_info(_("writing key binding signature\n"));
@@ -1356,14 +1431,22 @@ write_keybinding (ctrl_t ctrl, kbnode_t root,
     BUG();
 
   /* Make the signature.  */
-  sub_pk->pubkey_usage = use;
+  oduap.usage = use;
+  if ((use & PUBKEY_USAGE_ENC)
+      && opt.compliance == CO_DE_VS
+      /* The required libgcrypt 1.11 won't yet claim a compliant RNG.  */
+      && gnupg_rng_is_compliant (CO_DE_VS))
+    oduap.cpl_notation = "de-vs";
+  else
+    oduap.cpl_notation = NULL;
+  oduap.pk = sub_pk;
   err = make_keysig_packet (ctrl, &sig, pri_pk, NULL, sub_pk, pri_psk, 0x18,
                             timestamp, 0,
-                            keygen_add_key_flags_and_expire, sub_pk,
+                            keygen_add_key_flags_from_oduap, &oduap,
                             cache_nonce);
   if (err)
     {
-      log_error ("make_keysig_packeto failed: %s\n", gpg_strerror (err));
+      log_error ("make_keysig_packet failed: %s\n", gpg_strerror (err));
       return err;
     }
 
@@ -1417,8 +1500,12 @@ curve_is_448 (gcry_sexp_t sexp)
 }
 
 
+/* Extract the parameters in OpenPGP format from SEXP and put them
+ * into the caller provided ARRAY.  SEXP2 is used to provide the
+ * parameters for dual algorithm (e.g. Kyber).  */
 static gpg_error_t
-ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp, int algo)
+ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp,
+                  gcry_sexp_t sexp2, int algo, int pkversion)
 {
   gpg_error_t err;
   gcry_sexp_t list, l2;
@@ -1453,7 +1540,7 @@ ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp, int algo)
       goto leave;
     }
   gcry_sexp_release (l2);
-  oidstr = openpgp_curve_to_oid (curve, &nbits, NULL);
+  oidstr = openpgp_curve_to_oid (curve, &nbits, NULL, pkversion > 4);
   if (!oidstr)
     {
       /* That can't happen because we used one of the curves
@@ -1461,6 +1548,7 @@ ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp, int algo)
       err = gpg_error (GPG_ERR_INV_OBJ);
       goto leave;
     }
+
   err = openpgp_oid_from_str (oidstr, &array[0]);
   if (err)
     goto leave;
@@ -1470,8 +1558,46 @@ ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp, int algo)
     goto leave;
 
   gcry_sexp_release (list);
+  list = NULL;
 
-  if (algo == PUBKEY_ALGO_ECDH)
+  if (algo == PUBKEY_ALGO_KYBER)
+    {
+      if (!sexp2)
+        {
+          err = gpg_error (GPG_ERR_MISSING_VALUE);
+          goto leave;
+        }
+
+      list = gcry_sexp_find_token (sexp2, "public-key", 0);
+      if (!list)
+        {
+          err = gpg_error (GPG_ERR_INV_OBJ);
+          goto leave;
+        }
+      l2 = gcry_sexp_cadr (list);
+      gcry_sexp_release (list);
+      list = l2;
+      if (!list)
+        {
+          err = gpg_error (GPG_ERR_NO_OBJ);
+          goto leave;
+        }
+
+      l2 = gcry_sexp_find_token (list, "p", 1);
+      if (!l2)
+        {
+          err = gpg_error (GPG_ERR_NO_OBJ); /* required parameter not found */
+          goto leave;
+        }
+      array[2] = gcry_sexp_nth_mpi (l2, 1, GCRYMPI_FMT_OPAQUE);
+      gcry_sexp_release (l2);
+      if (!array[2])
+        {
+          err = gpg_error (GPG_ERR_INV_OBJ); /* required parameter invalid */
+          goto leave;
+        }
+    }
+  else if (algo == PUBKEY_ALGO_ECDH)
     {
       array[2] = pk_ecdh_default_params (nbits);
       if (!array[2])
@@ -1483,6 +1609,7 @@ ecckey_from_sexp (gcry_mpi_t *array, gcry_sexp_t sexp, int algo)
 
  leave:
   xfree (curve);
+  gcry_sexp_release (list);
   if (err)
     {
       for (i=0; i < 3; i++)
@@ -1561,10 +1688,24 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
   PACKET *pkt;
   PKT_public_key *pk;
   gcry_sexp_t s_key;
+  gcry_sexp_t s_key2 = NULL;
   const char *algoelem;
+  char *hexkeygrip_buffer = NULL;
+  char *hexkeygrip2 = NULL;
 
   if (hexkeygrip[0] == '&')
     hexkeygrip++;
+  if (strchr (hexkeygrip, ','))
+    {
+      hexkeygrip_buffer = xtrystrdup (hexkeygrip);
+      if (!hexkeygrip_buffer)
+        return gpg_error_from_syserror ();
+      hexkeygrip = hexkeygrip_buffer;
+      hexkeygrip2 = strchr (hexkeygrip_buffer, ',');
+      if (hexkeygrip2)
+        *hexkeygrip2++ = 0;
+    }
+
 
   switch (algo)
     {
@@ -1574,16 +1715,21 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
     case PUBKEY_ALGO_ECDH:
     case PUBKEY_ALGO_ECDSA:     algoelem = ""; break;
     case PUBKEY_ALGO_EDDSA:     algoelem = ""; break;
-    default: return gpg_error (GPG_ERR_INTERNAL);
+    case PUBKEY_ALGO_KYBER:     algoelem = ""; break;
+    default:
+      xfree (hexkeygrip_buffer);
+      return gpg_error (GPG_ERR_INTERNAL);
     }
-
 
   /* Ask the agent for the public key matching HEXKEYGRIP.  */
   if (cardkey)
     {
       err = agent_scd_readkey (ctrl, hexkeygrip, &s_key, NULL);
       if (err)
-        return err;
+        {
+          xfree (hexkeygrip_buffer);
+          return err;
+        }
     }
   else
     {
@@ -1591,16 +1737,41 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
 
       err = agent_readkey (ctrl, 0, hexkeygrip, &public);
       if (err)
-        return err;
+        {
+          xfree (hexkeygrip_buffer);
+          return err;
+        }
       err = gcry_sexp_sscan (&s_key, NULL, public,
                                gcry_sexp_canon_len (public, 0, NULL, NULL));
       xfree (public);
       if (err)
-        return err;
+        {
+          xfree (hexkeygrip_buffer);
+          return err;
+        }
+      if (hexkeygrip2)
+        {
+          err = agent_readkey (ctrl, 0, hexkeygrip2, &public);
+          if (err)
+            {
+              gcry_sexp_release (s_key);
+              xfree (hexkeygrip_buffer);
+              return err;
+            }
+          err = gcry_sexp_sscan (&s_key2, NULL, public,
+                                 gcry_sexp_canon_len (public, 0, NULL, NULL));
+          xfree (public);
+          if (err)
+            {
+              gcry_sexp_release (s_key);
+              xfree (hexkeygrip_buffer);
+              return err;
+            }
+        }
     }
 
-  /* For X448 we force the use of v5 packets.  */
-  if (curve_is_448 (s_key))
+  /* For X448 and Kyber we force the use of v5 packets.  */
+  if (curve_is_448 (s_key) || algo == PUBKEY_ALGO_KYBER)
     *keygen_flags |= KEYGEN_FLAG_CREATE_V5_KEY;
 
   /* Build a public key packet.  */
@@ -1609,6 +1780,8 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
     {
       err = gpg_error_from_syserror ();
       gcry_sexp_release (s_key);
+      gcry_sexp_release (s_key2);
+      xfree (hexkeygrip_buffer);
       return err;
     }
 
@@ -1618,26 +1791,32 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
     pk->expiredate = pk->timestamp + expireval;
   pk->pubkey_algo = algo;
 
-  if (algo == PUBKEY_ALGO_ECDSA
+  if (algo == PUBKEY_ALGO_KYBER)
+    err = ecckey_from_sexp (pk->pkey, s_key, s_key2, algo, pk->version);
+  else if (algo == PUBKEY_ALGO_ECDSA
       || algo == PUBKEY_ALGO_EDDSA
       || algo == PUBKEY_ALGO_ECDH )
-    err = ecckey_from_sexp (pk->pkey, s_key, algo);
+    err = ecckey_from_sexp (pk->pkey, s_key, NULL, algo, pk->version);
   else
     err = key_from_sexp (pk->pkey, s_key, "public-key", algoelem);
   if (err)
     {
       log_error ("key_from_sexp failed: %s\n", gpg_strerror (err) );
       gcry_sexp_release (s_key);
+      gcry_sexp_release (s_key2);
       free_public_key (pk);
+      xfree (hexkeygrip_buffer);
       return err;
     }
   gcry_sexp_release (s_key);
+  gcry_sexp_release (s_key2);
 
   pkt = xtrycalloc (1, sizeof *pkt);
   if (!pkt)
     {
       err = gpg_error_from_syserror ();
       free_public_key (pk);
+      xfree (hexkeygrip_buffer);
       return err;
     }
 
@@ -1645,16 +1824,18 @@ do_create_from_keygrip (ctrl_t ctrl, int algo,
   pkt->pkt.public_key = pk;
   add_kbnode (pub_root, new_kbnode (pkt));
 
+  xfree (hexkeygrip_buffer);
   return 0;
 }
 
 
-/* Common code for the key generation function gen_xxx.  The optinal
+/* Common code for the key generation function gen_xxx.  The optional
  * (COMMON_GEN_CB,COMMON_GEN_CB_PARM) can be used as communication
- * object.
+ * object.  A KEYPARMS2 forces the use of a dual key (e.g. Kyber+ECC).
  */
 static int
-common_gen (const char *keyparms, int algo, const char *algoelem,
+common_gen (const char *keyparms, const char *keyparms2,
+            int algo, const char *algoelem,
             kbnode_t pub_root, u32 timestamp, u32 expireval, int is_subkey,
             int keygen_flags, const char *passphrase,
             char **cache_nonce_addr, char **passwd_nonce_addr,
@@ -1665,6 +1846,7 @@ common_gen (const char *keyparms, int algo, const char *algoelem,
   PACKET *pkt;
   PKT_public_key *pk;
   gcry_sexp_t s_key;
+  gcry_sexp_t s_key2 = NULL;
 
   err = agent_genkey (NULL, cache_nonce_addr, passwd_nonce_addr, keyparms,
                       !!(keygen_flags & KEYGEN_FLAG_NO_PROTECTION),
@@ -1676,14 +1858,61 @@ common_gen (const char *keyparms, int algo, const char *algoelem,
       return err;
     }
 
+  if (keyparms2)
+    {
+      unsigned char tmpgrip[KEYGRIP_LEN];
+      char hexgrip1[2*KEYGRIP_LEN+1];
+      char hexgrip2[2*KEYGRIP_LEN+1];
+
+      err = agent_genkey (NULL, NULL, NULL, keyparms2,
+                          1 /* No protection */,
+                          NULL, timestamp,
+                          &s_key2);
+      if (err)
+        {
+          log_error ("agent_genkey failed for second algo: %s\n",
+                     gpg_strerror (err) );
+          gcry_sexp_release (s_key);
+          return err;
+        }
+
+      if (!gcry_pk_get_keygrip (s_key, tmpgrip))
+        {
+          log_error ("error computing keygrip for generated key\n");
+          gcry_sexp_release (s_key);
+          gcry_sexp_release (s_key2);
+          return gpg_error (GPG_ERR_GENERAL);
+        }
+      bin2hex (tmpgrip, KEYGRIP_LEN, hexgrip1);
+      if (!gcry_pk_get_keygrip (s_key2, tmpgrip))
+        {
+          log_error ("error computing keygrip for generated key\n");
+          gcry_sexp_release (s_key);
+          gcry_sexp_release (s_key2);
+          return gpg_error (GPG_ERR_GENERAL);
+        }
+      bin2hex (tmpgrip, KEYGRIP_LEN, hexgrip2);
+      err = agent_crosslink_keys (NULL, hexgrip1, hexgrip2);
+      if (err)
+        {
+          log_error ("error setting link attributes for generated keys\n");
+          gcry_sexp_release (s_key);
+          gcry_sexp_release (s_key2);
+          return gpg_error (GPG_ERR_GENERAL);
+        }
+    }
+
   if (common_gen_cb && common_gen_cb_parm)
     {
       common_gen_cb_parm->genkey_result = s_key;
+      common_gen_cb_parm->genkey_result2 = s_key2;
       err = common_gen_cb (common_gen_cb_parm);
       common_gen_cb_parm->genkey_result = NULL;
+      common_gen_cb_parm->genkey_result2 = NULL;
       if (err)
         {
           gcry_sexp_release (s_key);
+          gcry_sexp_release (s_key2);
           return err;
         }
     }
@@ -1702,10 +1931,12 @@ common_gen (const char *keyparms, int algo, const char *algoelem,
     pk->expiredate = pk->timestamp + expireval;
   pk->pubkey_algo = algo;
 
-  if (algo == PUBKEY_ALGO_ECDSA
-      || algo == PUBKEY_ALGO_EDDSA
-      || algo == PUBKEY_ALGO_ECDH )
-    err = ecckey_from_sexp (pk->pkey, s_key, algo);
+  if (algo == PUBKEY_ALGO_KYBER)
+    err = ecckey_from_sexp (pk->pkey, s_key, s_key2, algo, pk->version);
+  else if (algo == PUBKEY_ALGO_ECDSA
+           || algo == PUBKEY_ALGO_EDDSA
+           || algo == PUBKEY_ALGO_ECDH )
+    err = ecckey_from_sexp (pk->pkey, s_key, NULL, algo, pk->version);
   else
     err = key_from_sexp (pk->pkey, s_key, "public-key", algoelem);
   if (err)
@@ -1716,6 +1947,7 @@ common_gen (const char *keyparms, int algo, const char *algoelem,
       return err;
     }
   gcry_sexp_release (s_key);
+  gcry_sexp_release (s_key2);
 
   pkt = xtrycalloc (1, sizeof *pkt);
   if (!pkt)
@@ -1781,7 +2013,7 @@ gen_elg (int algo, unsigned int nbits, KBNODE pub_root,
     err = gpg_error_from_syserror ();
   else
     {
-      err = common_gen (keyparms, algo, "pgy",
+      err = common_gen (keyparms, NULL, algo, "pgy",
                         pub_root, timestamp, expireval, is_subkey,
                         keygen_flags, passphrase,
                         cache_nonce_addr, passwd_nonce_addr,
@@ -1873,7 +2105,7 @@ gen_dsa (unsigned int nbits, KBNODE pub_root,
     err = gpg_error_from_syserror ();
   else
     {
-      err = common_gen (keyparms, PUBKEY_ALGO_DSA, "pqgy",
+      err = common_gen (keyparms, NULL, PUBKEY_ALGO_DSA, "pqgy",
                         pub_root, timestamp, expireval, is_subkey,
                         keygen_flags, passphrase,
                         cache_nonce_addr, passwd_nonce_addr,
@@ -1974,12 +2206,87 @@ gen_ecc (int algo, const char *curve, kbnode_t pub_root,
     err = gpg_error_from_syserror ();
   else
     {
-      err = common_gen (keyparms, algo, "",
+      err = common_gen (keyparms, NULL, algo, "",
                         pub_root, timestamp, expireval, is_subkey,
                         *keygen_flags, passphrase,
                         cache_nonce_addr, passwd_nonce_addr,
                         common_gen_cb, common_gen_cb_parm);
       xfree (keyparms);
+    }
+
+  return err;
+}
+
+
+/* Generate a dual ECC+Kyber key.  Note that KEYGEN_FLAGS will be
+ * updated by this function to indicate the forced creation of a v5
+ * key.  */
+static gpg_error_t
+gen_kyber (int algo, unsigned int nbits, const char *curve, kbnode_t pub_root,
+         u32 timestamp, u32 expireval, int is_subkey,
+         int *keygen_flags, const char *passphrase,
+         char **cache_nonce_addr, char **passwd_nonce_addr,
+         gpg_error_t (*common_gen_cb)(common_gen_cb_parm_t),
+         common_gen_cb_parm_t common_gen_cb_parm)
+{
+  gpg_error_t err;
+  char *keyparms1;
+  const char *keyparms2;
+
+  log_assert (algo == PUBKEY_ALGO_KYBER);
+
+  if (nbits == 768)
+    keyparms2 = "(genkey(kyber768))";
+  else if (nbits == 1024)
+    keyparms2 = "(genkey(kyber1024))";
+  else
+    return gpg_error (GPG_ERR_UNSUPPORTED_ALGORITHM);
+
+  if (!curve || !*curve)
+    return gpg_error (GPG_ERR_UNKNOWN_CURVE);
+
+  *keygen_flags |= KEYGEN_FLAG_CREATE_V5_KEY;
+
+  if (!strcmp (curve, "Curve25519") || !ascii_strcasecmp (curve, "cv25519"))
+    {
+      curve = "Curve25519";
+      keyparms1 = xtryasprintf
+        ("(genkey(ecc(curve %zu:%s)(flags djb-tweak comp%s)))",
+         strlen (curve), curve,
+         (((*keygen_flags & KEYGEN_FLAG_TRANSIENT_KEY)
+           && (*keygen_flags & KEYGEN_FLAG_NO_PROTECTION))?
+          " transient-key" : ""));
+    }
+  else if (!strcmp (curve, "X448") || !ascii_strcasecmp (curve, "cv448"))
+    {
+      curve = "X448";
+      keyparms1 = xtryasprintf
+        ("(genkey(ecc(curve %zu:%s)(flags comp%s)))",
+         strlen (curve), curve,
+         (((*keygen_flags & KEYGEN_FLAG_TRANSIENT_KEY)
+           && (*keygen_flags & KEYGEN_FLAG_NO_PROTECTION))?
+          " transient-key" : ""));
+    }
+  else  /* Should we use the compressed format?  Check smartcard support.  */
+    {
+      keyparms1 = xtryasprintf
+        ("(genkey(ecc(curve %zu:%s)(flags nocomp%s)))",
+         strlen (curve), curve,
+         (((*keygen_flags & KEYGEN_FLAG_TRANSIENT_KEY)
+           && (*keygen_flags & KEYGEN_FLAG_NO_PROTECTION))?
+          " transient-key" : ""));
+    }
+
+  if (!keyparms1)
+    err = gpg_error_from_syserror ();
+  else
+    {
+      err = common_gen (keyparms1, keyparms2, algo, "",
+                        pub_root, timestamp, expireval, is_subkey,
+                        *keygen_flags, passphrase,
+                        cache_nonce_addr, passwd_nonce_addr,
+                        common_gen_cb, common_gen_cb_parm);
+      xfree (keyparms1);
     }
 
   return err;
@@ -2034,7 +2341,7 @@ gen_rsa (int algo, unsigned int nbits, KBNODE pub_root,
     err = gpg_error_from_syserror ();
   else
     {
-      err = common_gen (keyparms, algo, "ne",
+      err = common_gen (keyparms, NULL, algo, "ne",
                         pub_root, timestamp, expireval, is_subkey,
                         keygen_flags, passphrase,
                         cache_nonce_addr, passwd_nonce_addr,
@@ -2353,6 +2660,13 @@ ask_algo (ctrl_t ctrl, int addmode, int *r_subkey_algo, unsigned int *r_usage,
   if (r_keygrip)
     tty_printf (_("  (%d) Existing key from card%s\n"), 14, "");
 
+  /* Reserve 15 for Dilithium primary + Kyber subkey.  */
+  tty_printf (_("  (%d) ECC and Kyber%s\n"), 16, "");
+  if (addmode)
+    {
+      tty_printf (_("  (%d) Kyber (encrypt only)%s\n"), 17, "");
+    }
+
   for (;;)
     {
       *r_usage = 0;
@@ -2457,7 +2771,26 @@ ask_algo (ctrl_t ctrl, int addmode, int *r_subkey_algo, unsigned int *r_usage,
                   continue;
                 }
 
-              if (strlen (answer) != 40 &&
+              if (strlen (answer) == 40+1+40 && answer[40]==',')
+                {
+                  int algo1, algo2;
+
+                  answer[40] = 0;
+                  algo1 = check_keygrip (ctrl, answer);
+                  algo2 = check_keygrip (ctrl, answer+41);
+                  answer[40] = ',';
+                  if (algo1 == PUBKEY_ALGO_ECDH && algo2 == PUBKEY_ALGO_KYBER)
+                    {
+                      algo = PUBKEY_ALGO_KYBER;
+                      break;
+                    }
+                  else if (!algo1 || !algo2)
+                    tty_printf (_("No key with this keygrip\n"));
+                  else
+                    tty_printf ("Invalid combination for dual algo (%d,%d)\n",
+                                algo1, algo2);
+                }
+              else if (strlen (answer) != 40 &&
                        !(answer[0] == '&' && strlen (answer+1) == 40))
                 tty_printf
                   (_("Not a valid keygrip (expecting 40 hex digits)\n"));
@@ -2619,6 +2952,18 @@ ask_algo (ctrl_t ctrl, int addmode, int *r_subkey_algo, unsigned int *r_usage,
           free_keypair_info (keypairlist);
           break;
 	}
+      else if ((algo == 16 || !strcmp (answer, "ecc+kyber")) && !addmode)
+        {
+          algo = PUBKEY_ALGO_ECDSA;
+          *r_subkey_algo = PUBKEY_ALGO_KYBER;
+          break;
+	}
+      else if ((algo == 17 || !strcmp (answer, "kyber")) && addmode)
+        {
+          algo = PUBKEY_ALGO_KYBER;
+          *r_usage = PUBKEY_USAGE_ENC;
+          break;
+	}
       else
         tty_printf (_("Invalid selection.\n"));
 
@@ -2669,6 +3014,12 @@ get_keysize_range (int algo, unsigned int *min, unsigned int *max)
       def=255;
       break;
 
+    case PUBKEY_ALGO_KYBER:
+      *min = 768;
+      *max = 1024;
+      def = 768;
+      break;
+
     default:
       *min = opt.compliance == CO_DE_VS ? 2048: 1024;
       *max = 4096;
@@ -2684,44 +3035,43 @@ get_keysize_range (int algo, unsigned int *min, unsigned int *max)
 static unsigned int
 fixup_keysize (unsigned int nbits, int algo, int silent)
 {
+  unsigned int orig_nbits = nbits;
+
   if (algo == PUBKEY_ALGO_DSA && (nbits % 64))
     {
       nbits = ((nbits + 63) / 64) * 64;
-      if (!silent)
-        tty_printf (_("rounded up to %u bits\n"), nbits);
     }
   else if (algo == PUBKEY_ALGO_EDDSA)
     {
-      if (nbits != 255 && nbits != 441)
-        {
-          if (nbits < 256)
-            nbits = 255;
-          else
-            nbits = 441;
-          if (!silent)
-            tty_printf (_("rounded to %u bits\n"), nbits);
-        }
+      if (nbits < 256)
+        nbits = 255;
+      else
+        nbits = 441;
     }
   else if (algo == PUBKEY_ALGO_ECDH || algo == PUBKEY_ALGO_ECDSA)
     {
-      if (nbits != 256 && nbits != 384 && nbits != 521)
-        {
-          if (nbits < 256)
-            nbits = 256;
-          else if (nbits < 384)
-            nbits = 384;
-          else
-            nbits = 521;
-          if (!silent)
-            tty_printf (_("rounded to %u bits\n"), nbits);
-        }
+      if (nbits < 256)
+        nbits = 256;
+      else if (nbits < 384)
+        nbits = 384;
+      else
+        nbits = 521;
+    }
+  else if (algo == PUBKEY_ALGO_KYBER)
+    {
+      /* (in reality the numbers are not bits) */
+      if (nbits < 768)
+        nbits = 768;
+      else if (nbits > 1024)
+        nbits = 1024;
     }
   else if ((nbits % 32))
     {
       nbits = ((nbits + 31) / 32) * 32;
-      if (!silent)
-        tty_printf (_("rounded up to %u bits\n"), nbits );
     }
+
+  if (!silent && orig_nbits != nbits)
+    tty_printf (_("rounded to %u bits\n"), nbits);
 
   return nbits;
 }
@@ -2940,6 +3290,77 @@ ask_curve (int *algo, int *subkey_algo, const char *current)
 
   if (!result)
     result = curves[0].name;
+
+  return result;
+}
+
+
+/* Ask for the Kyber variant.  Returns a const algo string like
+ * kyber768_bp256 or NULL on error.  */
+const char *
+ask_kyber_variant (void)
+{
+  struct {
+    const char *desc;           /* e.g. "Kyber 768"       */
+    const char *variant;        /* e.g. "kyber768_bp256"  */
+    unsigned int de_vs : 1;     /* Allowed in CO_DE_VS.   */
+  } table[] = {
+    { "Kyber 768",      "kyber768_bp256", 1 },
+    { "Kyber 1024",     "kyber1024_bp384", 1 },
+    { "Kyber 768 (X25519)",  "kyber768_cv25519", 0 },
+    { "Kyber 1024 (X448)",   "kyber1024_cv448", 0 },
+  };
+  int idx;
+  char *answer;
+  const char *result = NULL;
+
+  tty_printf (_("Please select the %s variant you want:\n"), "Kyber");
+
+  for (idx=0; idx < DIM(table); idx++)
+    {
+      if (opt.compliance==CO_DE_VS)
+        {
+          if (!table[idx].de_vs)
+            continue; /* Not allowed.  */
+        }
+
+      tty_printf ("   (%d) %s%s\n", idx + 1,
+                  table[idx].desc,
+                  idx == 0? _(" *default*"):"");
+    }
+
+  for (;;)
+    {
+      answer = cpr_get ("keygen.kyber_variant", _("Your selection? "));
+      cpr_kill_prompt ();
+      idx = *answer? atoi (answer) : 1 /* default */;
+      if (*answer && !idx)
+        {
+          /* See whether the user entered the name of the algo.  */
+          for (idx=0; idx < DIM(table); idx++)
+            {
+              if (!stricmp (table[idx].variant, answer))
+                break;
+            }
+          if (idx == DIM(table))
+            idx = -1;
+        }
+      else
+        idx--;  /* Map back to 0 based index.  */
+      xfree(answer);
+      answer = NULL;
+      if (idx < 0 || idx >= DIM (table)
+          || (opt.compliance==CO_DE_VS && !table[idx].de_vs))
+        tty_printf (_("Invalid selection.\n"));
+      else
+        {
+          result = table[idx].variant;
+          break;
+        }
+    }
+
+  if (!result)
+    result = table[0].variant;
 
   return result;
 }
@@ -3452,6 +3873,12 @@ do_create (int algo, unsigned int nbits, const char *curve, kbnode_t pub_root,
                    keygen_flags, passphrase,
                    cache_nonce_addr, passwd_nonce_addr,
                    common_gen_cb, common_gen_cb_parm);
+  else if (algo == PUBKEY_ALGO_KYBER)
+    err = gen_kyber (algo, nbits, curve,
+                   pub_root, timestamp, expiredate, is_subkey,
+                   keygen_flags, passphrase,
+                   cache_nonce_addr, passwd_nonce_addr,
+                   common_gen_cb, common_gen_cb_parm);
   else if (algo == PUBKEY_ALGO_RSA)
     err = gen_rsa (algo, nbits, pub_root, timestamp, expiredate, is_subkey,
                    *keygen_flags, passphrase,
@@ -3530,6 +3957,7 @@ parse_key_parameter_part (ctrl_t ctrl,
   char *keygrip = NULL;
   u32 keytime = 0;
   int is_448 = 0;
+  int is_pqc = 0;
 
   if (!string || !*string)
     return 0; /* Success.  */
@@ -3555,6 +3983,7 @@ parse_key_parameter_part (ctrl_t ctrl,
     ; /* We need the flags before we can figure out the key to use.  */
   else if (algo)
     {
+      /* This is one of the algos parsed above (rsa, dsa, or elg).  */
       if (!string[3])
         size = get_keysize_range (algo, NULL, NULL);
       else
@@ -3563,6 +3992,63 @@ parse_key_parameter_part (ctrl_t ctrl,
           if (size < 512 || size > 16384 || *endp)
             return gpg_error (GPG_ERR_INV_VALUE);
         }
+    }
+  else if (!ascii_strcasecmp (string, "kyber")
+           || !ascii_strcasecmp (string, "kyber768"))
+    {
+      /* Get the curve and check that it can technically be used
+       * (i.e. everything except the EdXXXX curves.  */
+      curve = openpgp_is_curve_supported ("brainpoolP256r1", &algo, NULL);
+      if (!curve || algo == PUBKEY_ALGO_EDDSA)
+        return gpg_error (GPG_ERR_UNKNOWN_CURVE);
+      algo = PUBKEY_ALGO_KYBER;
+      size = 768;
+      is_pqc = 1;
+    }
+  else if (!ascii_strcasecmp (string, "kyber1024"))
+    {
+      /* Get the curve and check that it can technically be used
+       * (i.e. everything except the EdXXXX curves.  */
+      curve = openpgp_is_curve_supported ("brainpoolP384r1", &algo, NULL);
+      if (!curve || algo == PUBKEY_ALGO_EDDSA)
+        return gpg_error (GPG_ERR_UNKNOWN_CURVE);
+      algo = PUBKEY_ALGO_KYBER;
+      size = 1024;
+      is_pqc = 1;
+    }
+  else if (!ascii_strncasecmp (string,    "ky768_", 6)
+           || !ascii_strncasecmp (string, "ky1024_", 7)
+           || !ascii_strncasecmp (string, "kyber768_", 9)
+           || !ascii_strncasecmp (string, "kyber1024_", 10)
+           )
+    {
+      /* Get the curve and check that it can technically be used
+       * (i.e. everything except the EdXXXX curves.  */
+      s = strchr (string, '_');
+      log_assert (s);
+      s++;
+      curve = openpgp_is_curve_supported (s, &algo, NULL);
+      if (!curve || algo == PUBKEY_ALGO_EDDSA)
+        return gpg_error (GPG_ERR_UNKNOWN_CURVE);
+      algo = PUBKEY_ALGO_KYBER;
+      size = strstr (string, "768_")? 768 : 1024;
+      is_pqc = 1;
+    }
+  else if (!ascii_strcasecmp (string, "dil3"))
+    {
+      algo = PUBKEY_ALGO_DIL3_25519;
+      is_pqc = 1;
+    }
+  else if (!ascii_strcasecmp (string, "dil5"))
+    {
+      algo = PUBKEY_ALGO_DIL5_448;
+      is_pqc = 1;
+    }
+  else if (!ascii_strcasecmp (string, "sphinx")
+           || !ascii_strcasecmp (string, "sphinx_sha2"))
+    {
+      algo = PUBKEY_ALGO_SPHINX_SHA2;
+      is_pqc = 1;
     }
   else if ((curve = openpgp_is_curve_supported (string, &algo, &size)))
     {
@@ -3812,8 +4298,8 @@ parse_key_parameter_part (ctrl_t ctrl,
       return gpg_error (GPG_ERR_WRONG_KEY_USAGE);
     }
 
-  /* Ed448 and X448 must only be used as v5 keys.  */
-  if (is_448)
+  /* Ed448, X448 and the PQC algos must only be used as v5 keys.  */
+  if (is_448 || is_pqc)
     {
       if (keyversion == 4)
         log_info (_("WARNING: v4 is specified, but overridden by v5.\n"));
@@ -3877,6 +4363,8 @@ parse_key_parameter_part (ctrl_t ctrl,
  *   cv25519 := ECDH using curve Curve25519.
  *   cv448   := ECDH using curve X448.
  *   nistp256:= ECDSA or ECDH using curve NIST P-256
+ *   kyber   := Kyber with the default parameters
+ *   ky768_bp384 := Kyber-768 with BrainpoolP256r1 as second algo
  *
  * All strings with an unknown prefix are considered an elliptic
  * curve.  Curves which have no implicit algorithm require that FLAGS
@@ -3961,6 +4449,8 @@ parse_key_parameter_string (ctrl_t ctrl,
   else if (!ascii_strcasecmp (string, "future-default")
            || !ascii_strcasecmp (string, "futuredefault"))
     string = FUTURE_STD_KEY_PARAM;
+  else if (!ascii_strcasecmp (string, "pqc"))
+    string = PQC_STD_KEY_PARAM;
   else if (!ascii_strcasecmp (string, "card"))
     string = "card/cert,sign+card/encr";
 
@@ -4126,6 +4616,8 @@ get_parameter_algo (ctrl_t ctrl, struct para_data_s *para, enum para_name key,
     i = PUBKEY_ALGO_ECDSA;
   else if (!ascii_strcasecmp (r->u.value, "ECDH"))
     i = PUBKEY_ALGO_ECDH;
+  else if (!ascii_strcasecmp (r->u.value, "KYBER"))
+    i = PUBKEY_ALGO_KYBER;
   else
     i = map_gcry_pk_to_openpgp (gcry_pk_map_name (r->u.value));
 
@@ -4214,7 +4706,7 @@ parse_parameter_usage (const char *fname,
 
 /* Parse the revocation key specified by NAME, check that the public
  * key exists (so that we can get the required public key algorithm),
- * and return a parameter wit the revocation key information.  On
+ * and return a parameter with the revocation key information.  On
  * error print a diagnostic and return NULL.  */
 static struct para_data_s *
 prepare_desig_revoker (ctrl_t ctrl, const char *name)
@@ -4596,7 +5088,7 @@ proc_parameter_file (ctrl_t ctrl, struct para_data_s *para, const char *fname,
   if (parse_revocation_key (fname, para, pREVOKER))
     return -1;
 
-  /* Check and appened revokers from the config file.  */
+  /* Check and append revokers from the config file.  */
   for (sl = opt.desig_revokers; sl; sl = sl->next)
     {
       r = prepare_desig_revoker (ctrl, sl->d);
@@ -4706,6 +5198,7 @@ read_parameter_file (ctrl_t ctrl, const char *fname )
 	{ "Name-Real",      pNAMEREAL },
 	{ "Name-Email",     pNAMEEMAIL },
 	{ "Name-Comment",   pNAMECOMMENT },
+        { "User-Id",        pUSERID },
 	{ "Expire-Date",    pEXPIREDATE },
 	{ "Subkey-Expire-Date", pSUBKEYEXPIREDATE },
 	{ "Creation-Date",  pCREATIONDATE },
@@ -4953,14 +5446,14 @@ quickgen_set_para (struct para_data_s *para, int for_subkey,
       r->next = para;
       para = r;
     }
-  else
-    {
-      r = xmalloc_clear (sizeof *r + 20);
-      r->key = for_subkey? pSUBKEYLENGTH : pKEYLENGTH;
-      sprintf (r->u.value, "%u", nbits);
-      r->next = para;
-      para = r;
-    }
+
+  /* Always store the size - although not required for ECC it is
+   * required for composite algos.  Should not harm anyway.  */
+  r = xmalloc_clear (sizeof *r + 20);
+  r->key = for_subkey? pSUBKEYLENGTH : pKEYLENGTH;
+  sprintf (r->u.value, "%u", nbits);
+  r->next = para;
+  para = r;
 
   r = xmalloc_clear (sizeof *r + 20);
   r->key = for_subkey? pSUBVERSION : pVERSION;
@@ -5066,6 +5559,7 @@ quick_generate_keypair (ctrl_t ctrl, const char *uid, const char *algostr,
   if ((!*algostr || !ascii_strcasecmp (algostr, "default")
        || !ascii_strcasecmp (algostr, "future-default")
        || !ascii_strcasecmp (algostr, "futuredefault")
+       || !ascii_strcasecmp (algostr, "pqc")
        || !ascii_strcasecmp (algostr, "card"))
       && (!*usagestr || !ascii_strcasecmp (usagestr, "default")
           || !strcmp (usagestr, "-")))
@@ -5357,7 +5851,82 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
         {
           const char *curve = NULL;
 
-          if (subkey_algo)
+          if (algo == PUBKEY_ALGO_ECDSA && subkey_algo == PUBKEY_ALGO_KYBER)
+            {
+              /* Create primary and subkey at once.  */
+              const char *subalgostr;
+              const char *s;
+              const char *pricurve;
+              int prialgo = PUBKEY_ALGO_ECDSA;
+
+              both = 1;
+              subalgostr = ask_kyber_variant ();
+              if (!subalgostr)  /* Should not happen.  */
+                subalgostr = PQC_STD_KEY_PARAM_SUB;
+
+              /* Determine the primary key algo from the subkey algo.  */
+              if (strstr (subalgostr, "bp384"))
+                pricurve = "brainpoolP384r1";
+              else if (strstr (subalgostr, "bp256"))
+                pricurve = "brainpoolP256r1";
+              else if (strstr (subalgostr, "cv448"))
+                {
+                  pricurve = "Ed448";
+                  prialgo = PUBKEY_ALGO_EDDSA;
+                }
+              else
+                {
+                  pricurve = "Ed25519";
+                  prialgo = PUBKEY_ALGO_EDDSA;
+                }
+
+              r = xmalloc_clear (sizeof *r + 20);
+              r->key = pKEYTYPE;
+              sprintf (r->u.value, "%d", prialgo);
+              r->next = para;
+              para = r;
+
+              r = xmalloc_clear (sizeof *r + strlen (pricurve));
+              r->key = pKEYCURVE;
+              strcpy (r->u.value, pricurve);
+              r->next = para;
+              para = r;
+
+              r = xmalloc_clear (sizeof *r + 20);
+              r->key = pKEYUSAGE;
+              strcpy (r->u.value, "sign");
+              r->next = para;
+              para = r;
+
+              r = xmalloc_clear (sizeof *r + 20);
+              r->key = pSUBKEYTYPE;
+              sprintf (r->u.value, "%d", PUBKEY_ALGO_KYBER);
+              r->next = para;
+              para = r;
+
+              r = xmalloc_clear (sizeof *r + 20);
+              r->key = pSUBKEYLENGTH;
+              sprintf (r->u.value, "%u",
+                       strstr (subalgostr, "768_")? 768 : 1024);
+              r->next = para;
+              para = r;
+
+              s = strchr (subalgostr, '_');
+              log_assert (s && s[1]);
+              s++;
+              r = xmalloc_clear (sizeof *r + strlen (s));
+              r->key = pSUBKEYCURVE;
+              strcpy (r->u.value, s);
+              r->next = para;
+              para = r;
+
+              r = xmalloc_clear (sizeof *r + 20);
+              r->key = pSUBKEYUSAGE;
+              strcpy( r->u.value, "encrypt" );
+              r->next = para;
+              para = r;
+            }
+          else if (subkey_algo)
             {
               /* Create primary and subkey at once.  */
               both = 1;
@@ -5517,11 +6086,7 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
 
       tty_printf ( _("Note: Use \"%s %s\""
                      " for a full featured key generation dialog.\n"),
-#if USE_GPG2_HACK
-                   GPG_NAME "2"
-#else
                    GPG_NAME
-#endif
                    , "--full-generate-key" );
 
       err = parse_key_parameter_string (ctrl, NULL, -1, 0,
@@ -6135,8 +6700,11 @@ do_generate_keypair (ctrl_t ctrl, struct para_data_s *para,
               list_keyblock_direct (ctrl, pub_root, 0, 1,
                                     opt.fingerprint || opt.with_fingerprint,
                                     1);
+              /* Note that we ignore errors from the list function
+               * because that would only be an additional info.  It
+               * has already been remarked that the key has been
+               * created.  */
             }
-
 
           if (!opt.batch
               && (get_parameter_algo (ctrl, para,
@@ -6354,6 +6922,8 @@ generate_subkeypair (ctrl_t ctrl, kbnode_t keyblock, const char *algostr,
   err = hexkeygrip_from_pk (pri_psk, &hexgrip);
   if (err)
     goto leave;
+  /* FIXME: Right now the primary key won't be a dual key.  But this
+   *        will change */
   if (agent_get_keyinfo (NULL, hexgrip, &serialno, NULL))
     {
       if (interactive)
@@ -6387,6 +6957,11 @@ generate_subkeypair (ctrl_t ctrl, kbnode_t keyblock, const char *algostr,
 
           if (curve && (!strcmp (curve, "X448") || !strcmp (curve, "Ed448")))
             keygen_flags |= KEYGEN_FLAG_CREATE_V5_KEY;
+        }
+      else if (algo == PUBKEY_ALGO_KYBER)
+        {
+          nbits = 768;
+          curve = "brainpoolP256r1";
         }
       else
         nbits = ask_keysize (algo, 0);
@@ -6693,12 +7268,14 @@ gen_card_key (int keyno, int algo, int is_primary, kbnode_t pub_root,
   if (curve_is_448 (s_key))
     *keygen_flags |= KEYGEN_FLAG_CREATE_V5_KEY;
 
+  pk->version = (*keygen_flags & KEYGEN_FLAG_CREATE_V5_KEY)? 5 : 4;
+
   if (algo == PUBKEY_ALGO_RSA)
     err = key_from_sexp (pk->pkey, s_key, "public-key", "ne");
   else if (algo == PUBKEY_ALGO_ECDSA
            || algo == PUBKEY_ALGO_EDDSA
            || algo == PUBKEY_ALGO_ECDH )
-    err = ecckey_from_sexp (pk->pkey, s_key, algo);
+    err = ecckey_from_sexp (pk->pkey, s_key, NULL, algo, pk->version);
   else
     err = gpg_error (GPG_ERR_PUBKEY_ALGO);
   gcry_sexp_release (s_key);
@@ -6711,7 +7288,6 @@ gen_card_key (int keyno, int algo, int is_primary, kbnode_t pub_root,
     }
 
   pk->timestamp = *timestamp;
-  pk->version = (*keygen_flags & KEYGEN_FLAG_CREATE_V5_KEY)? 5 : 4;
   if (expireval)
     pk->expiredate = pk->timestamp + expireval;
   pk->pubkey_algo = algo;

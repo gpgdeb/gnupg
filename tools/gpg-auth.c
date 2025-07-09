@@ -33,7 +33,6 @@
 #include "../common/asshelp.h"
 #include "../common/session-env.h"
 #include "../common/membuf.h"
-#include "../common/exechelp.h"
 
 
 /* We keep all global options in the structure OPT.  */
@@ -396,7 +395,7 @@ start_agent (assuan_context_t *ctx_p)
                              opt.agent_program,
                              NULL, NULL,
                              session_env,
-                             opt.autostart,
+                             opt.autostart?ASSHELP_FLAG_AUTOSTART:0,
                              !opt.quiet, 0,
                              NULL, NULL);
 
@@ -826,6 +825,7 @@ ssh_authorized_keys (const char *user, struct ssh_key_list **r_ssh_key_list)
         {
           err = gpg_error (GPG_ERR_LINE_TOO_LONG);
           log_error (_("error reading '%s': %s\n"), fname, gpg_strerror (err));
+          release_ssh_key_list (ssh_key_list);
           goto leave;
         }
 

@@ -2585,7 +2585,7 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
   struct card_key_info_s *keyinfo_on_cards, *l;
   char *cardsn;
   gcry_sexp_t key_public = NULL;
-  int count;
+  int count, skipped;
   struct key_collection_s keyarray = { NULL };
 
   err = open_control_file (&cf, 0);
@@ -2602,6 +2602,7 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
   if (!dirname)
     {
       err = gpg_error_from_syserror ();
+      ssh_close_control_file (cf);
       agent_card_free_keyinfo (keyinfo_on_cards);
       return err;
     }
@@ -2610,6 +2611,7 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
     {
       err = gpg_error_from_syserror ();
       xfree (dirname);
+      ssh_close_control_file (cf);
       agent_card_free_keyinfo (keyinfo_on_cards);
       return err;
     }
@@ -2714,6 +2716,8 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
       err = add_to_key_array (&keyarray, key_public, cardsn, order);
       if (err)
         {
+          gnupg_closedir (dir);
+          ssh_close_control_file (cf);
           gcry_sexp_release (key_public);
           xfree (cardsn);
           goto leave;
@@ -2749,6 +2753,7 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
                  keyarray.items[count].key, keyarray.items[count].cardsn);
 
   /* And print the keys.  */
+  skipped = 0;
   for (count=0; count < keyarray.nitems; count++)
     {
       err = ssh_send_key_public (key_blobs, keyarray.items[count].key,
@@ -2763,12 +2768,13 @@ ssh_send_available_keys (ctrl_t ctrl, estream_t key_blobs, u32 *r_key_counter)
               /* For example a Brainpool curve or a curve we don't
                * support at all but a smartcard lists that curve.
                * We ignore them.  */
+              skipped++;
             }
           else
             goto leave;
         }
     }
-  *r_key_counter = count;
+  *r_key_counter = count - skipped;
 
  leave:
   agent_card_free_keyinfo (keyinfo_on_cards);
@@ -3952,7 +3958,11 @@ start_command_handler_ssh (ctrl_t ctrl, gnupg_fd_t sock_client)
   es_syshd_t syshd;
 
   syshd.type = ES_SYSHD_SOCK;
+#if defined(HAVE_SOCKET) && defined(HAVE_W32_SYSTEM)
+  syshd.u.sock = (SOCKET)sock_client;
+#else
   syshd.u.sock = sock_client;
+#endif
 
   get_client_info (sock_client, &peer_info);
   ctrl->client_pid = peer_info.pid;

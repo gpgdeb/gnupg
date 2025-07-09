@@ -241,7 +241,7 @@ reset_notify (assuan_context_t ctx, char *line)
   (void) line;
 
   memset (ctrl->keygrip, 0, 20);
-  ctrl->have_keygrip = 0;
+  ctrl->have_keygrip = ctrl->have_keygrip1 = 0;
   ctrl->digest.valuelen = 0;
   xfree (ctrl->digest.data);
   ctrl->digest.data = NULL;
@@ -251,7 +251,7 @@ reset_notify (assuan_context_t ctx, char *line)
 
   clear_nonce_cache (ctrl);
 
-  /* Note that a RESET does not clear the ephemeral store becuase
+  /* Note that a RESET does not clear the ephemeral store because
    * clients are used to issue a RESET on a connection.  */
 
   return 0;
@@ -569,22 +569,24 @@ cmd_istrusted (assuan_context_t ctx, char *line)
 
 
 static const char hlp_listtrusted[] =
-  "LISTTRUSTED\n"
+  "LISTTRUSTED [--status]\n"
   "\n"
-  "List all entries from the trustlist.";
+  "List all entries from the trustlist.  With --status the\n"
+  "keys are listed using status line similar to ISTRUSTED";
 static gpg_error_t
 cmd_listtrusted (assuan_context_t ctx, char *line)
 {
   ctrl_t ctrl = assuan_get_pointer (ctx);
-  int rc;
+  gpg_error_t err;
+  int opt_status;
 
-  (void)line;
+  opt_status = has_option (line, "--status");
 
   if (ctrl->restricted)
     return leave_cmd (ctx, gpg_error (GPG_ERR_FORBIDDEN));
 
-  rc = agent_listtrusted (ctx);
-  return leave_cmd (ctx, rc);
+  err = agent_listtrusted (ctrl, ctx, opt_status);
+  return leave_cmd (ctx, err);
 }
 
 
@@ -796,8 +798,8 @@ cmd_havekey (assuan_context_t ctx, char *line)
 
 
 static const char hlp_sigkey[] =
-  "SIGKEY <hexstring_with_keygrip>\n"
-  "SETKEY <hexstring_with_keygrip>\n"
+  "SIGKEY [--another] <hexstring_with_keygrip>\n"
+  "SETKEY [--another] <hexstring_with_keygrip>\n"
   "\n"
   "Set the  key used for a sign or decrypt operation.";
 static gpg_error_t
@@ -805,11 +807,17 @@ cmd_sigkey (assuan_context_t ctx, char *line)
 {
   int rc;
   ctrl_t ctrl = assuan_get_pointer (ctx);
+  int opt_another;
 
-  rc = parse_keygrip (ctx, line, ctrl->keygrip);
+  opt_another = has_option (line, "--another");
+  line = skip_options (line);
+  rc = parse_keygrip (ctx, line, opt_another? ctrl->keygrip1 : ctrl->keygrip);
   if (rc)
     return rc;
-  ctrl->have_keygrip = 1;
+  if (opt_another)
+    ctrl->have_keygrip1 = 1;
+  else
+    ctrl->have_keygrip = 1;
   return 0;
 }
 
@@ -1043,10 +1051,14 @@ cmd_pksign (assuan_context_t ctx, char *line)
 
 
 static const char hlp_pkdecrypt[] =
-  "PKDECRYPT [<options>]\n"
+  "PKDECRYPT [--kem[=<kemid>] [<options>]\n"
   "\n"
   "Perform the actual decrypt operation.  Input is not\n"
-  "sensitive to eavesdropping.";
+  "sensitive to eavesdropping.\n"
+  "If the --kem option is used, decryption is done with the KEM,\n"
+  "inquiring upper-layer option, when needed.  KEMID can be\n"
+  "specified with --kem option;  Valid value is: PQC-PGP, PGP, or CMS.\n"
+  "Default is PQC-PGP.";
 static gpg_error_t
 cmd_pkdecrypt (assuan_context_t ctx, char *line)
 {
@@ -1055,22 +1067,52 @@ cmd_pkdecrypt (assuan_context_t ctx, char *line)
   unsigned char *value;
   size_t valuelen;
   membuf_t outbuf;
-  int padding;
+  int padding = -1;
+  unsigned char *option = NULL;
+  size_t optionlen = 0;
+  const char *p;
+  int kemid = -1;
 
-  (void)line;
+  p = has_option_name (line, "--kem");
+  if (p)
+    {
+      kemid = KEM_PQC_PGP;
+      if (*p == '=')
+        {
+          p++;
+          if (!strcmp (p, "PQC-PGP"))
+            kemid = KEM_PQC_PGP;
+          else if (!strcmp (p, "PGP"))
+            kemid = KEM_PGP;
+          else if (!strcmp (p, "CMS"))
+            kemid = KEM_CMS;
+          else
+            return set_error (GPG_ERR_ASS_PARAMETER, "invalid KEM algorithm");
+        }
+    }
 
   /* First inquire the data to decrypt */
   rc = print_assuan_status (ctx, "INQUIRE_MAXLEN", "%u", MAXLEN_CIPHERTEXT);
   if (!rc)
     rc = assuan_inquire (ctx, "CIPHERTEXT",
 			&value, &valuelen, MAXLEN_CIPHERTEXT);
+  if (!rc && kemid > KEM_PGP)
+    rc = assuan_inquire (ctx, "OPTION",
+                         &option, &optionlen, MAXLEN_CIPHERTEXT);
   if (rc)
     return rc;
 
   init_membuf (&outbuf, 512);
 
-  rc = agent_pkdecrypt (ctrl, ctrl->server_local->keydesc,
-                        value, valuelen, &outbuf, &padding);
+  if (kemid < 0)
+    rc = agent_pkdecrypt (ctrl, ctrl->server_local->keydesc,
+                          value, valuelen, &outbuf, &padding);
+  else
+    {
+      rc = agent_kem_decrypt (ctrl, ctrl->server_local->keydesc, kemid,
+                              value, valuelen, option, optionlen, &outbuf);
+      xfree (option);
+    }
   xfree (value);
   if (rc)
     clear_outbuf (&outbuf);
@@ -2334,27 +2376,31 @@ cmd_get_confirmation (assuan_context_t ctx, char *line)
 
 
 static const char hlp_learn[] =
-  "LEARN [--send] [--sendinfo] [--force]\n"
+  "LEARN [--send] [--sendinfo] [--force] [SERIALNO]\n"
   "\n"
   "Learn something about the currently inserted smartcard.  With\n"
   "--sendinfo information about the card is returned; with --send\n"
   "the available certificates are returned as D lines; with --force\n"
-  "private key storage will be updated by the result.";
+  "private key storage will be updated by the result. With SERIALNO\n"
+  "given the current card is first switched to the specified one.";
 static gpg_error_t
 cmd_learn (assuan_context_t ctx, char *line)
 {
   ctrl_t ctrl = assuan_get_pointer (ctx);
   gpg_error_t err;
   int send, sendinfo, force;
+  const char *demand_sn;
 
   send = has_option (line, "--send");
   sendinfo = send? 1 : has_option (line, "--sendinfo");
   force = has_option (line, "--force");
+  line = skip_options (line);
+  demand_sn = *line? line : NULL;
 
   if (ctrl->restricted)
     return leave_cmd (ctx, gpg_error (GPG_ERR_FORBIDDEN));
 
-  err = agent_handle_learn (ctrl, send, sendinfo? ctx : NULL, force);
+  err = agent_handle_learn (ctrl, send, sendinfo? ctx : NULL, force, demand_sn);
   return leave_cmd (ctx, err);
 }
 

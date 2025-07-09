@@ -348,7 +348,7 @@ get_pubkey_for_sig (ctrl_t ctrl, PKT_public_key *pk, PKT_signature *sig,
 
   /* First try the ISSUER_FPR info.  */
   fpr = issuer_fpr_raw (sig, &fprlen);
-  if (fpr && !get_pubkey_byfprint (ctrl, pk, r_keyblock, fpr, fprlen))
+  if (fpr && !get_pubkey_byfpr (ctrl, pk, r_keyblock, fpr, fprlen))
     return 0;
   if (r_keyblock)
     {
@@ -500,7 +500,7 @@ get_pubkey (ctrl_t ctrl, PKT_public_key *pk, u32 *keyid)
 
 
 /* Same as get_pubkey but if the key was not found the function tries
- * to import it from LDAP.  FIXME: We should not need this but swicth
+ * to import it from LDAP.  FIXME: We should not need this but switch
  * to a fingerprint lookup.  */
 gpg_error_t
 get_pubkey_with_ldap_fallback (ctrl_t ctrl, PKT_public_key *pk, u32 *keyid)
@@ -1037,7 +1037,7 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
   /* If we are called due to --locate-external-key check whether NAME
    * is a fingerprint and then try to lookup that key by configured
    * method which support lookup by fingerprint.  FPRBUF carries the
-   * parsed fingerpint iff IS_FPR is true.  */
+   * parsed fingerprint iff IS_FPR is true.  */
   is_fpr = 0;
   if (!is_mbox && (mode == GET_PUBKEY_NO_LOCAL || mode == GET_PUBKEY_TRY_LDAP))
     {
@@ -1239,7 +1239,7 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
                   mechanism_string = is_fpr? "ldap/fpr":"ldap/mbox";
                   glo_ctrl.in_auto_key_retrieve++;
                   if (is_fpr)
-                    rc = keyserver_import_fprint (ctrl,
+                    rc = keyserver_import_fpr (ctrl,
                                                fprbuf.u.fpr, fprbuf.fprlen,
                                                opt.keyserver,
                                                KEYSERVER_IMPORT_FLAG_LDAP);
@@ -1262,8 +1262,8 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
 	      mechanism_string = "NTDS";
 	      glo_ctrl.in_auto_key_retrieve++;
               if (is_fpr)
-                rc = keyserver_import_fprint_ntds (ctrl,
-                                                   fprbuf.u.fpr, fprbuf.fprlen);
+                rc = keyserver_import_fpr_ntds (ctrl,
+                                                fprbuf.u.fpr, fprbuf.fprlen);
               else
                 rc = keyserver_import_ntds (ctrl, name, &fpr, &fpr_len);
 	      glo_ctrl.in_auto_key_retrieve--;
@@ -1280,10 +1280,10 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
 		  glo_ctrl.in_auto_key_retrieve++;
                   if (is_fpr)
                     {
-                      rc = keyserver_import_fprint (ctrl,
-                                                    fprbuf.u.fpr, fprbuf.fprlen,
-                                                    opt.keyserver,
-                                                    KEYSERVER_IMPORT_FLAG_LDAP);
+                      rc = keyserver_import_fpr (ctrl,
+                                                 fprbuf.u.fpr, fprbuf.fprlen,
+                                                 opt.keyserver,
+                                                 KEYSERVER_IMPORT_FLAG_LDAP);
                       /* Map error codes because Dirmngr returns NO
                        * DATA if the keyserver does not have the
                        * requested key.  It returns NO KEYSERVER if no
@@ -1315,10 +1315,10 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
 		glo_ctrl.in_auto_key_retrieve++;
                 if (is_fpr)
                   {
-                    rc = keyserver_import_fprint (ctrl,
-                                                  fprbuf.u.fpr, fprbuf.fprlen,
-                                                  opt.keyserver,
-                                                  KEYSERVER_IMPORT_FLAG_LDAP);
+                    rc = keyserver_import_fpr (ctrl,
+                                               fprbuf.u.fpr, fprbuf.fprlen,
+                                               opt.keyserver,
+                                               KEYSERVER_IMPORT_FLAG_LDAP);
                     if (gpg_err_code (rc) == GPG_ERR_NO_DATA
                         || gpg_err_code (rc) == GPG_ERR_NO_KEYSERVER)
                       rc = gpg_error (GPG_ERR_NO_PUBKEY);
@@ -1899,8 +1899,8 @@ get_pubkey_from_buffer (ctrl_t ctrl, PKT_public_key *pkbuf,
  * returned in *R_KEYBLOCK.  This should be freed using
  * release_kbnode().
  *
- * FPRINT is a byte array whose contents is the fingerprint to use as
- * the search term.  FPRINT_LEN specifies the length of the
+ * FPR is a byte array whose contents is the fingerprint to use as
+ * the search term.  FPRLEN specifies the length of the
  * fingerprint (in bytes).  Currently, only 16, 20, and 32-byte
  * fingerprints are supported.
  *
@@ -1908,15 +1908,15 @@ get_pubkey_from_buffer (ctrl_t ctrl, PKT_public_key *pkbuf,
  * be done by creating a userID conforming to the unified fingerprint
  * style.  */
 int
-get_pubkey_byfprint (ctrl_t ctrl, PKT_public_key *pk, kbnode_t *r_keyblock,
-		     const byte * fprint, size_t fprint_len)
+get_pubkey_byfpr (ctrl_t ctrl, PKT_public_key *pk, kbnode_t *r_keyblock,
+		  const byte *fpr, size_t fprlen)
 {
   int rc;
 
   if (r_keyblock)
     *r_keyblock = NULL;
 
-  if (fprint_len == 32 || fprint_len == 20 || fprint_len == 16)
+  if (fprlen == 32 || fprlen == 20 || fprlen == 16)
     {
       struct getkey_ctx_s ctx;
       KBNODE kb = NULL;
@@ -1933,8 +1933,8 @@ get_pubkey_byfprint (ctrl_t ctrl, PKT_public_key *pk, kbnode_t *r_keyblock,
 
       ctx.nitems = 1;
       ctx.items[0].mode = KEYDB_SEARCH_MODE_FPR;
-      memcpy (ctx.items[0].u.fpr, fprint, fprint_len);
-      ctx.items[0].fprlen = fprint_len;
+      memcpy (ctx.items[0].u.fpr, fpr, fprlen);
+      ctx.items[0].fprlen = fprlen;
       if (pk)
         ctx.req_usage = pk->req_usage;
       rc = lookup (ctrl, &ctx, 0, &kb, &found_key);
@@ -1954,7 +1954,7 @@ get_pubkey_byfprint (ctrl_t ctrl, PKT_public_key *pk, kbnode_t *r_keyblock,
 }
 
 
-/* This function is similar to get_pubkey_byfprint, but it doesn't
+/* This function is similar to get_pubkey_byfpr, but it doesn't
  * merge the self-signed data into the public key and subkeys or into
  * the user ids.  It also doesn't add the key to the user id cache.
  * Further, this function ignores PK->REQ_USAGE.
@@ -1962,17 +1962,16 @@ get_pubkey_byfprint (ctrl_t ctrl, PKT_public_key *pk, kbnode_t *r_keyblock,
  * This function is intended to avoid recursion and, as such, should
  * only be used in very specific situations.
  *
- * Like get_pubkey_byfprint, PK may be NULL.  In that case, this
+ * Like get_pubkey_byfpr, PK may be NULL.  In that case, this
  * function effectively just checks for the existence of the key.  */
 gpg_error_t
-get_pubkey_byfprint_fast (ctrl_t ctrl, PKT_public_key * pk,
-			  const byte * fprint, size_t fprint_len)
+get_pubkey_byfpr_fast (ctrl_t ctrl, PKT_public_key * pk,
+		       const byte *fpr, size_t fprlen)
 {
   gpg_error_t err;
   KBNODE keyblock;
 
-  err = get_keyblock_byfprint_fast (ctrl,
-                                    &keyblock, NULL, 0, fprint, fprint_len, 0);
+  err = get_keyblock_byfpr_fast (ctrl, &keyblock, NULL, 0, fpr, fprlen, 0);
   if (!err)
     {
       if (pk)
@@ -1984,7 +1983,7 @@ get_pubkey_byfprint_fast (ctrl_t ctrl, PKT_public_key * pk,
 }
 
 
-/* This function is similar to get_pubkey_byfprint_fast but returns a
+/* This function is similar to get_pubkey_byfpr_fast but returns a
  * keydb handle at R_HD and the keyblock at R_KEYBLOCK.  R_KEYBLOCK or
  * R_HD may be NULL.  If LOCK is set the handle has been opend in
  * locked mode and keydb_disable_caching () has been called.  On error
@@ -1994,10 +1993,10 @@ get_pubkey_byfprint_fast (ctrl_t ctrl, PKT_public_key * pk,
  * the function returns a keyblock which has the requested fingerprint
  * has primary key.  */
 gpg_error_t
-get_keyblock_byfprint_fast (ctrl_t ctrl,
+get_keyblock_byfpr_fast (ctrl_t ctrl,
                          kbnode_t *r_keyblock, KEYDB_HANDLE *r_hd,
                          int primary_only,
-                         const byte *fprint, size_t fprint_len, int lock)
+                         const byte *fpr, size_t fprlen, int lock)
 {
   gpg_error_t err;
   KEYDB_HANDLE hd;
@@ -2012,8 +2011,8 @@ get_keyblock_byfprint_fast (ctrl_t ctrl,
   if (r_hd)
     *r_hd = NULL;
 
-  for (i = 0; i < MAX_FINGERPRINT_LEN && i < fprint_len; i++)
-    fprbuf[i] = fprint[i];
+  for (i = 0; i < MAX_FINGERPRINT_LEN && i < fprlen; i++)
+    fprbuf[i] = fpr[i];
 
   hd = keydb_new (ctrl);
   if (!hd)
@@ -2038,7 +2037,7 @@ get_keyblock_byfprint_fast (ctrl_t ctrl,
     *r_hd = hd;
 
  again:
-  err = keydb_search_fpr (hd, fprbuf, fprint_len);
+  err = keydb_search_fpr (hd, fprbuf, fprlen);
   if (gpg_err_code (err) == GPG_ERR_NOT_FOUND)
     {
       if (!r_hd)
@@ -2060,7 +2059,7 @@ get_keyblock_byfprint_fast (ctrl_t ctrl,
   if (primary_only)
     {
       fingerprint_from_pk (keyblock->pkt->pkt.public_key, tmpfpr, &tmpfprlen);
-      if (fprint_len != tmpfprlen || memcmp (fprint, tmpfpr, fprint_len))
+      if (fprlen != tmpfprlen || memcmp (fpr, tmpfpr, fprlen))
         {
           release_kbnode (keyblock);
           keyblock = NULL;
@@ -2610,7 +2609,7 @@ parse_key_usage (PKT_signature * sig)
 
 /* Apply information from SIGNODE (which is the valid self-signature
  * associated with that UID) to the UIDNODE:
- * - wether the UID has been revoked
+ * - whether the UID has been revoked
  * - assumed creation date of the UID
  * - temporary store the keyflags here
  * - temporary store the key expiration time here
@@ -2739,13 +2738,42 @@ fixup_uidnode (KBNODE uidnode, KBNODE signode, u32 keycreated)
     uid->flags.ks_modify = 0;
 }
 
+
+/* Store the revocation signature into the RINFO struct.  */
 static void
 sig_to_revoke_info (PKT_signature * sig, struct revoke_info *rinfo)
 {
+  int reason_seq = 0;
+  size_t reason_n;
+  const byte *reason_p;
+
   rinfo->date = sig->timestamp;
   rinfo->algo = sig->pubkey_algo;
   rinfo->keyid[0] = sig->keyid[0];
   rinfo->keyid[1] = sig->keyid[1];
+  xfree (rinfo->reason_comment);
+  rinfo->reason_comment = NULL;
+  rinfo->reason_comment_len = 0;
+  rinfo->reason_code = 0;
+  rinfo->got_reason = 0;
+
+  while ((reason_p = enum_sig_subpkt (sig, 1, SIGSUBPKT_REVOC_REASON,
+                                      &reason_n, &reason_seq, NULL))
+         && !reason_n)
+    ; /* Skip over empty reason packets.  */
+
+  if (reason_p)
+    {
+      rinfo->got_reason = 1;
+      rinfo->reason_code = *reason_p;
+      reason_n--; reason_p++;
+      if (reason_n)
+        {
+          rinfo->reason_comment = xmalloc (reason_n);
+          memcpy (rinfo->reason_comment, reason_p, reason_n);
+          rinfo->reason_comment_len = reason_n;
+        }
+    }
 }
 
 
@@ -3565,7 +3593,7 @@ merge_selfsigs (ctrl_t ctrl, kbnode_t keyblock)
 {
   KBNODE k;
   int revoked;
-  struct revoke_info rinfo;
+  struct revoke_info rinfo = { 0 };
   PKT_public_key *main_pk;
   prefitem_t *prefs;
   unsigned int mdc_feature;
@@ -3612,8 +3640,19 @@ merge_selfsigs (ctrl_t ctrl, kbnode_t keyblock)
 		pk->flags.valid = 0;
 	      if (revoked && !pk->flags.revoked)
 		{
+                  /* Copy RINFO reason part only the first time
+                   * because we don't want to propagate the reason to
+                   * the subkeys.  This assumes that we get the public
+                   * key first.  */
 		  pk->flags.revoked = revoked;
-		  memcpy (&pk->revoked, &rinfo, sizeof (rinfo));
+                  memcpy (&pk->revoked, &rinfo, sizeof (rinfo));
+                  if (rinfo.got_reason)
+                    {
+                      rinfo.got_reason = 0;
+                      rinfo.reason_code = 0;
+                      rinfo.reason_comment = NULL;  /*(owner is pk->revoked)*/
+                      rinfo.reason_comment_len = 0;
+                    }
 		}
 	      if (main_pk->has_expired)
 		{
@@ -3623,7 +3662,7 @@ merge_selfsigs (ctrl_t ctrl, kbnode_t keyblock)
 		}
 	    }
 	}
-      return;
+      goto leave;
     }
 
   /* Set the preference list of all keys to those of the primary real
@@ -3661,6 +3700,9 @@ merge_selfsigs (ctrl_t ctrl, kbnode_t keyblock)
 	  pk->flags.aead = aead_feature;
 	}
     }
+
+ leave:
+  xfree (rinfo.reason_comment);
 }
 
 
@@ -3859,6 +3901,15 @@ finish_lookup (kbnode_t keyblock, unsigned int req_usage, int want_exact,
 			   req_usage, pk->pubkey_usage);
 	      continue;
 	    }
+	  if (!verify_mode
+              && opt.flags.disable_pqc_encryption
+              && pk->pubkey_algo == PUBKEY_ALGO_KYBER)
+	    {
+	      if (DBG_LOOKUP)
+                log_debug ("\tsubkey skipped due to option %s\n",
+                           "--disable-pqc-encryption");
+	      continue;
+	    }
 
           n_subkeys++;
 	  if (!verify_mode && pk->flags.revoked)
@@ -3881,6 +3932,16 @@ finish_lookup (kbnode_t keyblock, unsigned int req_usage, int want_exact,
 		log_debug ("\tsubkey not yet valid\n");
 	      continue;
 	    }
+
+          if (!verify_mode
+              && opt.flags.require_pqc_encryption
+              && (req_usage & PUBKEY_USAGE_XENC_MASK)
+              && pk->pubkey_algo != PUBKEY_ALGO_KYBER)
+            {
+	      if (DBG_LOOKUP)
+		log_debug ("\tsubkey is not quantum-resistant\n");
+              continue;
+            }
 
 
           if (!verify_mode && want_secret)
@@ -3962,6 +4023,14 @@ finish_lookup (kbnode_t keyblock, unsigned int req_usage, int want_exact,
 	  if (DBG_LOOKUP)
 	    log_debug ("\tprimary key has expired\n");
 	}
+      else if (!verify_mode
+               && opt.flags.require_pqc_encryption
+               && (req_usage & PUBKEY_USAGE_XENC_MASK)
+               && pk->pubkey_algo != PUBKEY_ALGO_KYBER)
+        {
+          if (DBG_LOOKUP)
+            log_debug ("\tprimary key is not quantum-resistant\n");
+        }
       else /* Okay.  */
 	{
 	  if (DBG_LOOKUP)
@@ -4173,16 +4242,16 @@ get_seckey_default_or_card (ctrl_t ctrl, PKT_public_key *pk,
     add_to_strlist (&namelist, def_secret_key);
   else if (fpr_card)
     {
-      err = get_pubkey_byfprint (ctrl, pk, NULL, fpr_card, fpr_len);
+      err = get_pubkey_byfpr (ctrl, pk, NULL, fpr_card, fpr_len);
       if (gpg_err_code (err) == GPG_ERR_NO_PUBKEY)
         {
           if (opt.debug)
             log_debug ("using LDAP to find public key for current card\n");
-          err = keyserver_import_fprint (ctrl, fpr_card, fpr_len,
-                                         opt.keyserver,
-                                         KEYSERVER_IMPORT_FLAG_LDAP);
+          err = keyserver_import_fpr (ctrl, fpr_card, fpr_len,
+                                      opt.keyserver,
+                                      KEYSERVER_IMPORT_FLAG_LDAP);
           if (!err)
-            err = get_pubkey_byfprint (ctrl, pk, NULL, fpr_card, fpr_len);
+            err = get_pubkey_byfpr (ctrl, pk, NULL, fpr_card, fpr_len);
           else if (gpg_err_code (err) == GPG_ERR_NO_DATA
                    || gpg_err_code (err) == GPG_ERR_NO_KEYSERVER)
             {
@@ -4365,7 +4434,7 @@ get_user_id_byfpr (ctrl_t ctrl, const byte *fpr, size_t fprlen, size_t *rn)
   if (!name)
     {
       /* Get it so that the cache will be filled.  */
-      if (!get_pubkey_byfprint (ctrl, NULL, NULL, fpr, fprlen))
+      if (!get_pubkey_byfpr (ctrl, NULL, NULL, fpr, fprlen))
         name = cache_get_uid_byfpr (fpr, fprlen, rn);
     }
 

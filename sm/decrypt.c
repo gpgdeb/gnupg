@@ -251,7 +251,7 @@ ecdh_decrypt (unsigned char *secret, size_t secretlen,
     log_printhex (secret, secretlen, "ECDH X ..:");
 
   /* We have now the shared secret bytes in (SECRET,SECRETLEN).  Now
-   * we will compute the KEK using a value dervied from the secret
+   * we will compute the KEK using a value derived from the secret
    * bytes. */
   err = gcry_sexp_extract_param (enc_val, "enc-val",
                                  "&'encr-algo''wrap-algo''ukm'?s",
@@ -555,7 +555,7 @@ pwri_decrypt (ctrl_t ctrl, gcry_sexp_t enc_val,
                                  ioarray+2, ioarray+3, ioarray+4, NULL);
   if (err)
     {
-      /* If this is not pwri element, it is likly a kekri element
+      /* If this is not pwri element, it is likely a kekri element
        * which we do not yet support.  Change the error back to the
        * original as returned by ksba_cms_get_issuer.  */
       if (gpg_err_code (err) == GPG_ERR_NOT_FOUND)
@@ -1052,7 +1052,7 @@ decrypt_gcm_filter (void *arg,
 
 /* Perform a decrypt operation.  */
 int
-gpgsm_decrypt (ctrl_t ctrl, int in_fd, estream_t out_fp)
+gpgsm_decrypt (ctrl_t ctrl, estream_t in_fp, estream_t out_fp)
 {
   int rc;
   gnupg_ksba_io_t b64reader = NULL;
@@ -1063,7 +1063,6 @@ gpgsm_decrypt (ctrl_t ctrl, int in_fd, estream_t out_fp)
   ksba_stop_reason_t stopreason;
   KEYDB_HANDLE kh;
   int recp;
-  estream_t in_fp = NULL;
   struct decrypt_filter_parm_s dfparm;
   char *curve = NULL;
 
@@ -1076,14 +1075,6 @@ gpgsm_decrypt (ctrl_t ctrl, int in_fd, estream_t out_fp)
     {
       log_error (_("failed to allocate keyDB handle\n"));
       rc = gpg_error (GPG_ERR_GENERAL);
-      goto leave;
-    }
-
-  in_fp = es_fdopen_nc (in_fd, "rb");
-  if (!in_fp)
-    {
-      rc = gpg_error_from_syserror ();
-      log_error ("fdopen() failed: %s\n", strerror (errno));
       goto leave;
     }
 
@@ -1520,7 +1511,6 @@ gpgsm_decrypt (ctrl_t ctrl, int in_fd, estream_t out_fp)
   gnupg_ksba_destroy_reader (b64reader);
   gnupg_ksba_destroy_writer (b64writer);
   keydb_release (kh);
-  es_fclose (in_fp);
   if (dfparm.hd)
     gcry_cipher_close (dfparm.hd);
   return rc;

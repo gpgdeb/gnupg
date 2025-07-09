@@ -53,7 +53,7 @@ struct resource_item {
 
 
 /* Data used to keep track of keybox daemon sessions.  This allows us
- * to use several sessions with the keyboxd and also to re-use already
+ * to use several sessions with the keyboxd and also to reuse already
  * established sessions.  Note that gpgdm.h defines the type
  * keydb_local_t for this structure.  */
 struct keydb_local_s
@@ -161,10 +161,17 @@ gpgsm_keydb_deinit_session_data (ctrl_t ctrl)
         log_error ("oops: trying to cleanup an active keydb context\n");
       else
         {
-          kbx_client_data_release (kbl->kcd);
-          kbl->kcd = NULL;
           assuan_release (kbl->ctx);
           kbl->ctx = NULL;
+          /*
+           * Since there may be pipe output FD sent to the server (so
+           * that it can receive data through the pipe), we should
+           * release the assuan connection before releasing KBL->KCD.
+           * This way, the data receiving thread can finish cleanly,
+           * and we can join the thread.
+           */
+          kbx_client_data_release (kbl->kcd);
+          kbl->kcd = NULL;
         }
       xfree (kbl);
     }
@@ -516,7 +523,8 @@ create_new_context (ctrl_t ctrl, assuan_context_t *r_ctx)
   err = start_new_keyboxd (&ctx,
                            GPG_ERR_SOURCE_DEFAULT,
                            opt.keyboxd_program,
-                           opt.autostart, opt.verbose, DBG_IPC,
+                           opt.autostart?ASSHELP_FLAG_AUTOSTART:0,
+                           opt.verbose, DBG_IPC,
                            NULL, ctrl);
   if (!opt.autostart && gpg_err_code (err) == GPG_ERR_NO_KEYBOXD)
     {
@@ -580,9 +588,7 @@ open_context (ctrl_t ctrl, keydb_local_t *r_kbl)
           return err;
         }
 
-      /* We use D-lines in 2.4 for communication due to a bug with fd
-       * passing.  See T6512.  */
-      err = kbx_client_data_new (&kbl->kcd, kbl->ctx, 1);
+      err = kbx_client_data_new (&kbl->kcd, kbl->ctx, 0);
       if (err)
         {
           assuan_release (kbl->ctx);
@@ -1546,7 +1552,7 @@ keydb_search_desc_dump (struct keydb_search_desc *desc)
 
 
 
-/* Status callback for SEARCH and NEXT operaions.  */
+/* Status callback for SEARCH and NEXT operations.  */
 static gpg_error_t
 search_status_cb (void *opaque, const char *line)
 {
@@ -1595,7 +1601,7 @@ search_status_cb (void *opaque, const char *line)
  * keydb_search_reset().
  *
  * If no key matches the search description, the error code
- * GPG_ERR_NOT_FOUND is retruned.  If there was a match, 0 is
+ * GPG_ERR_NOT_FOUND is returned.  If there was a match, 0 is
  * returned.  If an error occurred, that error code is returned.
  *
  * The returned key is considered to be selected and the certificate
@@ -1605,7 +1611,7 @@ keydb_search (ctrl_t ctrl, KEYDB_HANDLE hd,
               KEYDB_SEARCH_DESC *desc, size_t ndesc)
 {
   gpg_error_t err = gpg_error (GPG_ERR_EOF);
-  unsigned long skipped;
+  unsigned long skipped = 0;
   int i;
 
   if (!hd)

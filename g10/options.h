@@ -234,7 +234,8 @@ struct
   int ignore_expiration;
   int command_fd;
   const char *override_session_key;
-  int show_session_key;
+  unsigned int show_session_key:1;
+  unsigned int show_only_session_key:1;
 
   const char *gpg_agent_info;
   int try_all_secrets;
@@ -305,6 +306,11 @@ struct
     /* Fail if an operation can't be done in the requested compliance
      * mode.  */
     unsigned int require_compliance:1;
+    /* Fail encryption unless a PQC algorithm is used.  */
+    unsigned int require_pqc_encryption:1;
+    /* Do not use PQC subkeys for encryption.  This is never set if
+     * require_pqc_encryption is also set.  */
+    unsigned int disable_pqc_encryption:1;
     /* Process all signatures even in batch mode.  */
     unsigned int proc_all_sigs:1;
   } flags;
@@ -362,9 +368,11 @@ struct {
 #define DBG_TRUST_VALUE   256	/* debug the trustdb */
 #define DBG_HASHING_VALUE 512	/* debug hashing operations */
 #define DBG_IPC_VALUE     1024  /* debug assuan communication */
+#define DBG_RECSEL_VALUE  2048  /* Debug the record selection */
 #define DBG_CLOCK_VALUE   4096
 #define DBG_LOOKUP_VALUE  8192	/* debug the key lookup */
 #define DBG_EXTPROG_VALUE 16384 /* debug external program calls */
+#define DBG_KEYDB_VALUE   32768 /* debug keydb and keyboxd searches. */
 
 /* Tests for the debugging flags.  */
 #define DBG_PACKET (opt.debug & DBG_PACKET_VALUE)
@@ -375,9 +383,11 @@ struct {
 #define DBG_TRUST  (opt.debug & DBG_TRUST_VALUE)
 #define DBG_HASHING (opt.debug & DBG_HASHING_VALUE)
 #define DBG_IPC     (opt.debug & DBG_IPC_VALUE)
+#define DBG_RECSEL  (opt.debug & DBG_RECSEL_VALUE)
 #define DBG_CLOCK   (opt.debug & DBG_CLOCK_VALUE)
 #define DBG_LOOKUP  (opt.debug & DBG_LOOKUP_VALUE)
 #define DBG_EXTPROG (opt.debug & DBG_EXTPROG_VALUE)
+#define DBG_KEYDB   (opt.debug & DBG_KEYDB_VALUE)
 
 /* FIXME: We need to check why we did not put this into opt. */
 #define DBG_MEMORY    memory_debug_mode
@@ -387,10 +397,11 @@ EXTERN_UNLESS_MAIN_MODULE int memory_debug_mode;
 EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 
 /* Compatibility flags */
-/* #define COMPAT_FOO   1 */
+#define COMPAT_PARALLELIZED   1  /* Use threaded hashing for signatures.  */
+#define COMPAT_T7014_OLD      2  /* Use initial T7014 test data.  */
+#define COMPAT_COMPR_KEYS     4  /* Allow import of compressed keys. (T7014) */
 
-
-/* Compliance test macors.  */
+/* Compliance test macros.  */
 #define GNUPG   (opt.compliance==CO_GNUPG || opt.compliance==CO_DE_VS)
 #define RFC2440 (opt.compliance==CO_RFC2440)
 #define RFC4880 (opt.compliance==CO_RFC4880)
@@ -451,7 +462,10 @@ EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 #define LIST_SHOW_PREF                   (1<<14)
 #define LIST_SHOW_PREF_VERBOSE           (1<<15)
 #define LIST_SHOW_UNUSABLE_SIGS          (1<<16)
+#define LIST_SHOW_X509_NOTATIONS         (1<<17)
+#define LIST_STORE_X509_NOTATIONS        (1<<18)
 #define LIST_SHOW_OWNERTRUST             (1<<19)
+#define LIST_SHOW_TRUSTSIG               (1<<20)
 
 #define VERIFY_SHOW_PHOTOS               (1<<0)
 #define VERIFY_SHOW_POLICY_URLS          (1<<1)

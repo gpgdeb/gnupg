@@ -1,6 +1,7 @@
 /* pkglue.c - public key operations glue code
  * Copyright (C) 2000, 2003, 2010 Free Software Foundation, Inc.
  * Copyright (C) 2014 Werner Koch
+ * Copyright (C) 2024 g10 Code GmbH.
  *
  * This file is part of GnuPG.
  *
@@ -16,6 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see <https://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include <config.h>
@@ -29,6 +31,12 @@
 #include "pkglue.h"
 #include "main.h"
 #include "options.h"
+
+
+/* Maximum buffer sizes required for ECC KEM.  */
+#define ECC_POINT_LEN_MAX (1+2*66)
+#define ECC_HASH_LEN_MAX 64
+
 
 /* FIXME: Better change the function name because mpi_ is used by
    gcrypt macros.  */
@@ -172,29 +180,6 @@ sexp_extract_param_sos_nlz (gcry_sexp_t sexp, const char *param,
     }
 
   return err;
-}
-
-
-static byte *
-get_data_from_sexp (gcry_sexp_t sexp, const char *item, size_t *r_size)
-{
-  gcry_sexp_t list;
-  size_t valuelen;
-  const char *value;
-  byte *v;
-
-  if (DBG_CRYPTO)
-    log_printsexp ("get_data_from_sexp:", sexp);
-
-  list = gcry_sexp_find_token (sexp, item, 0);
-  log_assert (list);
-  value = gcry_sexp_nth_data (list, 1, &valuelen);
-  log_assert (value);
-  v = xtrymalloc (valuelen);
-  memcpy (v, value, valuelen);
-  gcry_sexp_release (list);
-  *r_size = valuelen;
-  return v;
 }
 
 
@@ -430,140 +415,728 @@ pk_verify (pubkey_algo_t pkalgo, gcry_mpi_t hash,
 }
 
 
+#if GCRY_KEM_MLKEM1024_ENCAPS_LEN < GCRY_KEM_MLKEM768_ENCAPS_LEN    \
+    || GCRY_KEM_MLKEM1024_SHARED_LEN < GCRY_KEM_MLKEM768_SHARED_LEN
+# error Bad Kyber constants in Libgcrypt
+#endif
 
-
-/****************
- * Emulate our old PK interface here - sometime in the future we might
- * change the internal design to directly fit to libgcrypt.
- * PK is only required to compute the fingerprint for ECDH.
- */
-int
-pk_encrypt (pubkey_algo_t algo, gcry_mpi_t *resarr, gcry_mpi_t data,
-            PKT_public_key *pk, gcry_mpi_t *pkey)
+/* Core of the encryption for KEM algorithms.  See pk_decrypt for a
+ * description of the arguments.  */
+static gpg_error_t
+do_encrypt_kem (PKT_public_key *pk, gcry_mpi_t data, int seskey_algo,
+                gcry_mpi_t *resarr)
 {
-  gcry_sexp_t s_ciph = NULL;
+  gpg_error_t err;
+  int i;
+  unsigned int nbits, n;
   gcry_sexp_t s_data = NULL;
-  gcry_sexp_t s_pkey = NULL;
-  int rc;
+  gcry_cipher_hd_t hd = NULL;
+  char *ecc_oid = NULL;
+  enum gcry_kem_algos kyber_algo, ecc_algo;
 
-  /* Make a sexp from pkey.  */
-  if (algo == PUBKEY_ALGO_ELGAMAL || algo == PUBKEY_ALGO_ELGAMAL_E)
-    {
-      rc = gcry_sexp_build (&s_pkey, NULL,
-			    "(public-key(elg(p%m)(g%m)(y%m)))",
-			    pkey[0], pkey[1], pkey[2]);
-      /* Put DATA into a simplified S-expression.  */
-      if (!rc)
-        rc = gcry_sexp_build (&s_data, NULL, "%m", data);
-    }
-  else if (algo == PUBKEY_ALGO_RSA || algo == PUBKEY_ALGO_RSA_E)
-    {
-      rc = gcry_sexp_build (&s_pkey, NULL,
-			    "(public-key(rsa(n%m)(e%m)))",
-			    pkey[0], pkey[1]);
-      /* Put DATA into a simplified S-expression.  */
-      if (!rc)
-        rc = gcry_sexp_build (&s_data, NULL, "%m", data);
-    }
-  else if (algo == PUBKEY_ALGO_ECDH)
-    {
-      gcry_mpi_t k;
+  const unsigned char *ecc_pubkey;
+  size_t ecc_pubkey_len;
+  const unsigned char *kyber_pubkey;
+  size_t kyber_pubkey_len;
+  const unsigned char *seskey;
+  size_t seskey_len;
+  unsigned char *enc_seskey = NULL;
+  size_t enc_seskey_len;
+  int ecc_hash_algo;
 
-      rc = pk_ecdh_generate_ephemeral_key (pkey, &k);
-      if (!rc)
+  unsigned char ecc_ct[ECC_POINT_LEN_MAX];
+  unsigned char ecc_ecdh[ECC_POINT_LEN_MAX];
+  unsigned char ecc_ss[ECC_HASH_LEN_MAX];
+  size_t ecc_ct_len, ecc_ecdh_len, ecc_ss_len;
+
+  unsigned char kyber_ct[GCRY_KEM_MLKEM1024_ENCAPS_LEN];
+  unsigned char kyber_ss[GCRY_KEM_MLKEM1024_SHARED_LEN];
+  size_t kyber_ct_len, kyber_ss_len;
+
+  char fixedinfo[1+MAX_FINGERPRINT_LEN];
+  int fixedlen;
+
+  unsigned char kek[32];  /* AES-256 is mandatory.  */
+  size_t kek_len = 32;
+
+  /* For later error checking we make sure the array is cleared.  */
+  resarr[0] = resarr[1] = resarr[2] = NULL;
+
+  /* As of now we use KEM only for the combined Kyber and thus a
+   * second public key is expected.  Right now we take the keys
+   * directly from the PK->data elements.  */
+
+  ecc_oid = openpgp_oid_to_str (pk->pkey[0]);
+  if (!ecc_oid)
+    {
+      err = gpg_error_from_syserror ();
+      log_error ("%s: error getting OID for ECC key\n", __func__);
+      goto leave;
+    }
+  ecc_algo = openpgp_oid_to_kem_algo (ecc_oid);
+  if (ecc_algo == GCRY_KEM_RAW_X25519)
+    {
+      if (!strcmp (ecc_oid, "1.3.6.1.4.1.3029.1.5.1"))
+        log_info ("Warning: "
+                  "legacy OID for cv25519 accepted during development\n");
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len == 33 && *ecc_pubkey == 0x40)
         {
-          char *curve;
-
-          curve = openpgp_oid_to_str (pkey[0]);
-          if (!curve)
-            rc = gpg_error_from_syserror ();
-          else
-            {
-              int with_djb_tweak_flag = openpgp_oid_is_cv25519 (pkey[0]);
-
-              /* Now use the ephemeral secret to compute the shared point.  */
-              rc = gcry_sexp_build (&s_pkey, NULL,
-                                    with_djb_tweak_flag ?
-                                    "(public-key(ecdh(curve%s)(flags djb-tweak)(q%m)))"
-                                    : "(public-key(ecdh(curve%s)(q%m)))",
-                                    curve, pkey[1]);
-              xfree (curve);
-              /* Put K into a simplified S-expression.  */
-              if (!rc)
-                rc = gcry_sexp_build (&s_data, NULL, "%m", k);
-            }
-          gcry_mpi_release (k);
+          ecc_pubkey++;     /* Remove the 0x40 prefix.  */
+          ecc_pubkey_len--;
         }
-    }
-  else
-    rc = gpg_error (GPG_ERR_PUBKEY_ALGO);
-
-  /* Pass it to libgcrypt. */
-  if (!rc)
-    rc = gcry_pk_encrypt (&s_ciph, s_data, s_pkey);
-
-  gcry_sexp_release (s_data);
-  gcry_sexp_release (s_pkey);
-
-  if (rc)
-    ;
-  else if (algo == PUBKEY_ALGO_ECDH)
-    {
-      gcry_mpi_t public, result;
-      byte fp[MAX_FINGERPRINT_LEN];
-      byte *shared;
-      size_t nshared;
-
-      /* Get the shared point and the ephemeral public key.  */
-      shared = get_data_from_sexp (s_ciph, "s", &nshared);
-      if (!shared)
+      if (ecc_pubkey_len != 32)
         {
-          rc = gpg_error_from_syserror ();
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
           goto leave;
         }
-      rc = sexp_extract_param_sos (s_ciph, "e", &public);
-      gcry_sexp_release (s_ciph);
-      s_ciph = NULL;
-      if (DBG_CRYPTO)
-        {
-          log_debug ("ECDH ephemeral key:");
-          gcry_mpi_dump (public);
-          log_printf ("\n");
-        }
-
-      result = NULL;
-      fingerprint_from_pk (pk, fp, NULL);
-
-      if (!rc)
-        {
-          unsigned int nbits;
-          byte *p = gcry_mpi_get_opaque (data, &nbits);
-          rc = pk_ecdh_encrypt_with_shared_point (shared, nshared, fp, p,
-                                                  (nbits+7)/8, pkey, &result);
-        }
-      xfree (shared);
-      if (!rc)
-        {
-          resarr[0] = public;
-          resarr[1] = result;
-        }
-      else
-        {
-          gcry_mpi_release (public);
-          gcry_mpi_release (result);
-        }
+      ecc_ct_len = ecc_ecdh_len = 32;
+      ecc_ss_len = 32;
+      ecc_hash_algo = GCRY_MD_SHA3_256;
     }
-  else /* Elgamal or RSA case.  */
-    { /* Fixme: Add better error handling or make gnupg use
-         S-expressions directly.  */
-      resarr[0] = get_mpi_from_sexp (s_ciph, "a", GCRYMPI_FMT_USG);
-      if (!is_RSA (algo))
-        resarr[1] = get_mpi_from_sexp (s_ciph, "b", GCRYMPI_FMT_USG);
+  else if (ecc_algo == GCRY_KEM_RAW_X448)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 56)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 56;
+      ecc_ss_len = 64;
+      ecc_hash_algo = GCRY_MD_SHA3_512;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP256)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 65)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 65;
+      ecc_ss_len = 32;
+      ecc_hash_algo = GCRY_MD_SHA3_256;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP384)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 97)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 97;
+      ecc_ss_len = 64;
+      ecc_hash_algo = GCRY_MD_SHA3_512;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP512)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 129)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 129;
+      ecc_ss_len = 64;
+      ecc_hash_algo = GCRY_MD_SHA3_512;
+    }
+  else
+    {
+      if (opt.verbose)
+        log_info ("%s: ECC curve %s not supported\n", __func__, ecc_oid);
+      err = gpg_error (GPG_ERR_INV_DATA);
+      goto leave;
+    }
+
+
+  if (DBG_CRYPTO)
+    {
+      log_debug ("ECC    curve: %s\n", ecc_oid);
+      log_printhex (ecc_pubkey, ecc_pubkey_len, "ECC   pubkey:");
+    }
+
+  err = gcry_kem_encap (ecc_algo,
+                        ecc_pubkey, ecc_pubkey_len,
+                        ecc_ct, ecc_ct_len,
+                        ecc_ecdh, ecc_ecdh_len,
+                        NULL, 0);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: gcry_kem_encap for ECC (%s) failed\n",
+                  __func__, ecc_oid);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    {
+      log_printhex (ecc_ct, ecc_ct_len, "ECC    ephem:");
+      log_printhex (ecc_ecdh, ecc_ecdh_len, "ECC     ecdh:");
+    }
+  err = gnupg_ecc_kem_kdf (ecc_ss, ecc_ss_len,
+                           ecc_hash_algo,
+                           ecc_ecdh, ecc_ecdh_len,
+                           ecc_ct, ecc_ct_len,
+                           ecc_pubkey, ecc_pubkey_len, NULL, 0);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: kdf for ECC failed\n", __func__);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (ecc_ss, ecc_ss_len, "ECC   shared:");
+
+  kyber_pubkey = gcry_mpi_get_opaque (pk->pkey[2], &nbits);
+  kyber_pubkey_len = (nbits+7)/8;
+  if (kyber_pubkey_len == GCRY_KEM_MLKEM768_PUBKEY_LEN)
+    {
+      kyber_algo = GCRY_KEM_MLKEM768;
+      kyber_ct_len = GCRY_KEM_MLKEM768_ENCAPS_LEN;
+      kyber_ss_len = GCRY_KEM_MLKEM768_SHARED_LEN;
+    }
+  else if (kyber_pubkey_len == GCRY_KEM_MLKEM1024_PUBKEY_LEN)
+    {
+      kyber_algo = GCRY_KEM_MLKEM1024;
+      kyber_ct_len = GCRY_KEM_MLKEM1024_ENCAPS_LEN;
+      kyber_ss_len = GCRY_KEM_MLKEM1024_SHARED_LEN;
+    }
+  else
+    {
+      if (opt.verbose)
+        log_info ("%s: Kyber public key length invalid (%zu)\n",
+                  __func__, kyber_pubkey_len);
+      err = gpg_error (GPG_ERR_INV_DATA);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (kyber_pubkey, kyber_pubkey_len, "|!trunc|Kyber pubkey:");
+
+  err = gcry_kem_encap (kyber_algo,
+                        kyber_pubkey, kyber_pubkey_len,
+                        kyber_ct, kyber_ct_len,
+                        kyber_ss, kyber_ss_len,
+                        NULL, 0);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: gcry_kem_encap for ECC failed\n", __func__);
+      goto leave;
+    }
+
+  if (DBG_CRYPTO)
+    {
+      log_printhex (kyber_ct, kyber_ct_len, "|!trunc|Kyber  ephem:");
+      log_printhex (kyber_ss, kyber_ss_len, "Kyber shared:");
+    }
+
+
+  fixedinfo[0] = seskey_algo;
+  v5_fingerprint_from_pk (pk, fixedinfo+1, NULL);
+  fixedlen = 33;
+
+  err = gnupg_kem_combiner (kek, kek_len,
+                            ecc_ss, ecc_ss_len, ecc_ct, ecc_ct_len,
+                            kyber_ss, kyber_ss_len, kyber_ct, kyber_ct_len,
+                            fixedinfo, fixedlen);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: KEM combiner failed\n", __func__);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (kek, kek_len, "KEK:");
+
+  err = gcry_cipher_open (&hd, GCRY_CIPHER_AES256,
+                          GCRY_CIPHER_MODE_AESWRAP, 0);
+  if (!err)
+    err = gcry_cipher_setkey (hd, kek, kek_len);
+  if (err)
+    {
+      if (opt.verbose)
+        log_error ("%s: failed to initialize AESWRAP: %s\n", __func__,
+                   gpg_strerror (err));
+      goto leave;
+    }
+
+  err = gcry_sexp_build (&s_data, NULL, "%m", data);
+  if (err)
+    goto leave;
+
+  n = gcry_cipher_get_algo_keylen (seskey_algo);
+  seskey = gcry_mpi_get_opaque (data, &nbits);
+  seskey_len = (nbits+7)/8;
+  if (seskey_len != n)
+    {
+      if (opt.verbose)
+        log_info ("%s: session key length %zu"
+                  " does not match the length for algo %d\n",
+                  __func__, seskey_len, seskey_algo);
+      err = gpg_error (GPG_ERR_INV_DATA);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (seskey, seskey_len, "seskey:");
+
+  enc_seskey_len = 1 + seskey_len + 8;
+  enc_seskey = xtrymalloc (enc_seskey_len);
+  if (!enc_seskey || enc_seskey_len > 254)
+    {
+      err = gpg_error_from_syserror ();
+      goto leave;
+    }
+
+  enc_seskey[0] = enc_seskey_len - 1;
+  err = gcry_cipher_encrypt (hd, enc_seskey+1, enc_seskey_len-1,
+                             seskey, seskey_len);
+  if (err)
+    {
+      log_error ("%s: wrapping session key failed\n", __func__);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (enc_seskey, enc_seskey_len, "enc_seskey:");
+
+  resarr[0] = gcry_mpi_set_opaque_copy (NULL, ecc_ct, 8 * ecc_ct_len);
+  if (resarr[0])
+    resarr[1] = gcry_mpi_set_opaque_copy (NULL, kyber_ct, 8 * kyber_ct_len);
+  if (resarr[1])
+    resarr[2] = gcry_mpi_set_opaque_copy (NULL, enc_seskey, 8 * enc_seskey_len);
+  if (!resarr[0] || !resarr[1] || !resarr[2])
+    {
+      err = gpg_error_from_syserror ();
+      for (i=0; i < 3; i++)
+        gcry_mpi_release (resarr[i]), resarr[i] = NULL;
     }
 
  leave:
+  wipememory (ecc_ct, sizeof ecc_ct);
+  wipememory (ecc_ecdh, sizeof ecc_ecdh);
+  wipememory (ecc_ss, sizeof ecc_ss);
+  wipememory (kyber_ct, sizeof kyber_ct);
+  wipememory (kyber_ss, sizeof kyber_ss);
+  wipememory (kek, kek_len);
+  xfree (enc_seskey);
+  gcry_cipher_close (hd);
+  xfree (ecc_oid);
+  return err;
+}
+
+
+/* Core of the encryption for the ECDH algorithms.  See pk_decrypt for
+ * a description of the arguments.  */
+static gpg_error_t
+do_encrypt_ecdh (PKT_public_key *pk, gcry_mpi_t data,  gcry_mpi_t *resarr)
+{
+  gpg_error_t err;
+  unsigned int nbits;
+  gcry_cipher_hd_t hd = NULL;
+  char *ecc_oid = NULL;
+  enum gcry_kem_algos ecc_algo;
+
+  const unsigned char *ecc_pubkey;
+  size_t ecc_pubkey_len;
+  const unsigned char *seskey;
+  size_t seskey_len;
+  unsigned char *enc_seskey = NULL;
+  size_t enc_seskey_len;
+
+  unsigned char ecc_ct[ECC_POINT_LEN_MAX];
+  unsigned char ecc_ecdh[ECC_POINT_LEN_MAX];
+  size_t ecc_ct_len, ecc_ecdh_len;
+  int is_weierstrass;
+
+  unsigned char *kek = NULL;
+  size_t kek_len;
+
+  const unsigned char *kdf_params_spec;
+  byte fp[MAX_FINGERPRINT_LEN];
+  int keywrap_cipher_algo;
+  int kdf_hash_algo;
+  unsigned char *kdf_params = NULL;
+  size_t kdf_params_len = 0;
+
+  fingerprint_from_pk (pk, fp, NULL);
+
+  ecc_oid = openpgp_oid_to_str (pk->pkey[0]);
+  if (!ecc_oid)
+    {
+      err = gpg_error_from_syserror ();
+      log_error ("%s: error getting OID for ECC key\n", __func__);
+      goto leave;
+    }
+  ecc_algo = openpgp_oid_to_kem_algo (ecc_oid);
+  if (ecc_algo == GCRY_KEM_RAW_X25519)
+    {
+      /* Legacy OID is OK here.  */
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len == 33 && *ecc_pubkey == 0x40)
+        {
+          ecc_pubkey++;     /* Remove the 0x40 prefix.  */
+          ecc_pubkey_len--;
+        }
+      if (ecc_pubkey_len != 32)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 32;
+      is_weierstrass = 0;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_X448)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 56)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 56;
+      is_weierstrass = 0;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP256)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 65)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 65;
+      is_weierstrass = 1;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP384)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 97)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 97;
+      is_weierstrass = 1;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_BP512)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 129)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 129;
+      is_weierstrass = 1;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_P256R1)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 65)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 65;
+      is_weierstrass = 1;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_P384R1)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 97)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 97;
+      is_weierstrass = 1;
+    }
+  else if (ecc_algo == GCRY_KEM_RAW_P521R1)
+    {
+      ecc_pubkey = gcry_mpi_get_opaque (pk->pkey[1], &nbits);
+      ecc_pubkey_len = (nbits+7)/8;
+      if (ecc_pubkey_len != 133)
+        {
+          if (opt.verbose)
+            log_info ("%s: ECC public key length invalid (%zu)\n",
+                      __func__, ecc_pubkey_len);
+          err = gpg_error (GPG_ERR_INV_DATA);
+          goto leave;
+        }
+      ecc_ct_len = ecc_ecdh_len = 133;
+      is_weierstrass = 1;
+    }
+  else
+    {
+      if (opt.verbose)
+        log_info ("%s: ECC curve %s not supported\n", __func__, ecc_oid);
+      err = gpg_error (GPG_ERR_INV_DATA);
+      goto leave;
+    }
+
+  if (DBG_CRYPTO)
+    {
+      log_debug ("ECC    curve: %s\n", ecc_oid);
+      log_printhex (ecc_pubkey, ecc_pubkey_len, "ECC   pubkey:");
+    }
+
+  err = gcry_kem_encap (ecc_algo,
+                        ecc_pubkey, ecc_pubkey_len,
+                        ecc_ct, ecc_ct_len,
+                        ecc_ecdh, ecc_ecdh_len,
+                        NULL, 0);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: gcry_kem_encap for ECC (%s) failed\n",
+                  __func__, ecc_oid);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    {
+      log_printhex (ecc_ct, ecc_ct_len, "ECC    ephem:");
+      log_printhex (ecc_ecdh, ecc_ecdh_len, "ECC     ecdh:");
+    }
+
+  err = ecc_build_kdf_params (&kdf_params, &kdf_params_len,
+                              &kdf_params_spec, pk->pkey, fp);
+  if (err)
+    return err;
+
+  keywrap_cipher_algo = kdf_params_spec[3];
+  kdf_hash_algo = kdf_params_spec[2];
+
+  if (DBG_CRYPTO)
+    log_debug ("ecdh KDF algorithms %s+%s with aeswrap\n",
+               openpgp_md_algo_name (kdf_hash_algo),
+               openpgp_cipher_algo_name (keywrap_cipher_algo));
+
+  if (kdf_hash_algo != GCRY_MD_SHA256
+      && kdf_hash_algo != GCRY_MD_SHA384
+      && kdf_hash_algo != GCRY_MD_SHA512)
+    {
+      err = gpg_error (GPG_ERR_BAD_PUBKEY);
+      goto leave;
+    }
+
+  if (keywrap_cipher_algo != CIPHER_ALGO_AES
+      && keywrap_cipher_algo != CIPHER_ALGO_AES192
+      && keywrap_cipher_algo != CIPHER_ALGO_AES256)
+    {
+      err = gpg_error (GPG_ERR_BAD_PUBKEY);
+      goto leave;
+    }
+
+  kek_len = gcry_cipher_get_algo_keylen (keywrap_cipher_algo);
+  if (kek_len > gcry_md_get_algo_dlen (kdf_hash_algo))
+    {
+      err = gpg_error (GPG_ERR_BAD_PUBKEY);
+      goto leave;
+    }
+
+  kek = xtrymalloc (kek_len);
+  if (!kek)
+    {
+      err = gpg_error_from_syserror ();
+      goto leave;
+    }
+
+  err = gnupg_ecc_kem_kdf (kek, kek_len, kdf_hash_algo,
+                           is_weierstrass ?
+                           ecc_ecdh + 1 : ecc_ecdh,
+                           is_weierstrass ?
+                           (ecc_ecdh_len - 1) / 2 : ecc_ecdh_len,
+                           NULL, 0, NULL, 0,
+                           kdf_params, kdf_params_len);
+  xfree (kdf_params);
+  if (err)
+    {
+      if (opt.verbose)
+        log_info ("%s: kdf for ECC failed\n", __func__);
+      goto leave;
+    }
+
+  if (DBG_CRYPTO)
+    log_printhex (kek, kek_len, "KEK:");
+
+  err = gcry_cipher_open (&hd, keywrap_cipher_algo,
+                          GCRY_CIPHER_MODE_AESWRAP, 0);
+  if (!err)
+    err = gcry_cipher_setkey (hd, kek, kek_len);
+  if (err)
+    {
+      if (opt.verbose)
+        log_error ("%s: failed to initialize AESWRAP: %s\n", __func__,
+                   gpg_strerror (err));
+      goto leave;
+    }
+
+  seskey = gcry_mpi_get_opaque (data, &nbits);
+  seskey_len = (nbits+7)/8;
+
+  enc_seskey_len = 1 + seskey_len + 8;
+  enc_seskey = xtrymalloc (enc_seskey_len);
+  if (!enc_seskey || enc_seskey_len > 254)
+    {
+      err = gpg_error_from_syserror ();
+      goto leave;
+    }
+
+  enc_seskey[0] = enc_seskey_len - 1;
+  err = gcry_cipher_encrypt (hd, enc_seskey+1, enc_seskey_len-1,
+                             seskey, seskey_len);
+  if (err)
+    {
+      log_error ("%s: wrapping session key failed\n", __func__);
+      goto leave;
+    }
+  if (DBG_CRYPTO)
+    log_printhex (enc_seskey, enc_seskey_len, "enc_seskey:");
+
+  resarr[0] = gcry_mpi_set_opaque_copy (NULL, ecc_ct, 8 * ecc_ct_len);
+  if (!resarr[0])
+    {
+      err = gpg_error_from_syserror ();
+      goto leave;
+    }
+
+  resarr[1] = gcry_mpi_set_opaque_copy (NULL, enc_seskey, 8 * enc_seskey_len);
+  if (!resarr[1])
+    {
+      err = gpg_error_from_syserror ();
+      gcry_mpi_release (resarr[0]);
+    }
+
+ leave:
+  xfree (enc_seskey);
+  gcry_cipher_close (hd);
+  xfree (kek);
+  wipememory (ecc_ct, sizeof ecc_ct);
+  wipememory (ecc_ecdh, sizeof ecc_ecdh);
+  xfree (ecc_oid);
+  return err;
+}
+
+
+/* Core of the encryption for RSA and Elgamal algorithms.  See
+ * pk_decrypt for a description of the arguments.  */
+static gpg_error_t
+do_encrypt_rsa_elg (PKT_public_key *pk, gcry_mpi_t data, gcry_mpi_t *resarr)
+{
+  pubkey_algo_t algo = pk->pubkey_algo;
+  gcry_mpi_t *pkey   = pk->pkey;
+  gcry_sexp_t s_ciph = NULL;
+  gcry_sexp_t s_data = NULL;
+  gcry_sexp_t s_pkey = NULL;
+  gpg_error_t err;
+
+  if (algo == PUBKEY_ALGO_ELGAMAL || algo == PUBKEY_ALGO_ELGAMAL_E)
+    err = gcry_sexp_build (&s_pkey, NULL,
+                           "(public-key(elg(p%m)(g%m)(y%m)))",
+                           pkey[0], pkey[1], pkey[2]);
+  else
+    err = gcry_sexp_build (&s_pkey, NULL,
+                           "(public-key(rsa(n%m)(e%m)))",
+                           pkey[0], pkey[1]);
+  if (err)
+    goto leave;
+
+  err = gcry_sexp_build (&s_data, NULL, "%m", data);
+  if (err)
+    goto leave;
+
+  err = gcry_pk_encrypt (&s_ciph, s_data, s_pkey);
+  if (err)
+    goto leave;
+
+  gcry_sexp_release (s_data); s_data = NULL;
+  gcry_sexp_release (s_pkey); s_pkey = NULL;
+
+  resarr[0] = get_mpi_from_sexp (s_ciph, "a", GCRYMPI_FMT_USG);
+  if (!is_RSA (algo))
+    resarr[1] = get_mpi_from_sexp (s_ciph, "b", GCRYMPI_FMT_USG);
+
+ leave:
+  gcry_sexp_release (s_data);
+  gcry_sexp_release (s_pkey);
   gcry_sexp_release (s_ciph);
-  return rc;
+  return err;
+}
+
+
+/*
+ * Emulate our old PK interface here - sometime in the future we might
+ * change the internal design to directly fit to libgcrypt.  PK is is
+ * the OpenPGP public key packet, DATA is an MPI with the to be
+ * encrypted data, and RESARR receives the encrypted data.  RESARRAY
+ * is expected to be an two/three item array which will be filled with
+ * newly allocated MPIs.  SESKEY_ALGO is required for public key
+ * algorithms which do not encode it in DATA.
+ */
+gpg_error_t
+pk_encrypt (PKT_public_key *pk, gcry_mpi_t data, int seskey_algo,
+            gcry_mpi_t *resarr)
+{
+  pubkey_algo_t algo = pk->pubkey_algo;
+
+  if (algo == PUBKEY_ALGO_KYBER)
+    return do_encrypt_kem (pk, data, seskey_algo, resarr);
+  else if (algo == PUBKEY_ALGO_ECDH)
+    return do_encrypt_ecdh (pk, data, resarr);
+  else if (algo == PUBKEY_ALGO_ELGAMAL || algo == PUBKEY_ALGO_ELGAMAL_E)
+    return do_encrypt_rsa_elg (pk, data, resarr);
+  else if (algo == PUBKEY_ALGO_RSA || algo == PUBKEY_ALGO_RSA_E)
+    return do_encrypt_rsa_elg (pk, data, resarr);
+  else
+    return gpg_error (GPG_ERR_PUBKEY_ALGO);
 }
 
 

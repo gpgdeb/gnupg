@@ -724,6 +724,7 @@ dotlock_detect_tname (dotlock_t h)
 
       if (dlen > len)
         {
+          closedir (dir);
           xfree (basename);
           xfree (dirname);
           return -1;
@@ -734,6 +735,7 @@ dotlock_detect_tname (dotlock_t h)
       tname_path = strchr (h->tname + strlen (dirname) + 2, '.');
       if (!tname_path)
         {
+          closedir (dir);
           xfree (basename);
           xfree (dirname);
           return -1;
@@ -1450,7 +1452,7 @@ dotlock_take_unix (dotlock_t h, long timeout)
       int wtimereal;
 
       if (ownerchanged)
-        wtime = 0;  /* Reset because owner chnaged.  */
+        wtime = 0;  /* Reset because owner changed.  */
 
       wtimereal = next_wait_interval (&wtime, &timeout);
       if (!timeout)

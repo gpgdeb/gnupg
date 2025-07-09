@@ -218,7 +218,7 @@ ecdh_encrypt (DEK dek, gcry_sexp_t s_pkey, gcry_sexp_t *r_encval)
    * canonical numerical OID.  We also use this to get the size of the
    * curve which we need to figure out a suitable hash algo.  We
    * should have a Libgcrypt function to do this; see bug report #4926.  */
-  curve = openpgp_curve_to_oid (curvebuf, &curvebits, NULL);
+  curve = openpgp_curve_to_oid (curvebuf, &curvebits, NULL, -1);
   if (!curve)
     {
       err = gpg_error (GPG_ERR_UNKNOWN_CURVE);
@@ -574,7 +574,8 @@ encrypt_cb (void *cb_value, char *buffer, size_t count, size_t *nread)
    recipients are take from the certificate given in recplist; if this
    is NULL it will be encrypted for a default recipient */
 int
-gpgsm_encrypt (ctrl_t ctrl, certlist_t recplist, int data_fd, estream_t out_fp)
+gpgsm_encrypt (ctrl_t ctrl, certlist_t recplist, estream_t data_fp,
+               estream_t out_fp)
 {
   gpg_error_t err = 0;
   gnupg_ksba_io_t b64writer = NULL;
@@ -586,7 +587,6 @@ gpgsm_encrypt (ctrl_t ctrl, certlist_t recplist, int data_fd, estream_t out_fp)
   struct encrypt_cb_parm_s encparm;
   DEK dek = NULL;
   int recpno;
-  estream_t data_fp = NULL;
   certlist_t cl;
   int count;
   int compliant;
@@ -619,15 +619,6 @@ gpgsm_encrypt (ctrl_t ctrl, certlist_t recplist, int data_fd, estream_t out_fp)
     {
       log_error (_("failed to allocate keyDB handle\n"));
       err = gpg_error (GPG_ERR_GENERAL);
-      goto leave;
-    }
-
-  /* Fixme:  We should use the unlocked version of the es functions.  */
-  data_fp = es_fdopen_nc (data_fd, "rb");
-  if (!data_fp)
-    {
-      err = gpg_error_from_syserror ();
-      log_error ("fdopen() failed: %s\n", gpg_strerror (err));
       goto leave;
     }
 
@@ -855,7 +846,6 @@ gpgsm_encrypt (ctrl_t ctrl, certlist_t recplist, int data_fd, estream_t out_fp)
   ksba_reader_release (reader);
   keydb_release (kh);
   xfree (dek);
-  es_fclose (data_fp);
   xfree (encparm.buffer);
   return err;
 }

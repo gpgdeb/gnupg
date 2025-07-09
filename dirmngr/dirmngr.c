@@ -177,7 +177,7 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_c (aServer,   "server",  N_("run in server mode (foreground)") ),
   ARGPARSE_c (aDaemon,   "daemon",  N_("run in daemon mode (background)") ),
 #ifndef HAVE_W32_SYSTEM
-  ARGPARSE_c (aSupervised,  "supervised", "@"),
+  ARGPARSE_c (aSupervised,  "deprecated-supervised", "@"),
 #endif
   ARGPARSE_c (aListCRLs, "list-crls", N_("list the contents of the CRL cache")),
   ARGPARSE_c (aLoadCRL,  "load-crl", N_("|FILE|load CRL from FILE into cache")),
@@ -394,6 +394,9 @@ static enum
   } tor_mode;
 
 
+/* Flag indicating that we are in supervised mode.  */
+static int is_supervised;
+
 /* Counter for the active connections.  */
 static int active_connections;
 
@@ -449,9 +452,6 @@ static void netactivity_action (void);
 static void handle_connections (assuan_fd_t listen_fd);
 static void gpgconf_versions (void);
 
-
-/* NPth wrapper function definitions. */
-ASSUAN_SYSTEM_NPTH_IMPL;
 
 static const char *
 my_strusage( int level )
@@ -976,22 +976,46 @@ my_ntbtls_log_handler (void *opaque, int level, const char *fmt, va_list argv)
 #endif
 
 
+/* Helper for initialize_modules.  */
 static void
 thread_init (void)
 {
-  npth_init ();
-  assuan_set_system_hooks (ASSUAN_SYSTEM_NPTH);
+  static int npth_initialized = 0;
+
+  if (!npth_initialized)
+    {
+      npth_initialized++;
+      npth_init ();
+      /* With nPth running we can set the logging callback.  Our
+       * windows implementation does not yet feature the nPth TLS
+       * functions.  */
+#ifndef HAVE_W32_SYSTEM
+      if (npth_key_create (&my_tlskey_current_fd, NULL) == 0)
+        if (npth_setspecific (my_tlskey_current_fd, NULL) == 0)
+          log_set_pid_suffix_cb (pid_suffix_callback);
+#endif /*!HAVE_W32_SYSTEM*/
+      }
   gpgrt_set_syscall_clamp (npth_unprotect, npth_protect);
 
-  /* Now with NPth running we can set the logging callback.  Our
-     windows implementation does not yet feature the NPth TLS
-     functions.  */
-#ifndef HAVE_W32_SYSTEM
-  if (npth_key_create (&my_tlskey_current_fd, NULL) == 0)
-    if (npth_setspecific (my_tlskey_current_fd, NULL) == 0)
-      log_set_pid_suffix_cb (pid_suffix_callback);
-#endif /*!HAVE_W32_SYSTEM*/
+  /* Now that we have set the syscall clamp we need to tell Libgcrypt
+   * that it should get them from libgpg-error.  Note that Libgcrypt
+   * has already been initialized but at that point nPth was not
+   * initialized and thus Libgcrypt could not set its system call
+   * clamp.  */
+  gcry_control (GCRYCTL_REINIT_SYSCALL_CLAMP, 0, 0);
+  assuan_control (ASSUAN_CONTROL_REINIT_SYSCALL_CLAMP, NULL);
 }
+
+
+static void
+initialize_modules (void)
+{
+  thread_init ();
+  cert_cache_init (hkp_cacert_filenames);
+  crl_cache_init ();
+  ks_hkp_init ();
+}
+
 
 
 int
@@ -1105,12 +1129,12 @@ main (int argc, char **argv)
 
   socket_name = dirmngr_socket_name ();
 
-  /* The configuraton directories for use by gpgrt_argparser.  */
+  /* The configuration directories for use by gpgrt_argparser.  */
   gpgrt_set_confdir (GPGRT_CONFDIR_SYS, gnupg_sysconfdir ());
   gpgrt_set_confdir (GPGRT_CONFDIR_USER, gnupg_homedir ());
 
   /* We are re-using the struct, thus the reset flag.  We OR the
-   * flags so that the internal intialized flag won't be cleared. */
+   * flags so that the internal initialized flag won't be cleared. */
   argc = orig_argc;
   argv = orig_argv;
   pargs.argc = &argc;
@@ -1318,12 +1342,9 @@ main (int argc, char **argv)
           log_debug ("... okay\n");
         }
 
-
-      thread_init ();
-      cert_cache_init (hkp_cacert_filenames);
-      crl_cache_init ();
-      ks_hkp_init ();
+      initialize_modules ();
       http_register_netactivity_cb (netactivity_action);
+
       start_command_handler (ASSUAN_INVALID_FD, 0);
       shutdown_reaper ();
     }
@@ -1334,6 +1355,8 @@ main (int argc, char **argv)
 
       if (!opt.quiet)
         log_info(_("WARNING: \"%s\" is a deprecated option\n"), "--supervised");
+
+      is_supervised = 1;
 
       /* In supervised mode, we expect file descriptor 3 to be an
          already opened, listening socket.
@@ -1359,10 +1382,7 @@ main (int argc, char **argv)
       else
         log_set_prefix (NULL, 0);
 
-      thread_init ();
-      cert_cache_init (hkp_cacert_filenames);
-      crl_cache_init ();
-      ks_hkp_init ();
+      initialize_modules ();
       http_register_netactivity_cb (netactivity_action);
       handle_connections (3);
       shutdown_reaper ();
@@ -1458,6 +1478,7 @@ main (int argc, char **argv)
 	log_error (_("error getting nonce for the socket\n"));
       if (rc == -1)
         {
+          log_libassuan_system_error (fd);
           log_error (_("error binding socket to '%s': %s\n"),
                      serv_addr.sun_path,
                      gpg_strerror (gpg_error_from_syserror ()));
@@ -1585,11 +1606,9 @@ main (int argc, char **argv)
             }
         }
 
-      thread_init ();
-      cert_cache_init (hkp_cacert_filenames);
-      crl_cache_init ();
-      ks_hkp_init ();
+      initialize_modules ();
       http_register_netactivity_cb (netactivity_action);
+
       handle_connections (fd);
       shutdown_reaper ();
     }
@@ -1608,10 +1627,8 @@ main (int argc, char **argv)
       memset (&ctrlbuf, 0, sizeof ctrlbuf);
       dirmngr_init_default_ctrl (&ctrlbuf);
 
-      thread_init ();
-      cert_cache_init (hkp_cacert_filenames);
-      crl_cache_init ();
-      ks_hkp_init ();
+      initialize_modules ();
+
       if (!argc)
         rc = crl_cache_load (&ctrlbuf, NULL);
       else
@@ -1632,10 +1649,8 @@ main (int argc, char **argv)
       memset (&ctrlbuf, 0, sizeof ctrlbuf);
       dirmngr_init_default_ctrl (&ctrlbuf);
 
-      thread_init ();
-      cert_cache_init (hkp_cacert_filenames);
-      crl_cache_init ();
-      ks_hkp_init ();
+      initialize_modules ();
+
       rc = crl_fetch (&ctrlbuf, argv[0], &reader);
       if (rc)
         log_error (_("fetching CRL from '%s' failed: %s\n"),
@@ -1747,7 +1762,7 @@ dirmngr_deinit_default_ctrl (ctrl_t ctrl)
 
    The format of such a file is line oriented where empty lines and
    lines starting with a hash mark are ignored.  All other lines are
-   assumed to be colon seprated with these fields:
+   assumed to be colon separated with these fields:
 
    1. field: Hostname
    2. field: Portnumber
@@ -2233,7 +2248,7 @@ check_nonce (assuan_fd_t fd, assuan_sock_nonce_t *nonce)
   if (assuan_sock_check_nonce (fd, nonce))
     {
       log_info (_("error reading nonce on fd %d: %s\n"),
-                FD2INT (fd), strerror (errno));
+                FD_DBG (fd), strerror (errno));
       assuan_sock_close (fd);
       return -1;
     }
@@ -2267,7 +2282,7 @@ start_connection_thread (void *arg)
 
   active_connections++;
   if (opt.verbose)
-    log_info (_("handler for fd %d started\n"), FD2INT (fd));
+    log_info (_("handler for fd %d started\n"), FD_DBG (fd));
 
   session_id = ++last_session_id;
   if (!session_id)
@@ -2275,7 +2290,7 @@ start_connection_thread (void *arg)
   start_command_handler (fd, session_id);
 
   if (opt.verbose)
-    log_info (_("handler for fd %d terminated\n"), FD2INT (fd));
+    log_info (_("handler for fd %d terminated\n"), FD_DBG (fd));
   active_connections--;
 
   workqueue_run_post_session_tasks (session_id);
@@ -2378,7 +2393,7 @@ handle_connections (assuan_fd_t listen_fd)
      to full second.  */
   FD_ZERO (&fdset);
   FD_SET (FD2INT (listen_fd), &fdset);
-  nfd = FD2INT (listen_fd);
+  nfd = FD2NUM (listen_fd);
   if (my_inotify_fd != -1)
     {
       FD_SET (my_inotify_fd, &fdset);
@@ -2395,7 +2410,7 @@ handle_connections (assuan_fd_t listen_fd)
       /* Shutdown test.  */
       if (shutdown_pending)
         {
-          if (!active_connections)
+          if (!active_connections || is_supervised)
             break; /* ready */
 
           /* Do not accept new connections but keep on running the
@@ -2479,11 +2494,13 @@ handle_connections (assuan_fd_t listen_fd)
           gnupg_fd_t fd;
 
           plen = sizeof paddr;
-	  fd = INT2FD (npth_accept (FD2INT(listen_fd),
-				    (struct sockaddr *)&paddr, &plen));
+	  fd = assuan_sock_accept (listen_fd,
+                                   (struct sockaddr *)&paddr, &plen);
 	  if (fd == GNUPG_INVALID_FD)
 	    {
-	      log_error ("accept failed: %s\n", strerror (errno));
+              gpg_error_t myerr = gpg_error_from_syserror ();
+              log_libassuan_system_error (listen_fd);
+	      log_error ("accept failed: %s\n", gpg_strerror (myerr));
 	    }
           else
             {
@@ -2494,7 +2511,7 @@ handle_connections (assuan_fd_t listen_fd)
               memset (&argval, 0, sizeof argval);
               argval.afd = fd;
               snprintf (threadname, sizeof threadname,
-                        "conn fd=%d", FD2INT(fd));
+                        "conn fd=%d", FD_DBG (fd));
 
               ret = npth_create (&thread, &tattr,
                                  start_connection_thread, argval.aptr);

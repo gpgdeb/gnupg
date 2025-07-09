@@ -495,6 +495,7 @@ do_sign (ctrl_t ctrl, PKT_public_key *pksk, PKT_signature *sig,
       gcry_sexp_t s_sigval;
 
       desc = gpg_format_keydesc (ctrl, pksk, FORMAT_KEYDESC_NORMAL, 1);
+      /* FIXME: Eventually support dual keys.  */
       err = agent_pksign (NULL/*ctrl*/, cache_nonce, hexgrip, desc,
                           pksk->keyid, pksk->main_keyid, pksk->pubkey_algo,
                           dp, gcry_md_get_algo_dlen (mdalgo), mdalgo,
@@ -580,6 +581,7 @@ openpgp_card_v1_p (PKT_public_key *pk)
     {
       char *hexgrip;
 
+      /* Note: No need to care about dual keys for non-RSA keys.  */
       err = hexkeygrip_from_pk (pk, &hexgrip);
       if (err)
         {
@@ -682,7 +684,7 @@ hash_for (PKT_public_key *pk)
 	 like a new DSA key that just happens to have a 160-bit q
 	 (i.e. allow truncation).  If q is not 160, by definition it
 	 must be a new DSA key.  We ignore the personal_digest_prefs
-	 for ECDSA because they should always macth the curve and
+	 for ECDSA because they should always match the curve and
 	 truncated hashes are not useful either.  Even worse,
 	 smartcards may reject non matching hash lengths for curves
 	 (e.g. using SHA-512 with brainpooolP385r1 on a Yubikey).  */
@@ -1022,7 +1024,9 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
   const char *fname;
   armor_filter_context_t *afx;
   compress_filter_context_t zfx;
+  gcry_md_hd_t md = NULL;
   md_filter_context_t mfx;
+  md_thd_filter_context_t mfx2 = NULL;
   text_filter_context_t tfx;
   progress_filter_context_t *pfx;
   encrypt_filter_context_t efx;
@@ -1115,7 +1119,7 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
       else if (opt.verbose)
         log_info (_("writing to '%s'\n"), outfile);
     }
-  else if ((rc = open_outfile (-1, fname,
+  else if ((rc = open_outfile (GNUPG_INVALID_FD, fname,
                                opt.armor? 1 : detached? 2 : 0, 0, &out)))
     {
       goto leave;
@@ -1128,10 +1132,10 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
       iobuf_push_filter (inp, text_filter, &tfx);
     }
 
-  if (gcry_md_open (&mfx.md, 0, 0))
+  if (gcry_md_open (&md, 0, 0))
     BUG ();
   if (DBG_HASHING)
-    gcry_md_debug (mfx.md, "sign");
+    gcry_md_debug (md, "sign");
 
   /* If we're encrypting and signing, it is reasonable to pick the
    * hash algorithm to use out of the recipient key prefs.  This is
@@ -1228,10 +1232,21 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
     }
 
   for (sk_rover = sk_list; sk_rover; sk_rover = sk_rover->next)
-    gcry_md_enable (mfx.md, hash_for (sk_rover->pk));
+    gcry_md_enable (md, hash_for (sk_rover->pk));
 
   if (!multifile)
-    iobuf_push_filter (inp, md_filter, &mfx);
+    {
+      if (encryptflag && (opt.compat_flags & COMPAT_PARALLELIZED))
+        {
+          iobuf_push_filter (inp, md_thd_filter, &mfx2);
+          md_thd_filter_set_md (mfx2, md);
+        }
+      else
+        {
+          iobuf_push_filter (inp, md_filter, &mfx);
+          mfx.md = md;
+        }
+    }
 
   if (detached && !encryptflag)
     afx->what = 2;
@@ -1294,7 +1309,7 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
         goto leave;
     }
 
-  write_status_begin_signing (mfx.md);
+  write_status_begin_signing (md);
 
   /* Setup the inner packet. */
   if (detached)
@@ -1307,7 +1322,7 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
 
           if (opt.verbose)
             log_info (_("signing:") );
-          /* Must walk reverse trough this list.  */
+          /* Must walk reverse through this list.  */
           for (sl = strlist_last(filenames);
                sl;
                sl = strlist_prev( filenames, sl))
@@ -1334,7 +1349,16 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
                   memset (&tfx, 0, sizeof tfx);
                   iobuf_push_filter (inp, text_filter, &tfx);
                 }
-              iobuf_push_filter (inp, md_filter, &mfx);
+              if (encryptflag && (opt.compat_flags & COMPAT_PARALLELIZED))
+                {
+                  iobuf_push_filter (inp, md_thd_filter, &mfx2);
+                  md_thd_filter_set_md (mfx2, md);
+                }
+              else
+                {
+                  iobuf_push_filter (inp, md_filter, &mfx);
+                  mfx.md = md;
+                }
               while (iobuf_read (inp, NULL, iobuf_size) != -1)
                 ;
               iobuf_close (inp);
@@ -1363,7 +1387,7 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
     goto leave;
 
   /* Write the signatures. */
-  rc = write_signature_packets (ctrl, sk_list, out, mfx.md, extrahash,
+  rc = write_signature_packets (ctrl, sk_list, out, md, extrahash,
                                 opt.textmode && !outfile? 0x01 : 0x00,
                                 0, duration, detached ? 'D':'S', NULL);
   if (rc)
@@ -1380,7 +1404,7 @@ sign_file (ctrl_t ctrl, strlist_t filenames, int detached, strlist_t locusr,
         write_status (STATUS_END_ENCRYPTION);
     }
   iobuf_close (inp);
-  gcry_md_close (mfx.md);
+  gcry_md_close (md);
   release_sk_list (sk_list);
   release_pk_list (pk_list);
   recipient_digest_algo = 0;
@@ -1461,7 +1485,7 @@ clearsign_file (ctrl_t ctrl,
         log_info (_("writing to '%s'\n"), outfile);
 
     }
-  else if ((rc = open_outfile (-1, fname, 1, 0, &out)))
+  else if ((rc = open_outfile (GNUPG_INVALID_FD, fname, 1, 0, &out)))
     {
       goto leave;
     }
@@ -1563,6 +1587,8 @@ sign_symencrypt_file (ctrl_t ctrl, const char *fname, strlist_t locusr)
   progress_filter_context_t *pfx;
   compress_filter_context_t zfx;
   md_filter_context_t mfx;
+  md_thd_filter_context_t mfx2 = NULL;
+  gcry_md_hd_t md = NULL;
   text_filter_context_t tfx;
   cipher_filter_context_t cfx;
   iobuf_t inp = NULL;
@@ -1639,22 +1665,32 @@ sign_symencrypt_file (ctrl_t ctrl, const char *fname, strlist_t locusr)
               /**/             : "CFB");
 
   /* Now create the outfile.  */
-  rc = open_outfile (-1, fname, opt.armor? 1:0, 0, &out);
+  rc = open_outfile (GNUPG_INVALID_FD, fname, opt.armor? 1:0, 0, &out);
   if (rc)
     goto leave;
 
   /* Prepare to calculate the MD over the input.  */
   if (opt.textmode)
     iobuf_push_filter (inp, text_filter, &tfx);
-  if (gcry_md_open (&mfx.md, 0, 0))
+  if (gcry_md_open (&md, 0, 0))
     BUG ();
   if  (DBG_HASHING)
-    gcry_md_debug (mfx.md, "symc-sign");
+    gcry_md_debug (md, "symc-sign");
 
   for (sk_rover = sk_list; sk_rover; sk_rover = sk_rover->next)
-    gcry_md_enable (mfx.md, hash_for (sk_rover->pk));
+    gcry_md_enable (md, hash_for (sk_rover->pk));
 
-  iobuf_push_filter (inp, md_filter, &mfx);
+  if ((opt.compat_flags & COMPAT_PARALLELIZED))
+    {
+      iobuf_push_filter (inp, md_thd_filter, &mfx2);
+      md_thd_filter_set_md (mfx2, md);
+    }
+  else
+    {
+      iobuf_push_filter (inp, md_filter, &mfx);
+      mfx.md = md;
+    }
+
 
   /* Push armor output filter */
   if (opt.armor)
@@ -1696,7 +1732,7 @@ sign_symencrypt_file (ctrl_t ctrl, const char *fname, strlist_t locusr)
   if (rc)
     goto leave;
 
-  write_status_begin_signing (mfx.md);
+  write_status_begin_signing (md);
 
   /* Pipe data through all filters; i.e. write the signed stuff.  */
   /* (current filters: zip - encrypt - armor) */
@@ -1708,7 +1744,7 @@ sign_symencrypt_file (ctrl_t ctrl, const char *fname, strlist_t locusr)
 
   /* Write the signatures.  */
   /* (current filters: zip - encrypt - armor) */
-  rc = write_signature_packets (ctrl, sk_list, out, mfx.md, extrahash,
+  rc = write_signature_packets (ctrl, sk_list, out, md, extrahash,
                                 opt.textmode? 0x01 : 0x00,
                                 0, duration, 'S', NULL);
   if (rc)
@@ -1725,7 +1761,7 @@ sign_symencrypt_file (ctrl_t ctrl, const char *fname, strlist_t locusr)
     }
   iobuf_close (inp);
   release_sk_list (sk_list);
-  gcry_md_close (mfx.md);
+  gcry_md_close (md);
   xfree (cfx.dek);
   xfree (s2k);
   release_progress_context (pfx);

@@ -758,7 +758,7 @@ find_up_via_auth_info_access (ctrl_t ctrl, KEYDB_HANDLE kh, ksba_cert_t cert)
                               &find_up_store_certs_parm);
 
   /* Although we might receive several certificates we use only the
-   * first one.  Or more exacty the first one for which we retrieved
+   * first one.  Or more exactly the first one for which we retrieved
    * the fingerprint.  */
   if (opt.verbose)
     log_info ("number of caIssuers found: %d\n",
@@ -795,6 +795,7 @@ static int
 find_up_dirmngr (ctrl_t ctrl, KEYDB_HANDLE kh,
                  ksba_sexp_t serialno, const char *issuer, int subject_mode)
 {
+  static int no_dirmngr;
   int rc;
   strlist_t names = NULL;
   struct find_up_store_certs_s find_up_store_certs_parm;
@@ -804,6 +805,12 @@ find_up_dirmngr (ctrl_t ctrl, KEYDB_HANDLE kh,
 
   find_up_store_certs_parm.ctrl = ctrl;
   find_up_store_certs_parm.count = 0;
+
+  if (no_dirmngr)
+    {
+      rc = GPG_ERR_NO_DIRMNGR;
+      goto leave;
+    }
 
   if (opt.verbose)
     log_info (_("looking up issuer from the Dirmngr cache\n"));
@@ -834,8 +841,13 @@ find_up_dirmngr (ctrl_t ctrl, KEYDB_HANDLE kh,
     log_info (_("number of matching certificates: %d\n"),
               find_up_store_certs_parm.count);
   if (rc && opt.verbose)
-    log_info (_("dirmngr cache-only key lookup failed: %s\n"),
-              gpg_strerror (rc));
+    {
+      log_info (_("dirmngr cache-only key lookup failed: %s\n"),
+                gpg_strerror (rc));
+    }
+  if (gpg_err_code (rc) == GPG_ERR_NO_DIRMNGR)
+    no_dirmngr = 1;
+ leave:
   return ((!rc && find_up_store_certs_parm.count)
           ? 0 : gpg_error (GPG_ERR_NOT_FOUND));
 }
@@ -1056,15 +1068,10 @@ gpgsm_walk_cert_chain (ctrl_t ctrl, ksba_cert_t start, ksba_cert_t *r_next)
   gpg_error_t err = 0;
   char *issuer = NULL;
   char *subject = NULL;
-  KEYDB_HANDLE kh = keydb_new (ctrl);
+  KEYDB_HANDLE kh = NULL;
+  cert_cache_item_t ci;
 
   *r_next = NULL;
-  if (!kh)
-    {
-      log_error (_("failed to allocate keyDB handle\n"));
-      err = gpg_error (GPG_ERR_GENERAL);
-      goto leave;
-    }
 
   issuer = ksba_cert_get_issuer (start, 0);
   subject = ksba_cert_get_subject (start, 0);
@@ -1080,6 +1087,30 @@ gpgsm_walk_cert_chain (ctrl_t ctrl, ksba_cert_t start, ksba_cert_t *r_next)
   if (subject && is_root_cert (start, issuer, subject))
     {
       err = gpg_error (GPG_ERR_NOT_FOUND); /* we are at the root */
+      goto leave;
+    }
+
+  if (!(opt.compat_flags & COMPAT_NO_CHAIN_CACHE))
+    {
+      unsigned char fpr[20];
+
+      gpgsm_get_fingerprint (start, GCRY_MD_SHA1, fpr, NULL);
+      for (ci = ctrl->parent_cert_cache; ci; ci = ci->next)
+        {
+          if (!memcmp (fpr, ci->fpr, 20) && ci->result)
+            {
+              /* Found in the cache.  */
+              ksba_cert_ref ((*r_next = ci->result));
+              goto leave;
+            }
+        }
+    }
+
+  kh = keydb_new (ctrl);
+  if (!kh)
+    {
+      log_error (_("failed to allocate keyDB handle\n"));
+      err = gpg_error (GPG_ERR_GENERAL);
       goto leave;
     }
 
@@ -1101,6 +1132,22 @@ gpgsm_walk_cert_chain (ctrl_t ctrl, ksba_cert_t start, ksba_cert_t *r_next)
       log_error ("keydb_get_cert failed in %s: %s <%s>\n",
                  __func__, gpg_strerror (err), gpg_strsource (err));
       err = gpg_error (GPG_ERR_GENERAL);
+      goto leave;
+    }
+
+  /* Cache it. */
+  if (!(opt.compat_flags & COMPAT_NO_CHAIN_CACHE))
+    {
+      ci = xtrycalloc (1, sizeof *ci);
+      if (!ci)
+        {
+          err = gpg_error_from_syserror ();
+          goto leave;
+        }
+      gpgsm_get_fingerprint (start, GCRY_MD_SHA1, ci->fpr, NULL);
+      ksba_cert_ref ((ci->result = *r_next));
+      ci->next = ctrl->parent_cert_cache;
+      ctrl->parent_cert_cache = ci;
     }
 
  leave:
@@ -1379,15 +1426,18 @@ check_validity_period (ksba_isotime_t current_time,
 }
 
 /* This is a variant of check_validity_period used with the chain
-   model.  The extra constraint here is that notBefore and notAfter
-   must exists and if the additional argument CHECK_TIME is given this
-   time is used to check the validity period of SUBJECT_CERT.  */
-static gpg_error_t
+ * model.  The extra constraint here is that notBefore and notAfter
+ * must exists and if the additional argument CHECK_TIME is given this
+ * time is used to check the validity period of SUBJECT_CERT.  With
+ * NO_LOG_EXPIRED the function does not log diagnostics about cert
+ * expiration et al.  */
+gpg_error_t
 check_validity_period_cm (ksba_isotime_t current_time,
                           ksba_isotime_t check_time,
                           ksba_cert_t subject_cert,
                           ksba_isotime_t exptime,
-                          int listmode, estream_t listfp, int depth)
+                          int listmode, estream_t listfp, int depth,
+                          int no_log_expired)
 {
   gpg_error_t err;
   ksba_isotime_t not_before, not_after;
@@ -1403,22 +1453,26 @@ check_validity_period_cm (ksba_isotime_t current_time,
     }
   if (!*not_before || !*not_after)
     {
-      do_list (1, listmode, listfp,
-               _("required certificate attributes missing: %s%s%s"),
-               !*not_before? "notBefore":"",
-               (!*not_before && !*not_after)? ", ":"",
-               !*not_before? "notAfter":"");
+      if (!no_log_expired)
+        do_list (1, listmode, listfp,
+                 _("required certificate attributes missing: %s%s%s"),
+                 !*not_before? "notBefore":"",
+                 (!*not_before && !*not_after)? ", ":"",
+                 !*not_before? "notAfter":"");
       return gpg_error (GPG_ERR_BAD_CERT);
     }
   if (strcmp (not_before, not_after) > 0 )
     {
-      do_list (1, listmode, listfp,
-               _("certificate with invalid validity"));
-      log_info ("  (valid from ");
-      dump_isotime (not_before);
-      log_printf (" expired at ");
-      dump_isotime (not_after);
-      log_printf (")\n");
+      if (!no_log_expired)
+        {
+          do_list (1, listmode, listfp,
+                   _("certificate with invalid validity"));
+          log_info ("  (valid from ");
+          dump_isotime (not_before);
+          log_printf (" expired at ");
+          dump_isotime (not_after);
+          log_printf (")\n");
+        }
       return gpg_error (GPG_ERR_BAD_CERT);
     }
 
@@ -1429,15 +1483,18 @@ check_validity_period_cm (ksba_isotime_t current_time,
 
   if (strcmp (current_time, not_before) < 0 )
     {
-      do_list (1, listmode, listfp,
-               depth ==  0 ? _("certificate not yet valid") :
-               depth == -1 ? _("root certificate not yet valid") :
-               /* other */   _("intermediate certificate not yet valid"));
-      if (!listmode)
+      if (!no_log_expired)
         {
-          log_info ("  (valid from ");
-          dump_isotime (not_before);
-          log_printf (")\n");
+          do_list (1, listmode, listfp,
+                   depth ==  0 ? _("certificate not yet valid") :
+                   depth == -1 ? _("root certificate not yet valid") :
+                   /* other */   _("intermediate certificate not yet valid"));
+          if (!listmode)
+            {
+              log_info ("  (valid from ");
+              dump_isotime (not_before);
+              log_printf (")\n");
+            }
         }
       return gpg_error (GPG_ERR_CERT_TOO_YOUNG);
     }
@@ -1448,14 +1505,15 @@ check_validity_period_cm (ksba_isotime_t current_time,
     {
       /* Note that we don't need a case for the root certificate
          because its own consistency has already been checked.  */
-      do_list(opt.ignore_expiration?0:1, listmode, listfp,
+      if (!no_log_expired)
+        do_list (opt.ignore_expiration?0:1, listmode, listfp,
               depth == 0 ?
               _("signature not created during lifetime of certificate") :
               depth == 1 ?
               _("certificate not created during lifetime of issuer") :
               _("intermediate certificate not created during lifetime "
                 "of issuer"));
-      if (!listmode)
+      if (!listmode && !no_log_expired)
         {
           log_info (depth== 0? _("  (  signature created at ") :
                     /* */      _("  (certificate created at ") );
@@ -1488,13 +1546,17 @@ ask_marktrusted (ctrl_t ctrl, ksba_cert_t cert, int listmode)
 {
   static int no_more_questions;
   int rc;
-  char *fpr;
   int success = 0;
 
-  fpr = gpgsm_get_fingerprint_string (cert, GCRY_MD_SHA1);
-  es_fflush (es_stdout);
-  log_info (_("fingerprint=%s\n"), fpr? fpr : "?");
-  xfree (fpr);
+  if (opt.quiet || no_more_questions)
+    es_fflush (es_stdout);
+  else
+    {
+      char *fpr = gpgsm_get_fingerprint_string (cert, GCRY_MD_SHA1);
+      es_fflush (es_stdout);
+      log_info (_("fingerprint=%s\n"), fpr? fpr : "?");
+      xfree (fpr);
+    }
 
   if (no_more_questions)
     rc = gpg_error (GPG_ERR_NOT_SUPPORTED);
@@ -1682,7 +1744,7 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
       if ( (flags & VALIDATE_FLAG_CHAIN_MODEL) )
         rc = check_validity_period_cm (current_time, check_time, subject_cert,
                                        exptime, listmode, listfp,
-                                       (depth && is_root)? -1: depth);
+                                       (depth && is_root)? -1: depth, 0);
       else
         rc = check_validity_period (current_time, subject_cert,
                                     exptime, listmode, listfp,
@@ -1848,6 +1910,24 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
         }
 
       /* Find the next cert up the tree. */
+      if (!(opt.compat_flags & COMPAT_NO_CHAIN_CACHE))
+        {
+          cert_cache_item_t ci;
+          unsigned char fpr[20];
+
+          gpgsm_get_fingerprint (subject_cert, GCRY_MD_SHA1, fpr, NULL);
+          for (ci = ctrl->parent_cert_cache; ci; ci = ci->next)
+            {
+              if (!memcmp (fpr, ci->fpr, 20) && ci->result)
+                {
+                  /* Found in the cache.  */
+                  ksba_cert_release (issuer_cert);
+                  ksba_cert_ref ((issuer_cert = ci->result));
+                  goto found_in_cache;
+                }
+            }
+        }
+
       keydb_search_reset (kh);
       rc = find_up (ctrl, kh, subject_cert, issuer, 0);
       if (rc)
@@ -1878,6 +1958,26 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
           rc = gpg_error (GPG_ERR_GENERAL);
           goto leave;
         }
+
+      /* Cache it.  The chain->next is here so that the leaf
+       * certificates are not cached. */
+      if (!(opt.compat_flags & COMPAT_NO_CHAIN_CACHE) && chain->next)
+        {
+          cert_cache_item_t ci;
+
+          ci = xtrycalloc (1, sizeof *ci);
+          if (!ci)
+            {
+              rc = gpg_error_from_syserror ();
+              goto leave;
+            }
+          gpgsm_get_fingerprint (subject_cert, GCRY_MD_SHA1, ci->fpr, NULL);
+          ksba_cert_ref ((ci->result = issuer_cert));
+          ci->next = ctrl->parent_cert_cache;
+          ctrl->parent_cert_cache = ci;
+      }
+
+    found_in_cache:
 
     try_another_cert:
       if (DBG_X509)
@@ -2081,9 +2181,22 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
     {
       gpg_error_t err;
       chain_item_t ci;
+      unsigned int blobflags;
+      size_t userdatalen;
 
       for (ci = chain; ci; ci = ci->next)
         {
+          /* First do a quick check by looking at the blob flags to
+           * see whether the certificate is flagged ephemeral.  This
+           * avoids the overhead of looking up the certificate again
+           * just to decide that there is no need to clear it.  */
+          if (!ksba_cert_get_user_data (cert, "keydb.blobflags",
+                                        &blobflags, sizeof (blobflags),
+                                        &userdatalen)
+              && userdatalen == sizeof blobflags
+              && !(blobflags & KEYBOX_FLAG_BLOB_EPHEMERAL))
+            continue;
+
           /* Note that it is possible for the last certificate in the
              chain (i.e. our target certificate) that it has not yet
              been stored in the keybox and thus the flag can't be set.
