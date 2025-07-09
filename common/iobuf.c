@@ -166,7 +166,8 @@ block_filter_ctx_t;
 /* Local prototypes.  */
 static int underflow (iobuf_t a, int clear_pending_eof);
 static int underflow_target (iobuf_t a, int clear_pending_eof, size_t target);
-static int translate_file_handle (int fd, int for_write);
+static iobuf_t do_iobuf_fdopen (gnupg_fd_t fp, const char *mode, int keep_open);
+
 
 /* Sends any pending data to the filter's FILTER function.  Note: this
    works on the filter and not on the whole pipeline.  That is,
@@ -389,7 +390,7 @@ fd_cache_close (const char *fname, gnupg_fd_t fp)
       close (fp);
 #endif
       if (DBG_IOBUF)
-	log_debug ("fd_cache_close (%d) real\n", (int)fp);
+	log_debug ("fd_cache_close (%d) real\n", FD_DBG (fp));
       return;
     }
   /* try to reuse a slot */
@@ -696,7 +697,7 @@ file_filter (void *opaque, int control, iobuf_t chain, byte * buf,
       if (f != FD_FOR_STDIN && f != FD_FOR_STDOUT)
 	{
 	  if (DBG_IOBUF)
-	    log_debug ("%s: close fd/handle %d\n", a->fname, FD2INT (f));
+	    log_debug ("%s: close fd/handle %d\n", a->fname, FD_DBG (f));
 	  if (!a->keep_open)
 	    fd_cache_close (a->no_cache ? NULL : a->fname, f);
 	}
@@ -1410,7 +1411,7 @@ iobuf_is_pipe_filename (const char *fname)
 {
   if (!fname || (*fname=='-' && !fname[1]) )
     return 1;
-  return check_special_filename (fname, 0, 1) != -1;
+  return gnupg_check_special_filename (fname) != GNUPG_INVALID_FD;
 }
 
 
@@ -1423,7 +1424,7 @@ do_open (const char *fname, int special_filenames,
   file_filter_ctx_t *fcx;
   size_t len = 0;
   int print_only = 0;
-  int fd;
+  gnupg_fd_t fd;
   byte desc[MAX_IOBUF_DESC];
 
   log_assert (use == IOBUF_INPUT || use == IOBUF_OUTPUT);
@@ -1447,9 +1448,8 @@ do_open (const char *fname, int special_filenames,
   else if (!fname)
     return NULL;
   else if (special_filenames
-           && (fd = check_special_filename (fname, 0, 1)) != -1)
-    return iobuf_fdopen (translate_file_handle (fd, use == IOBUF_INPUT ? 0 : 1),
-			 opentype);
+           && (fd = gnupg_check_special_filename (fname)) != GNUPG_INVALID_FD)
+    return do_iobuf_fdopen (fd, opentype, 0);
   else
     {
       if (use == IOBUF_INPUT)
@@ -1472,7 +1472,8 @@ do_open (const char *fname, int special_filenames,
   file_filter (fcx, IOBUFCTRL_INIT, NULL, NULL, &len);
   if (DBG_IOBUF)
     log_debug ("iobuf-%d.%d: open '%s' desc=%s fd=%d\n",
-	       a->no, a->subno, fname, iobuf_desc (a, desc), FD2INT (fcx->fp));
+	       a->no, a->subno, fname, iobuf_desc (a, desc),
+               FD_DBG (fcx->fp));
 
   return a;
 }
@@ -1497,14 +1498,11 @@ iobuf_openrw (const char *fname)
 
 
 static iobuf_t
-do_iobuf_fdopen (int fd, const char *mode, int keep_open)
+do_iobuf_fdopen (gnupg_fd_t fp, const char *mode, int keep_open)
 {
   iobuf_t a;
-  gnupg_fd_t fp;
   file_filter_ctx_t *fcx;
   size_t len = 0;
-
-  fp = INT2FD (fd);
 
   a = iobuf_alloc (strchr (mode, 'w') ? IOBUF_OUTPUT : IOBUF_INPUT,
 		   iobuf_buffer_size);
@@ -1512,7 +1510,7 @@ do_iobuf_fdopen (int fd, const char *mode, int keep_open)
   fcx->fp = fp;
   fcx->print_only_name = 1;
   fcx->keep_open = keep_open;
-  sprintf (fcx->fname, "[fd %d]", fd);
+  sprintf (fcx->fname, "[fd %d]", FD_DBG (fp));
   a->filter = file_filter;
   a->filter_ov = fcx;
   file_filter (fcx, IOBUFCTRL_INIT, NULL, NULL, &len);
@@ -1525,15 +1523,15 @@ do_iobuf_fdopen (int fd, const char *mode, int keep_open)
 
 
 iobuf_t
-iobuf_fdopen (int fd, const char *mode)
+iobuf_fdopen (gnupg_fd_t fp, const char *mode)
 {
-  return do_iobuf_fdopen (fd, mode, 0);
+  return do_iobuf_fdopen (fp, mode, 0);
 }
 
 iobuf_t
-iobuf_fdopen_nc (int fd, const char *mode)
+iobuf_fdopen_nc (gnupg_fd_t fp, const char *mode)
 {
-  return do_iobuf_fdopen (fd, mode, 1);
+  return do_iobuf_fdopen (fp, mode, 1);
 }
 
 
@@ -1585,7 +1583,7 @@ iobuf_sockopen (int fd, const char *mode)
     log_debug ("iobuf-%d.%d: sockopen '%s'\n", a->no, a->subno, scx->fname);
   iobuf_ioctl (a, IOBUF_IOCTL_NO_CACHE, 1, NULL);
 #else
-  a = iobuf_fdopen (fd, mode);
+  a = do_iobuf_fdopen (fd, mode, 0);
 #endif
   return a;
 }
@@ -1672,7 +1670,7 @@ iobuf_ioctl (iobuf_t a, iobuf_ioctl_t cmd, int intval, void *ptrval)
       /* Peek at a justed opened file.  Use this only directly after a
        * file has been opened for reading.  Don't use it after you did
        * a seek.  This works only if just file filter has been
-       * pushed.  Expects a buffer wit size INTVAL at PTRVAL and returns
+       * pushed.  Expects a buffer with size INTVAL at PTRVAL and returns
        * the number of bytes put into the buffer.  */
       if (DBG_IOBUF)
 	log_debug ("iobuf-%d.%d: ioctl '%s' peek\n",
@@ -2644,20 +2642,20 @@ iobuf_get_filelength (iobuf_t a)
 }
 
 
-int
+gnupg_fd_t
 iobuf_get_fd (iobuf_t a)
 {
   for (; a->chain; a = a->chain)
     ;
 
   if (a->filter != file_filter)
-    return -1;
+    return GNUPG_INVALID_FD;
 
   {
     file_filter_ctx_t *b = a->filter_ov;
     gnupg_fd_t fp = b->fp;
 
-    return FD2INT (fp);
+    return fp;
   }
 }
 
@@ -2946,36 +2944,6 @@ iobuf_read_line (iobuf_t a, byte ** addr_of_buffer,
   /* Return the number of characters written to the buffer including
      the newline, but not including the terminating NUL.  */
   return nbytes;
-}
-
-static int
-translate_file_handle (int fd, int for_write)
-{
-#if defined(HAVE_W32_SYSTEM)
-  {
-    int x;
-
-    (void)for_write;
-
-    if (fd == 0)
-      x = (int) GetStdHandle (STD_INPUT_HANDLE);
-    else if (fd == 1)
-      x = (int) GetStdHandle (STD_OUTPUT_HANDLE);
-    else if (fd == 2)
-      x = (int) GetStdHandle (STD_ERROR_HANDLE);
-    else
-      x = fd;
-
-    if (x == -1)
-      log_debug ("GetStdHandle(%d) failed: ec=%d\n",
-		 fd, (int) GetLastError ());
-
-    fd = x;
-  }
-#else
-  (void)for_write;
-#endif
-  return fd;
 }
 
 

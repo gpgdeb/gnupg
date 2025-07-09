@@ -132,7 +132,6 @@ my_strusage( int level )
 }
 
 
-
 /*  static void */
 /*  wrong_args( const char *text ) */
 /*  { */

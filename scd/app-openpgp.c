@@ -119,8 +119,8 @@ static struct {
   { 0x00D6, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Signature"},
   { 0x00D7, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Decryption"},
   { 0x00D8, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Authentication"},
-  { 0x00F9, 0,    0, 1, 0, 0, 0, 0, "KDF data object"},
-  { 0x00FA, 0,    0, 1, 0, 0, 0, 2, "Algorithm Information"},
+  { 0x00F9, 1,    0, 1, 0, 0, 0, 0, "KDF data object"},
+  { 0x00FA, 1,    0, 1, 0, 0, 0, 2, "Algorithm Information"},
   { 0 }
 };
 
@@ -190,7 +190,7 @@ struct app_local_s {
   struct
   {
     unsigned int is_v2:1;              /* Compatible to v2 or later.        */
-    unsigned int is_v3:1;              /* Comatible to v3 or later.         */
+    unsigned int is_v3:1;              /* Compatible to v3 or later.        */
     unsigned int has_button:1;         /* Has confirmation button or not.   */
 
     unsigned int sm_supported:1;       /* Secure Messaging is supported.    */
@@ -1759,7 +1759,7 @@ ecdh_params (const char *curve)
 {
   unsigned int nbits;
 
-  openpgp_curve_to_oid (curve, &nbits, NULL);
+  openpgp_curve_to_oid (curve, &nbits, NULL, -1);
 
   /* See RFC-6637 for those constants.
          0x03: Number of bytes
@@ -1801,7 +1801,7 @@ ecc_read_pubkey (app_t app, ctrl_t ctrl, int meta_update,
     }
 
   curve = app->app_local->keyattr[keyno].ecc.curve;
-  oidstr = openpgp_curve_to_oid (curve, NULL, NULL);
+  oidstr = openpgp_curve_to_oid (curve, NULL, NULL, 0);
   err = openpgp_oid_from_str (oidstr, &oid);
   if (err)
     return err;
@@ -4194,7 +4194,7 @@ change_keyattr_from_string (app_t app, ctrl_t ctrl,
       else
         {
           nbits = 0;
-          oidstr = openpgp_curve_to_oid (keyalgo, NULL, &algo);
+          oidstr = openpgp_curve_to_oid (keyalgo, NULL, &algo, 0);
           if (!oidstr)
             {
               err = gpg_error (GPG_ERR_INV_DATA);
@@ -4244,7 +4244,7 @@ change_keyattr_from_string (app_t app, ctrl_t ctrl,
       else if (algo == PUBKEY_ALGO_ECDH || algo == PUBKEY_ALGO_ECDSA
                || algo == PUBKEY_ALGO_EDDSA)
         {
-          oidstr = openpgp_curve_to_oid (string+n, NULL, NULL);
+          oidstr = openpgp_curve_to_oid (string+n, NULL, NULL, 0);
           if (!oidstr)
             {
               err = gpg_error (GPG_ERR_INV_DATA);
@@ -4821,7 +4821,7 @@ ecc_writekey (app_t app, ctrl_t ctrl,
       ecdh_param_len = 4;
     }
 
-  oidstr = openpgp_curve_to_oid (curve, &n, NULL);
+  oidstr = openpgp_curve_to_oid (curve, &n, NULL, 0);
   ecc_d_fixed_len = (n+7)/8;
   err = openpgp_oid_from_str (oidstr, &oid);
   if (err)
@@ -5552,7 +5552,7 @@ gen_challenge (app_t app, const void **r_data, size_t *r_datalen)
     {
       unsigned int n;
 
-      openpgp_curve_to_oid (app->app_local->keyattr[2].ecc.curve, &n, NULL);
+      openpgp_curve_to_oid (app->app_local->keyattr[2].ecc.curve, &n, NULL, -1);
       /* No hash algo header, and appropriate length of random octets,
          determined by field size of the curve.  */
       datalen = (n+7)/8;
@@ -5641,14 +5641,15 @@ do_auth (app_t app, ctrl_t ctrl, const char *keyidstr,
 
   if (app->app_local->keyattr[2].key_type == KEY_TYPE_ECC)
     {
-      if (!(app->app_local->keyattr[2].ecc.flags & ECC_FLAG_DJB_TWEAK)
-          && (indatalen == 51 || indatalen == 67 || indatalen == 83))
+      /* This is a heuristic to strip off the OID of digest.  Fully
+         implemented, it would be use of X macro in do_sign above.  */
+      if (indatalen == 51 || indatalen == 67 || indatalen == 83)
         {
           const char *p = (const char *)indata + 19;
           indata = p;
           indatalen -= 19;
         }
-      else
+      else if (indatalen > 15)
         {
           const char *p = (const char *)indata + 15;
           indata = p;

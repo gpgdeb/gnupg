@@ -212,7 +212,8 @@ parse_import_options(char *str,unsigned int *options,int noisy)
       /* New options.  Right now, without description string.  */
       {"ignore-attributes", IMPORT_IGNORE_ATTRIBUTES, NULL, NULL},
 
-      {"only-pubkeys", IMPORT_ONLY_PUBKEYS, NULL, NULL},
+      {"only-pubkeys", IMPORT_ONLY_PUBKEYS, NULL,
+       N_("do not import secret keys")},
 
       /* Hidden options which are enabled by default and are provided
        * in case of problems with the respective implementation.  */
@@ -233,7 +234,7 @@ parse_import_options(char *str,unsigned int *options,int noisy)
   int rc;
   int saved_self_sigs_only, saved_import_clean;
 
-  /* We need to set flags indicating wether the user has set certain
+  /* We need to set flags indicating whether the user has set certain
    * options or if they came from the default.  */
   saved_self_sigs_only = (*options & IMPORT_SELF_SIGS_ONLY);
   saved_self_sigs_only &= ~IMPORT_SELF_SIGS_ONLY;
@@ -1057,7 +1058,12 @@ read_block( IOBUF a, unsigned int options,
       switch (pkt->pkttype)
         {
         case PKT_COMPRESSED:
-          if (check_compress_algo (pkt->pkt.compressed->algorithm))
+          if (!(opt.compat_flags & COMPAT_COMPR_KEYS))
+            {
+              rc = GPG_ERR_UNEXPECTED_PACKET;
+              goto ready;
+            }
+          else if (check_compress_algo (pkt->pkt.compressed->algorithm))
             {
               rc = GPG_ERR_COMPR_ALGO;
               goto ready;
@@ -1463,6 +1469,8 @@ impex_filter_getval (void *cookie, const char *propname)
   /* We allow a prefix delimited by a slash to limit the scope of the
    * keyword.  Note that "pub" also includes "sec" and "sub" includes
    * "ssb".  */
+  if (DBG_RECSEL)  /* Printing the packet type is useful.  */
+    log_debug ("%s: pkttype=%s\n", __func__, pkttype_str (node->pkt->pkttype));
   if ((s=strchr (propname, '/')) && s != propname)
     {
       size_t n = s - propname;
@@ -1815,7 +1823,7 @@ insert_key_origin_uid (PKT_user_id *uid, u32 curtime,
       /* We insert origin information on a UID only when we received
        * them via the Web Key Directory or a DANE record.  The key we
        * receive here from the WKD has been filtered to contain only
-       * the user ID as looked up in the WKD.  For a DANE origin we
+       * the user ID as looked up in the WKD.  For a DANE origin
        * this should also be the case.  Thus we will see here only one
        * user id.  */
       uid->keyorg = origin;
@@ -2188,10 +2196,12 @@ import_one_real (ctrl_t ctrl,
       merge_keys_done = 1;
       /* Note that we do not want to show the validity because the key
        * has not yet imported.  */
-      list_keyblock_direct (ctrl, keyblock, from_sk, 0,
+      err = list_keyblock_direct (ctrl, keyblock, from_sk, 0,
                             opt.fingerprint || opt.with_fingerprint, 1);
       es_fflush (es_stdout);
       no_usable_encr_subkeys_warning (keyblock);
+      if (err)
+        goto leave;
     }
 
   /* Write the keyblock to the output and do not actually import.  */
@@ -2210,7 +2220,7 @@ import_one_real (ctrl_t ctrl,
     goto leave;
 
   /* Do we have this key already in one of our pubrings ? */
-  err = get_keyblock_byfprint_fast (ctrl, &keyblock_orig, &hd,
+  err = get_keyblock_byfpr_fast (ctrl, &keyblock_orig, &hd,
                                  1 /*primary only */,
                                  fpr2, fpr2len, 1/*locked*/);
   if ((err
@@ -3083,7 +3093,7 @@ import_matching_seckeys (ctrl_t ctrl, kbnode_t seckeys,
 
   /* Get the entire public key block from our keystore and put all its
    * fingerprints into an array.  */
-  err = get_pubkey_byfprint (ctrl, NULL, &pub_keyblock, mainfpr, mainfprlen);
+  err = get_pubkey_byfpr (ctrl, NULL, &pub_keyblock, mainfpr, mainfprlen);
   if (err)
     goto leave;
   log_assert (pub_keyblock && pub_keyblock->pkt->pkttype == PKT_PUBLIC_KEY);
@@ -3321,7 +3331,7 @@ import_secret_one (ctrl_t ctrl, kbnode_t keyblock,
 	{
           /* Read the keyblock again to get the effects of a merge for
            * the public key.  */
-          err = get_pubkey_byfprint (ctrl, NULL, &node, fpr, fprlen);
+          err = get_pubkey_byfpr (ctrl, NULL, &node, fpr, fprlen);
           if (err || !node)
             log_error ("key %s: failed to re-lookup public key: %s\n",
                        keystr_from_pk (pk), gpg_strerror (err));
@@ -3356,6 +3366,33 @@ import_secret_one (ctrl_t ctrl, kbnode_t keyblock,
 }
 
 
+/* Return a string for the revocation reason CODE.  R_FREEM must be an
+ * possibly unintialized ptr which should be freed by the caller after
+ * the return value has been consumed.  */
+const char *
+revocation_reason_code_to_str (int code, char **freeme)
+{
+  /* Take care: get_revocation_reason has knowledge of the internal
+   * working of this fucntion.  */
+  const char *result;
+
+  *freeme = NULL;
+  switch (code)
+    {
+    case 0x00: result = _("No reason specified"); break;
+    case 0x01: result = _("Key is superseded");   break;
+    case 0x02: result = _("Key has been compromised"); break;
+    case 0x03: result = _("Key is no longer used"); break;
+    case 0x20: result = _("User ID is no longer valid"); break;
+    default:
+      *freeme = xasprintf ("code=%02x", code);
+      result = *freeme;
+      break;
+    }
+
+  return result;
+}
+
 
 /* Return the recocation reason from signature SIG.  If no revocation
  * reason is available 0 is returned, in other cases the reason
@@ -3373,9 +3410,8 @@ get_revocation_reason (PKT_signature *sig, char **r_reason,
   int reason_seq = 0;
   size_t reason_n;
   const byte *reason_p;
-  char reason_code_buf[20];
-  const char *reason_text = NULL;
   int reason_code = 0;
+  char *freeme;
 
   if (r_reason)
     *r_reason = NULL;
@@ -3387,26 +3423,15 @@ get_revocation_reason (PKT_signature *sig, char **r_reason,
                                       &reason_n, &reason_seq, NULL))
          && !reason_n)
     ;
-  if (reason_p)
+  if (reason_p && reason_n)
     {
       reason_code = *reason_p;
       reason_n--; reason_p++;
-      switch (reason_code)
-        {
-        case 0x00: reason_text = _("No reason specified"); break;
-        case 0x01: reason_text = _("Key is superseded");   break;
-        case 0x02: reason_text = _("Key has been compromised"); break;
-        case 0x03: reason_text = _("Key is no longer used"); break;
-        case 0x20: reason_text = _("User ID is no longer valid"); break;
-        default:
-          snprintf (reason_code_buf, sizeof reason_code_buf,
-                    "code=%02x", reason_code);
-          reason_text = reason_code_buf;
-          break;
-        }
-
+      revocation_reason_code_to_str (reason_code, &freeme);
       if (r_reason)
-        *r_reason = xstrdup (reason_text);
+        *r_reason = freeme;
+      else
+        xfree (freeme);
 
       if (r_comment && reason_n)
         {
@@ -3523,31 +3548,7 @@ list_standalone_revocation (ctrl_t ctrl, PKT_signature *sig, int sigrc)
         {
           es_fprintf (es_stdout, "      %s%s\n",
                       _("reason for revocation: "), reason_text);
-          if (reason_comment)
-            {
-              const byte *s, *s_lf;
-              size_t n, n_lf;
-
-              s = reason_comment;
-              n = reason_commentlen;
-              s_lf = NULL;
-              do
-                {
-                  /* We don't want any empty lines, so we skip them.  */
-                  for (;n && *s == '\n'; s++, n--)
-                    ;
-                  if (n)
-                    {
-                      s_lf = memchr (s, '\n', n);
-                      n_lf = s_lf? s_lf - s : n;
-                      es_fprintf (es_stdout, "         %s",
-                                  _("revocation comment: "));
-                      es_write_sanitized (es_stdout, s, n_lf, NULL, NULL);
-                      es_putc ('\n', es_stdout);
-                      s += n_lf; n -= n_lf;
-                    }
-                } while (s_lf);
-            }
+          print_revocation_reason_comment (reason_comment, reason_commentlen);
         }
     }
 
@@ -4415,9 +4416,9 @@ revocation_present (ctrl_t ctrl, kbnode_t keyblock)
                        * itself?  */
                       gpg_error_t err;
 
-		      err = get_pubkey_byfprint_fast (ctrl, NULL,
-                                                      sig->revkey[idx].fpr,
-                                                      sig->revkey[idx].fprlen);
+		      err = get_pubkey_byfpr_fast (ctrl, NULL,
+                                                   sig->revkey[idx].fpr,
+                                                   sig->revkey[idx].fprlen);
 		      if (gpg_err_code (err) == GPG_ERR_NO_PUBKEY
                           || gpg_err_code (err) == GPG_ERR_UNUSABLE_PUBKEY)
 			{
@@ -4431,13 +4432,13 @@ revocation_present (ctrl_t ctrl, kbnode_t keyblock)
 			      log_info(_("WARNING: key %s may be revoked:"
 					 " fetching revocation key %s\n"),
 				       tempkeystr,keystr(keyid));
-			      keyserver_import_fprint (ctrl,
-                                                       sig->revkey[idx].fpr,
-                                                       sig->revkey[idx].fprlen,
-                                                       opt.keyserver, 0);
+			      keyserver_import_fpr (ctrl,
+                                                    sig->revkey[idx].fpr,
+                                                    sig->revkey[idx].fprlen,
+                                                    opt.keyserver, 0);
 
 			      /* Do we have it now? */
-			      err = get_pubkey_byfprint_fast (ctrl, NULL,
+			      err = get_pubkey_byfpr_fast (ctrl, NULL,
 						     sig->revkey[idx].fpr,
                                                      sig->revkey[idx].fprlen);
 			    }

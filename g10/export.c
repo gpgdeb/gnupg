@@ -424,11 +424,8 @@ do_export (ctrl_t ctrl, strlist_t users, int secret, unsigned int options,
   IOBUF out = NULL;
   int any, rc;
   armor_filter_context_t *afx = NULL;
-  compress_filter_context_t zfx;
 
-  memset( &zfx, 0, sizeof zfx);
-
-  rc = open_outfile (-1, NULL, 0, !!secret, &out );
+  rc = open_outfile (GNUPG_INVALID_FD, NULL, 0, !!secret, &out);
   if (rc)
     return rc;
 
@@ -585,7 +582,7 @@ match_curve_skey_pk (gcry_sexp_t s_key, PKT_public_key *pk)
     }
   if (!strcmp (curve_str, "Ed448"))
     is_eddsa = 1;
-  oidstr = openpgp_curve_to_oid (curve_str, NULL, NULL);
+  oidstr = openpgp_curve_to_oid (curve_str, NULL, NULL, (pk->version > 4));
   if (!oidstr)
     {
       log_error ("no OID known for curve '%s'\n", curve_str);
@@ -1280,7 +1277,7 @@ transfer_format_to_openpgp (gcry_sexp_t s_pgp, PKT_public_key *pk)
           goto leave;
         }
 
-      oidstr = openpgp_curve_to_oid (curve, NULL, NULL);
+      oidstr = openpgp_curve_to_oid (curve, NULL, NULL, (pk->version > 4));
       if (!oidstr)
         {
           log_error ("no OID known for curve '%s'\n", curve);
@@ -1961,6 +1958,11 @@ do_export_one_keyblock (ctrl_t ctrl, kbnode_t keyblock, u32 *keyid,
               err = 0;
               continue;
             }
+          if (strchr (hexgrip, ','))
+            {
+              log_error ("exporting a secret dual key is not yet supported\n");
+              return gpg_error (GPG_ERR_NOT_IMPLEMENTED);
+            }
 
           xfree (serialno);
           serialno = NULL;
@@ -2129,7 +2131,7 @@ do_export_revocs (ctrl_t ctrl, kbnode_t keyblock, u32 *keyid,
         continue;
       sig = node->pkt->pkt.signature;
 
-      /* We are only interested in revocation certifcates.  */
+      /* We are only interested in revocation certificates.  */
       if (!(IS_KEY_REV (sig) || IS_UID_REV (sig) || IS_SUBKEY_REV (sig)))
         continue;
 
@@ -2707,18 +2709,18 @@ export_one_ssh_key (estream_t fp, PKT_public_key *pk)
   blob = get_membuf (&mb, &bloblen);
   if (blob)
     {
-      struct b64state b64_state;
+      gpgrt_b64state_t b64_state;
 
       es_fprintf (fp, "%s ", identifier);
-      err = b64enc_start_es (&b64_state, fp, "");
-      if (err)
+      b64_state = gpgrt_b64enc_start (fp, "");
+      if (!b64_state)
         {
           xfree (blob);
           goto leave;
         }
 
-      err = b64enc_write (&b64_state, blob, bloblen);
-      b64enc_finish (&b64_state);
+      err = gpgrt_b64enc_write (b64_state, blob, bloblen);
+      gpgrt_b64enc_finish (b64_state);
 
       es_fprintf (fp, " openpgp:0x%08lX\n", (ulong)keyid_from_pk (pk, NULL));
       xfree (blob);
@@ -2962,7 +2964,7 @@ export_secret_ssh_key (ctrl_t ctrl, const char *userid)
   int pkalgo;
   int i;
   gcry_mpi_t keyparam[10] = { NULL };
-  struct b64state b64_state;
+  gpgrt_b64state_t b64_state;
 
   init_membuf_secure (&mb, 1024);
   init_membuf_secure (&mb2, 1024);
@@ -2973,7 +2975,7 @@ export_secret_ssh_key (ctrl_t ctrl, const char *userid)
     {
       log_error (_("key \"%s\" not found: %s\n"), userid,
                  err? gpg_strerror (err) : "Not a Keygrip" );
-      return err;
+      goto leave;
     }
 
   bin2hex (desc.u.grip, KEYGRIP_LEN, hexgrip);
@@ -3140,11 +3142,11 @@ export_secret_ssh_key (ctrl_t ctrl, const char *userid)
       goto leave;
     }
 
-  err = b64enc_start_es (&b64_state, fp, "OPENSSH PRIVATE_KEY");
-  if (err)
+  b64_state = gpgrt_b64enc_start (fp, "OPENSSH PRIVATE_KEY");
+  if (!b64_state)
     goto leave;
-  err = b64enc_write (&b64_state, blob, bloblen);
-  b64enc_finish (&b64_state);
+  err = gpgrt_b64enc_write (b64_state, blob, bloblen);
+  gpgrt_b64enc_finish (b64_state);
   if (err)
     goto leave;
 

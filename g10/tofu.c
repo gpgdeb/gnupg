@@ -2493,9 +2493,8 @@ get_policy (ctrl_t ctrl, tofu_dbs_t dbs, PKT_public_key *pk,
         int lookup_err;
         kbnode_t kb;
 
-        lookup_err = get_pubkey_byfprint (ctrl, NULL, &kb,
-                                          fingerprint_raw,
-                                          fingerprint_raw_len);
+        lookup_err = get_pubkey_byfpr (ctrl, NULL, &kb,
+                                       fingerprint_raw, fingerprint_raw_len);
         if (lookup_err)
           {
             if (DBG_TRUST)
@@ -3655,7 +3654,7 @@ tofu_wot_trust_combine (int tofu_base, int wot_base)
               || wot == TRUST_FULLY
               || wot == TRUST_ULTIMATE);
 
-  /* We first consider negative trust policys.  These trump positive
+  /* We first consider negative trust policies.  These trump positive
      trust policies.  */
   if (tofu == TRUST_NEVER || wot == TRUST_NEVER)
     /* TRUST_NEVER trumps everything else.  */

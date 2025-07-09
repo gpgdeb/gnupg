@@ -414,7 +414,7 @@ card_list_wait (ctrl_t ctrl)
     {
       FD_ZERO (&fdset);
       FD_SET (FD2INT (fd), &fdset);
-      nfd = FD2INT (fd);
+      nfd = FD2NUM (fd);
 
 #ifdef HAVE_W32_SYSTEM
       ret = npth_eselect (nfd+1, &fdset, NULL, NULL, NULL,
@@ -1488,7 +1488,7 @@ app_munge_serialno (card_t card)
        *   !     !----------- Form factor
        *   !----------------- Our prefix
        * Yubico seems to use the decimalized version of their S/N
-       * as the OpenPGP card S/N.  Thus in theory we can contruct the
+       * as the OpenPGP card S/N.  Thus in theory we can construct the
        * number from this information so that we do not rely on having
        * the OpenPGP app enabled.
        */
@@ -2472,7 +2472,6 @@ app_check_pin (card_t card, ctrl_t ctrl, const char *keyidstr,
   return err;
 }
 
-
 static void
 report_change (int slot, int old_status, int cur_status)
 {
@@ -2500,11 +2499,9 @@ report_change (int slot, int old_status, int cur_status)
   else
     {
       gpg_error_t err;
-      const char *args[9], *envs[2];
+      const char *args[9];
       char numbuf1[30], numbuf2[30], numbuf3[30];
-
-      envs[0] = envstr;
-      envs[1] = NULL;
+      gpgrt_spawn_actions_t act = NULL;
 
       sprintf (numbuf1, "%d", slot);
       sprintf (numbuf2, "0x%04X", old_status);
@@ -2522,7 +2519,16 @@ report_change (int slot, int old_status, int cur_status)
       args[8] = NULL;
 
       fname = make_filename (gnupg_homedir (), "scd-event", NULL);
-      err = gnupg_spawn_process_detached (fname, args, envs);
+      err = gpgrt_spawn_actions_new (&act);
+      if (!err)
+        {
+          const char *envchange[2] = { envstr, NULL };
+
+          gpgrt_spawn_actions_set_env_rev (act, envchange);
+          err = gpgrt_process_spawn (fname, args, GPGRT_PROCESS_DETACHED,
+                                     act, NULL);
+          gpgrt_spawn_actions_release (act);
+        }
       if (err && gpg_err_code (err) != GPG_ERR_ENOENT)
         log_error ("failed to run event handler '%s': %s\n",
                    fname, gpg_strerror (err));
@@ -2652,7 +2658,7 @@ initialize_module_command (void)
 #ifdef HAVE_W32_SYSTEM
   scd_init_event (&card_list_lock.the_event, card_list_lock.events);
 #else
-  ret = gnupg_create_pipe (card_list_lock.notify_pipe);
+  ret = gnupg_create_pipe (card_list_lock.notify_pipe, 0);
   if (ret)
     {
       err = gpg_error_from_syserror ();

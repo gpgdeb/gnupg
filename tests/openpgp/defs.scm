@@ -113,7 +113,7 @@
 
 ;; Note that the entry for pinentry relies on the fact that
 ;; GNUPG_BUILD_ROOT is the top of the build root.  The second element
-;; in each list is an envvar which can be used to specifiy a different
+;; in each list is an envvar which can be used to specify a different
 ;; tool than the installed one.
 (define tools
   '((gpgv "GPGV" "g10/gpgv")
@@ -268,13 +268,14 @@
 (define (gpg-pipe args0 args1 errfd)
   (lambda (source sink)
     (let* ((p (pipe))
-	   (task0 (spawn-process-fd `(,@GPG ,@args0)
+	   (task0 (process-spawn-fd `(,@GPG ,@args0)
 		   source (:write-end p) errfd))
 	   (_ (close (:write-end p)))
-	   (task1 (spawn-process-fd `(,@GPG ,@args1)
+	   (task1 (process-spawn-fd `(,@GPG ,@args1)
 		   (:read-end p) sink errfd)))
       (close (:read-end p))
-      (wait-processes (list GPG GPG) (list task0 task1) #t))))
+      (process-wait task0 #t)
+      (process-wait task1 #t))))
 
 (setenv "GPG_AGENT_INFO" "" #t)
 (setenv "GNUPGHOME" (getcwd) #t)

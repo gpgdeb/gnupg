@@ -111,20 +111,20 @@ get_output_file (const byte *embedded_name, int embedded_namelen,
     {
       /* Special file name, no filename, or "-" given; write to the
        * file descriptor or to stdout. */
-      int fd;
+      gnupg_fd_t fd;
       char xname[64];
 
-      fd = check_special_filename (fname, 1, 0);
-      if (fd == -1)
+      fd = gnupg_check_special_filename (fname);
+      if (fd == GNUPG_INVALID_FD)
         {
           /* Not a special filename, thus we want stdout.  */
           fp = es_stdout;
           es_set_binary (fp);
         }
-      else if (!(fp = es_fdopen_nc (fd, "wb")))
+      else if (!(fp = open_stream_nc (fd, "wb")))
         {
           err = gpg_error_from_syserror ();
-          snprintf (xname, sizeof xname, "[fd %d]", fd);
+          snprintf (xname, sizeof xname, "[fd %d]", FD_DBG (fd));
           log_error (_("can't open '%s': %s\n"), xname, gpg_strerror (err));
           goto leave;
         }
@@ -137,8 +137,7 @@ get_output_file (const byte *embedded_name, int embedded_namelen,
 	  if (!tmp || !*tmp)
 	    {
 	      xfree (tmp);
-              /* FIXME: Below used to be GPG_ERR_CREATE_FILE */
-	      err = gpg_error (GPG_ERR_GENERAL);
+              err = gpg_error (GPG_ERR_EEXIST);
 	      goto leave;
 	    }
 	  xfree (fname);
@@ -146,13 +145,7 @@ get_output_file (const byte *embedded_name, int embedded_namelen,
 	}
     }
 
-  if (opt.outfp && is_secured_file (es_fileno (opt.outfp)))
-    {
-      err = gpg_error (GPG_ERR_EPERM);
-      log_error (_("error creating '%s': %s\n"), fname, gpg_strerror (err));
-      goto leave;
-    }
-  else if (fp || nooutput)
+  if (fp || nooutput)
     ;
   else if (is_secured_filename (fname))
     {
@@ -729,8 +722,8 @@ hash_datafiles (gcry_md_hd_t md, gcry_md_hd_t md2, strlist_t files,
 /* Hash the data from file descriptor DATA_FD and append the hash to hash
    contexts MD and MD2.  */
 int
-hash_datafile_by_fd (gcry_md_hd_t md, gcry_md_hd_t md2, int data_fd,
-		     int textmode)
+hash_datafile_by_fd (gcry_md_hd_t md, gcry_md_hd_t md2,
+                     gnupg_fd_t data_fd, int textmode)
 {
   progress_filter_context_t *pfx = new_progress_context ();
   iobuf_t fp;
@@ -747,7 +740,7 @@ hash_datafile_by_fd (gcry_md_hd_t md, gcry_md_hd_t md2, int data_fd,
     {
       int rc = gpg_error_from_syserror ();
       log_error (_("can't open signed data fd=%d: %s\n"),
-		 data_fd, strerror (errno));
+		 FD_DBG (data_fd), strerror (errno));
       release_progress_context (pfx);
       return rc;
     }

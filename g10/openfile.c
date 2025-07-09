@@ -165,7 +165,7 @@ ask_outfile_name( const char *name, size_t namelen )
 
 /*
  * Make an output filename for the inputfile INAME.
- * Returns an IOBUF and an errorcode
+ * Returns an IOBUF at A and an errorcode
  * Mode 0 = use ".gpg"
  *	1 = use ".asc"
  *	2 = use ".sig"
@@ -179,13 +179,13 @@ ask_outfile_name( const char *name, size_t namelen )
  * be closed if the returned IOBUF is closed.  This is used for gpg's
  * --server mode.  */
 int
-open_outfile (int out_fd, const char *iname, int mode, int restrictedperm,
-              iobuf_t *a)
+open_outfile (gnupg_fd_t out_fd, const char *iname, int mode,
+              int restrictedperm, iobuf_t *a)
 {
   int rc = 0;
 
   *a = NULL;
-  if (out_fd != -1)
+  if (out_fd != GNUPG_INVALID_FD)
     {
       char xname[64];
 
@@ -193,12 +193,12 @@ open_outfile (int out_fd, const char *iname, int mode, int restrictedperm,
       if (!*a)
         {
           rc = gpg_error_from_syserror ();
-          snprintf (xname, sizeof xname, "[fd %d]", out_fd);
+          snprintf (xname, sizeof xname, "[fd %d]", FD_DBG (out_fd));
           log_error (_("can't open '%s': %s\n"), xname, gpg_strerror (rc));
         }
       else if (opt.verbose)
         {
-          snprintf (xname, sizeof xname, "[fd %d]", out_fd);
+          snprintf (xname, sizeof xname, "[fd %d]", FD_DBG (out_fd));
           log_info (_("writing to '%s'\n"), xname);
         }
     }
