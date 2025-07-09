@@ -1,0 +1,42 @@
+Description: Add keyboxd systemd support
+Author: NIIBE Yutaka <gniibe@fsij.org>
+Date: Tue Aug 22 15:20:54 2023 +0900
+Forwarded: not-needed
+Last-Update: 2023-08-22
+
+--- gnupg2-2.4.7.orig/doc/Makefile.am
++++ gnupg2-2.4.7/doc/Makefile.am
+@@ -33,6 +33,8 @@ examples = examples/README examples/scd-
+ 	   examples/systemd-user/gpg-agent-ssh.socket 			\
+ 	   examples/systemd-user/gpg-agent-browser.socket		\
+ 	   examples/systemd-user/gpg-agent-extra.socket 		\
++	   examples/systemd-user/keyboxd.service			\
++	   examples/systemd-user/keyboxd.socket				\
+ 	   examples/pwpattern.list
+ 
+ helpfiles = help.txt help.be.txt help.ca.txt help.cs.txt		\
+--- /dev/null
++++ gnupg2-2.4.7/doc/examples/systemd-user/keyboxd.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=GnuPG public key management service
++Documentation=man:keyboxd(8)
++Requires=keyboxd.socket
++
++[Service]
++ExecStart=/usr/lib/gnupg/keyboxd --supervised
++ExecReload=/usr/bin/gpgconf --reload keyboxd
+--- /dev/null
++++ gnupg2-2.4.7/doc/examples/systemd-user/keyboxd.socket
+@@ -0,0 +1,11 @@
++[Unit]
++Description=GnuPG public key management service
++Documentation=man:keyboxd(8)
++
++[Socket]
++ListenStream=%t/gnupg/S.keyboxd
++SocketMode=0600
++DirectoryMode=0700
++
++[Install]
++WantedBy=sockets.target

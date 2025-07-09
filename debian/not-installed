@@ -1,0 +1,4 @@
+usr/bin/gpg-authcode-sign.sh
+usr/bin/gpgscm
+usr/share/gnupg/sks-keyservers.netCA.pem
+usr/share/man/man1/symcryptrun.1

@@ -1,0 +1,53 @@
+From: Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+Date: Sun, 25 Dec 2022 13:14:50 +0100
+Subject: Use hkps://keys.openpgp.org as the default keyserver
+
+Upstream's choice of default keyserver is not federated with other
+keyservers, is subject to flooding attacks, does no e-mail
+verification, and is intermittently unreachable.
+
+keys.openpgp.org is also not federated with other keyservers, but
+avoids the other drawbacks.
+
+Upstream intends to ship no keyserver default in the future, so it is
+not worth trying to convince them to choose a better default.
+
+Forwarded: not-needed
+Signed-off-by: Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+---
+ configure.ac     | 2 +-
+ doc/dirmngr.texi | 6 +++++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 42ef43b..1eaf47b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1940,7 +1940,7 @@ AC_DEFINE_UNQUOTED(TPM2DAEMON_SOCK_NAME, "S.tpm2daemon",
+ AC_DEFINE_UNQUOTED(DIRMNGR_SOCK_NAME, "S.dirmngr",
+                    [The name of the dirmngr socket])
+ AC_DEFINE_UNQUOTED(DIRMNGR_DEFAULT_KEYSERVER,
+-                   "hkps://keyserver.ubuntu.com",
++                   "hkps://keys.openpgp.org",
+       [The default keyserver for dirmngr to use, if none is explicitly given])
+ 
+ AC_DEFINE_UNQUOTED(GPGEXT_GPG, "gpg", [The standard binary file suffix])
+diff --git a/doc/dirmngr.texi b/doc/dirmngr.texi
+index 6dd2a46..998a65c 100644
+--- a/doc/dirmngr.texi
++++ b/doc/dirmngr.texi
+@@ -345,9 +345,13 @@ whether Tor is locally running or not.  The check for a running Tor is
+ done for each new connection.
+ 
+ If no keyserver is explicitly configured, dirmngr will use the
+-built-in default of @code{https://keyserver.ubuntu.com}.  To avoid the
++built-in default of @code{hkps://keys.openpgp.org}.  To avoid the
+ use of a default keyserver the value @code{none} can be used.
+ 
++Note that the above default is a Debian-specific choice.  Upstream
++GnuPG prefers @code{https://keyserver.ubuntu.com}.  See
++/usr/share/doc/gpgconf/NEWS.Debian.gz for more details.
++
+ Windows users with a keyserver running on their Active Directory
+ may use the short form @code{ldap:///} for @var{name} to access this directory.
+ 

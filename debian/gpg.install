@@ -1,0 +1,2 @@
+debian/tmp/usr/bin/gpg
+debian/tmp/usr/lib/gnupg/keyboxd

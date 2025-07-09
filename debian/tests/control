@@ -1,0 +1,36 @@
+Tests:
+ gpgv-win32,
+Depends:
+ gnupg,
+ gpgv,
+ gpgv-win32,
+ wine32,
+Restrictions:
+ allow-stderr,
+Architecture: i386
+
+Tests:
+ simple-tests,
+Depends:
+ gnupg,
+ gpgv,
+Restrictions:
+ allow-stderr,
+
+Tests:
+ migration,
+Depends:
+ debian-archive-keyring,
+ gnupg-utils,
+ gnupg1,
+ gpg,
+Restrictions:
+ allow-stderr,
+
+tests:
+ emacs-epg-message-mode,
+Depends:
+ coreutils,
+ emacs-nox,
+ findutils,
+ gnupg,

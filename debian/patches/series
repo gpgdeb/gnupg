@@ -1,0 +1,6 @@
+debian-packaging/avoid-beta-warning.patch
+debian-packaging/avoid-regenerating-defsincdate-use-shipped-file.patch
+dirmngr-idling/dirmngr-hkp-Avoid-potential-race-condition-when-some.patch
+dirmngr-idling/dirmngr-Avoid-automatically-checking-upstream-swdb.patch
+debian-packaging/Build-regexp-against-debian-s-unicode-data-package.patch
+debian-packaging/Always-build-common-status-codes.h-and-common-audit-event.patch
