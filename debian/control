@@ -42,7 +42,7 @@ Build-Depends-Indep:
  libz-mingw-w64-dev,
  mingw-w64,
 Homepage: https://www.gnupg.org/
-Vcs-Git: https://github.com/gpgdeb/gnupg.git -b gnupg/stable
+Vcs-Git: https://github.com/gpgdeb/gnupg.git -b gnupg/devel
 Vcs-Browser: https://github.com/gpgdeb/gnupg
 Rules-Requires-Root: no
 
