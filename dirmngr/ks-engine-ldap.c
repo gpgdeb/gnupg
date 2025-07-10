@@ -154,6 +154,9 @@ epoch2ldaptime (time_t stamp)
 #endif
 
 
+/*
+ * Begin LDAP wrappers
+ */
 static void
 my_ldap_value_free (char **vals)
 {
@@ -161,6 +164,66 @@ my_ldap_value_free (char **vals)
     ldap_value_free (vals);
 }
 
+
+/* LDAP wrappers to cope with the stupid use of ULONG instead of int in
+ * the Windows LDAP interface.  rfc1823 alsways uses int and thus
+ * ldap_parse_result should also do this.  */
+#ifdef HAVE_W32_SYSTEM
+static int
+my_ldap_return_with_check (ULONG l_err)
+{
+  if ((int)l_err < 0)
+    {
+      log_error ("oops: LDAP returned a negative error code (0x%lx)\n", l_err);
+      l_err = LDAP_OTHER;
+    }
+  return (int)l_err;
+}
+#endif
+
+static int
+my_ldap_parse_result (LDAP *ld, LDAPMessage *result,
+                      int *errcodep, char **matcheddnp, char **errmsgp,
+                      char ***referralsp, LDAPControl ***serverctrlsp,
+                      int freeit)
+{
+#ifdef HAVE_W32_SYSTEM
+  ULONG l_err;
+  ULONG l_errcode;
+  l_err = ldap_parse_result (ld, result,
+                             errcodep? &l_errcode : NULL,
+                             matcheddnp, errmsgp,
+                             referralsp, serverctrlsp, freeit);
+  if (errcodep)
+    *errcodep = l_errcode;
+  return my_ldap_return_with_check (l_err);
+#else
+  return ldap_parse_result (ld, result, errcodep, matcheddnp, errmsgp,
+                            referralsp, serverctrlsp, freeit);
+#endif
+}
+
+
+static int
+my_ldap_parse_page_control (LDAP *ld, LDAPControl **ctrls,
+                            int *count, struct berval **cookie)
+{
+#ifdef HAVE_W32_SYSTEM
+  ULONG l_err;
+  ULONG l_count;
+  l_err = ldap_parse_page_control (ld, ctrls, count? &l_count: NULL, cookie);
+  if (count)
+    *count = l_count;
+  return my_ldap_return_with_check (l_err);
+#else
+  return ldap_parse_page_control (ld, ctrls, count, cookie);
+#endif
+}
+
+/*
+ * End LDAP wrappers
+ */
+
 
 /* Print a description of supported variables.  */
 void
@@ -1356,10 +1419,11 @@ search_and_parse (ctrl_t ctrl, const char *keyspec,
                   char **attrs, LDAPMessage **r_message)
 {
   gpg_error_t err = 0;
-  int l_err, l_reserr;
+  int l_err;
+  int l_reserr;
+  unsigned int totalcount = 0;
   LDAPControl *srvctrls[2] = { NULL, NULL };
   int count;
-  unsigned int totalcount = 0;
   LDAPControl *pagectrl = NULL;
   LDAPControl **resctrls = NULL;
 
@@ -1399,8 +1463,8 @@ search_and_parse (ctrl_t ctrl, const char *keyspec,
 
   if (ctrl->ks_get_state)
     {
-      l_err = ldap_parse_result (ldap_conn, *r_message, &l_reserr,
-                                 NULL, NULL, NULL, &resctrls, 0);
+      l_err = my_ldap_parse_result (ldap_conn, *r_message, &l_reserr,
+                                    NULL, NULL, NULL, &resctrls, 0);
       if (l_err)
         {
           err = ldap_err_to_gpg_err (l_err);
@@ -1414,9 +1478,9 @@ search_and_parse (ctrl_t ctrl, const char *keyspec,
           ber_bvfree (ctrl->ks_get_state->pagecookie);
           ctrl->ks_get_state->pagecookie = NULL;
         }
-      l_err = ldap_parse_page_control (ldap_conn, resctrls,
-                                       &totalcount,
-                                       &ctrl->ks_get_state->pagecookie);
+      l_err = my_ldap_parse_page_control (ldap_conn, resctrls,
+                                          &totalcount,
+                                          &ctrl->ks_get_state->pagecookie);
       if (l_err)
         {
           err = ldap_err_to_gpg_err (l_err);

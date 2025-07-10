@@ -227,7 +227,6 @@ int openpgp_oidbuf_is_cv25519 (const void *buf, size_t len);
 int openpgp_oid_is_cv25519 (gcry_mpi_t a);
 int openpgp_oid_is_cv448 (gcry_mpi_t a);
 int openpgp_oid_is_ed448 (gcry_mpi_t a);
-enum gcry_kem_algos openpgp_oid_to_kem_algo (const char *oidname);
 const char *openpgp_curve_to_oid (const char *name,
                                   unsigned int *r_nbits, int *r_algo,
                                   int selector);
@@ -323,6 +322,28 @@ gpg_error_t gnupg_kem_combiner  (void *kek, size_t kek_len,
                                  const void *mlkem_ss, size_t mlkem_ss_len,
                                  const void *mlkem_ct, size_t mlkem_ct_len,
                                  const void *fixedinfo, size_t fixedinfo_len);
+
+/* ECC parameters for KEM encryption/decryption.  */
+struct gnupg_ecc_params
+{
+  const char *curve;      /* Canonical name of the curve.  */
+  size_t pubkey_len;      /* Pubkey length in the SEXP representation.  */
+  size_t scalar_len;
+  size_t point_len;
+  int hash_algo;          /* Hash algo when it's used for composite KEM.  */
+  int kem_algo;
+  int scalar_reverse;     /* Byte-oder is reverse.  */
+  int may_have_prefix;    /* Point representation may have prefix.  */
+  int is_weierstrauss;    /* True if it is Weierstrass curve.  */
+};
+
+const struct gnupg_ecc_params *gnupg_get_ecc_params (const char *curve);
+
+/* Maximum buffer sizes required for ECC KEM.  */
+#define ECC_SCALAR_LEN_MAX 66
+#define ECC_POINT_LEN_MAX (1+2*ECC_SCALAR_LEN_MAX)
+#define ECC_HASH_LEN_MAX 64
+
 
 /*-- miscellaneous.c --*/
 
