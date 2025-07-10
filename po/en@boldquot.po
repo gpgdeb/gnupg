@@ -30,10 +30,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU gnupg 2.5.8\n"
+"Project-Id-Version: GNU gnupg 2.5.9\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-06-20 16:40+0200\n"
-"PO-Revision-Date: 2025-06-20 16:40+0200\n"
+"POT-Creation-Date: 2025-07-10 16:18+0200\n"
+"PO-Revision-Date: 2025-07-10 16:18+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: en\n"
@@ -252,7 +252,7 @@ msgid "ssh keys greater than %d bits are not supported\n"
 msgstr "ssh keys greater than %d bits are not supported\n"
 
 #: agent/command-ssh.c:890 common/dotlock.c:991 common/dotlock.c:994
-#: g10/card-util.c:1004 g10/export.c:1553 g10/gpg.c:1497 g10/keygen.c:6388
+#: g10/card-util.c:1004 g10/export.c:1553 g10/gpg.c:1497 g10/keygen.c:6391
 #: g10/keyring.c:1329 g10/keyring.c:1642 g10/openfile.c:293 g10/photoid.c:638
 #: g10/photoid.c:656 g10/sign.c:1116 g10/sign.c:1481 g10/tdbio.c:739
 #: tools/gpg-card.c:499
@@ -264,7 +264,7 @@ msgstr "can't create '%s': %s\n"
 #: g10/dearmor.c:59 g10/dearmor.c:110 g10/decrypt.c:74 g10/decrypt.c:175
 #: g10/decrypt.c:186 g10/decrypt.c:199 g10/encrypt.c:487 g10/encrypt.c:898
 #: g10/gpg.c:1498 g10/import.c:386 g10/import.c:573 g10/import.c:808
-#: g10/keygen.c:5241 g10/keyring.c:1668 g10/openfile.c:197 g10/openfile.c:211
+#: g10/keygen.c:5244 g10/keyring.c:1668 g10/openfile.c:197 g10/openfile.c:211
 #: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1096 g10/sign.c:1340
 #: g10/sign.c:1462 g10/sign.c:1636 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
@@ -272,7 +272,7 @@ msgstr "can't create '%s': %s\n"
 #: sm/gpgsm.c:2085 sm/gpgsm.c:2113 sm/gpgsm.c:2465 sm/gpgsm.c:2504
 #: sm/keylist.c:1857 sm/qualified.c:65 dirmngr/certcache.c:421
 #: dirmngr/certcache.c:503 dirmngr/certcache.c:505 dirmngr/crlcache.c:2674
-#: dirmngr/dirmngr.c:1893 tools/gpg-card.c:428
+#: dirmngr/dirmngr.c:1905 tools/gpg-card.c:428
 #, c-format
 msgid "can't open '%s': %s\n"
 msgstr "can't open '%s': %s\n"
@@ -442,58 +442,58 @@ msgstr "Please enter the passphrase to%0Aprotect your new key"
 msgid "Please enter the new passphrase"
 msgstr "Please enter the new passphrase"
 
-#: agent/gpg-agent.c:168 scd/scdaemon.c:117 dirmngr/dirmngr.c:189
+#: agent/gpg-agent.c:168 scd/scdaemon.c:117 dirmngr/dirmngr.c:190
 msgid "Options used for startup"
 msgstr "Options used for startup"
 
-#: agent/gpg-agent.c:170 scd/scdaemon.c:122 dirmngr/dirmngr.c:178
+#: agent/gpg-agent.c:170 scd/scdaemon.c:122 dirmngr/dirmngr.c:179
 msgid "run in daemon mode (background)"
 msgstr "run in daemon mode (background)"
 
-#: agent/gpg-agent.c:171 scd/scdaemon.c:119 dirmngr/dirmngr.c:177
+#: agent/gpg-agent.c:171 scd/scdaemon.c:119 dirmngr/dirmngr.c:178
 msgid "run in server mode (foreground)"
 msgstr "run in server mode (foreground)"
 
-#: agent/gpg-agent.c:175 scd/scdaemon.c:123 dirmngr/dirmngr.c:191
+#: agent/gpg-agent.c:175 scd/scdaemon.c:123 dirmngr/dirmngr.c:192
 msgid "do not detach from the console"
 msgstr "do not detach from the console"
 
-#: agent/gpg-agent.c:176 scd/scdaemon.c:124 dirmngr/dirmngr.c:192
+#: agent/gpg-agent.c:176 scd/scdaemon.c:124 dirmngr/dirmngr.c:193
 msgid "sh-style command output"
 msgstr "sh-style command output"
 
-#: agent/gpg-agent.c:177 scd/scdaemon.c:125 dirmngr/dirmngr.c:193
+#: agent/gpg-agent.c:177 scd/scdaemon.c:125 dirmngr/dirmngr.c:194
 msgid "csh-style command output"
 msgstr "csh-style command output"
 
 #: agent/gpg-agent.c:186 g10/gpg.c:624 scd/scdaemon.c:127 sm/gpgsm.c:445
-#: dirmngr/dirmngr.c:196
+#: dirmngr/dirmngr.c:197
 msgid "|FILE|read options from FILE"
 msgstr "|FILE|read options from FILE"
 
 #: agent/gpg-agent.c:190 g10/gpg.c:609 scd/scdaemon.c:131 sm/gpgsm.c:280
-#: dirmngr/dirmngr.c:200
+#: dirmngr/dirmngr.c:201
 msgid "Options controlling the diagnostic output"
 msgstr "Options controlling the diagnostic output"
 
 #: agent/gpg-agent.c:192 g10/gpg.c:611 g10/gpgv.c:79 kbx/kbxutil.c:88
 #: scd/scdaemon.c:133 sm/gpgsm.c:282 dirmngr/dirmngr-client.c:69
-#: dirmngr/dirmngr.c:202 tools/gpg-connect-agent.c:85 tools/gpgconf.c:123
+#: dirmngr/dirmngr.c:203 tools/gpg-connect-agent.c:85 tools/gpgconf.c:123
 msgid "verbose"
 msgstr "verbose"
 
 #: agent/gpg-agent.c:193 g10/gpg.c:613 g10/gpgv.c:80 kbx/kbxutil.c:89
 #: scd/scdaemon.c:134 sm/gpgsm.c:284 dirmngr/dirmngr-client.c:70
-#: dirmngr/dirmngr.c:203
+#: dirmngr/dirmngr.c:204
 msgid "be somewhat more quiet"
 msgstr "be somewhat more quiet"
 
-#: agent/gpg-agent.c:201 g10/gpg.c:628 sm/gpgsm.c:298 dirmngr/dirmngr.c:213
+#: agent/gpg-agent.c:201 g10/gpg.c:628 sm/gpgsm.c:298 dirmngr/dirmngr.c:214
 msgid "|FILE|write server mode logs to FILE"
 msgstr "|FILE|write server mode logs to FILE"
 
 #: agent/gpg-agent.c:205 g10/gpg.c:634 scd/scdaemon.c:149 sm/gpgsm.c:306
-#: dirmngr/dirmngr.c:217
+#: dirmngr/dirmngr.c:218
 msgid "Options controlling the configuration"
 msgstr "Options controlling the configuration"
 
@@ -634,7 +634,7 @@ msgstr "allow passphrase to be prompted through Emacs"
 #. reporting address without breaking the translations.
 #: agent/gpg-agent.c:584 agent/preset-passphrase.c:102 agent/protect-tool.c:153
 #: g10/gpg.c:1196 g10/gpgv.c:152 kbx/kbxutil.c:117 scd/scdaemon.c:319
-#: sm/gpgsm.c:650 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:471
+#: sm/gpgsm.c:650 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:473
 #: tools/gpg-connect-agent.c:222 tools/gpgconf.c:170
 #: tools/gpg-check-pattern.c:143
 msgid "Please report bugs to <@EMAIL@>.\n"
@@ -653,7 +653,7 @@ msgstr ""
 "Secret key management for @GNUPG@\n"
 
 #: agent/gpg-agent.c:640 g10/gpg.c:1394 scd/scdaemon.c:391 sm/gpgsm.c:798
-#: dirmngr/dirmngr.c:555
+#: dirmngr/dirmngr.c:557
 #, c-format
 msgid "invalid debug-level '%s' given\n"
 msgstr "invalid debug-level ‘[1m%s[0m’ given\n"
@@ -665,29 +665,29 @@ msgid "selected digest algorithm is invalid\n"
 msgstr "selected digest algorithm is invalid\n"
 
 #: agent/gpg-agent.c:1243 agent/gpg-agent.c:2096 common/comopt.c:97
-#: g10/gpg.c:2660 scd/scdaemon.c:555 sm/gpgsm.c:1065 dirmngr/dirmngr.c:1151
-#: dirmngr/dirmngr.c:2019
+#: g10/gpg.c:2660 scd/scdaemon.c:555 sm/gpgsm.c:1065 dirmngr/dirmngr.c:1163
+#: dirmngr/dirmngr.c:2031
 #, c-format
 msgid "reading options from '%s'\n"
 msgstr "reading options from ‘[1m%s[0m’\n"
 
 #: agent/gpg-agent.c:1369 g10/gpg.c:4047 scd/scdaemon.c:705 sm/gpgsm.c:1675
-#: dirmngr/dirmngr.c:1273 tools/gpg-connect-agent.c:1332 tools/gpgconf.c:768
+#: dirmngr/dirmngr.c:1285 tools/gpg-connect-agent.c:1332 tools/gpgconf.c:768
 #, c-format
 msgid "Note: '%s' is not considered an option\n"
 msgstr "Note: ‘[1m%s[0m’ is not considered an option\n"
 
-#: agent/gpg-agent.c:1420 g10/misc.c:1203 dirmngr/dirmngr.c:1357
+#: agent/gpg-agent.c:1420 g10/misc.c:1203 dirmngr/dirmngr.c:1369
 #, c-format
 msgid "WARNING: \"%s\" is a deprecated option\n"
 msgstr "WARNING: “[1m%s[0m” is a deprecated option\n"
 
-#: agent/gpg-agent.c:2255 scd/scdaemon.c:1158 dirmngr/dirmngr.c:1429
+#: agent/gpg-agent.c:2255 scd/scdaemon.c:1158 dirmngr/dirmngr.c:1441
 #, c-format
 msgid "can't create socket: %s\n"
 msgstr "can't create socket: %s\n"
 
-#: agent/gpg-agent.c:2272 scd/scdaemon.c:1171 dirmngr/dirmngr.c:1442
+#: agent/gpg-agent.c:2272 scd/scdaemon.c:1171 dirmngr/dirmngr.c:1454
 #, c-format
 msgid "socket name '%s' is too long\n"
 msgstr "socket name ‘[1m%s[0m’ is too long\n"
@@ -707,23 +707,23 @@ msgstr "a gpg-agent is already running - not starting a new one\n"
 msgid "socket file removed - retrying binding\n"
 msgstr "socket file removed - retrying binding\n"
 
-#: agent/gpg-agent.c:2329 scd/scdaemon.c:1195 dirmngr/dirmngr.c:1478
+#: agent/gpg-agent.c:2329 scd/scdaemon.c:1195 dirmngr/dirmngr.c:1490
 #, c-format
 msgid "error getting nonce for the socket\n"
 msgstr "error getting nonce for the socket\n"
 
-#: agent/gpg-agent.c:2336 scd/scdaemon.c:1200 dirmngr/dirmngr.c:1482
+#: agent/gpg-agent.c:2336 scd/scdaemon.c:1200 dirmngr/dirmngr.c:1494
 #, c-format
 msgid "error binding socket to '%s': %s\n"
 msgstr "error binding socket to '%s': %s\n"
 
 #: agent/gpg-agent.c:2346 agent/gpg-agent.c:2386 agent/gpg-agent.c:2395
-#: scd/scdaemon.c:1207 dirmngr/dirmngr.c:1491
+#: scd/scdaemon.c:1207 dirmngr/dirmngr.c:1503
 #, c-format
 msgid "can't set permissions of '%s': %s\n"
 msgstr "can't set permissions of '%s': %s\n"
 
-#: agent/gpg-agent.c:2360 scd/scdaemon.c:1219 dirmngr/dirmngr.c:1503
+#: agent/gpg-agent.c:2360 scd/scdaemon.c:1219 dirmngr/dirmngr.c:1515
 #, c-format
 msgid "listening on socket '%s'\n"
 msgstr "listening on socket ‘[1m%s[0m’\n"
@@ -750,7 +750,7 @@ msgstr "stat() failed for '%s': %s\n"
 msgid "can't use '%s' as home directory\n"
 msgstr "can't use ‘[1m%s[0m’ as home directory\n"
 
-#: agent/gpg-agent.c:2557 scd/scdaemon.c:1235 dirmngr/dirmngr.c:2250
+#: agent/gpg-agent.c:2557 scd/scdaemon.c:1235 dirmngr/dirmngr.c:2262
 #, c-format
 msgid "error reading nonce on fd %d: %s\n"
 msgstr "error reading nonce on fd %d: %s\n"
@@ -775,7 +775,7 @@ msgstr "ssh handler 0x%lx for fd %d started\n"
 msgid "ssh handler 0x%lx for fd %d terminated\n"
 msgstr "ssh handler 0x%lx for fd %d terminated\n"
 
-#: agent/gpg-agent.c:3217 scd/scdaemon.c:1406 dirmngr/dirmngr.c:2464
+#: agent/gpg-agent.c:3217 scd/scdaemon.c:1406 dirmngr/dirmngr.c:2476
 #, c-format
 msgid "npth_pselect failed: %s - waiting 1s\n"
 msgstr "npth_pselect failed: %s - waiting 1s\n"
@@ -812,7 +812,7 @@ msgstr ""
 "Password cache maintenance\n"
 
 #: agent/protect-tool.c:106 g10/gpg.c:475 kbx/kbxutil.c:71 sm/gpgsm.c:230
-#: dirmngr/dirmngr.c:175 tools/gpgconf.c:88
+#: dirmngr/dirmngr.c:176 tools/gpgconf.c:88
 msgid ""
 "@Commands:\n"
 " "
@@ -1036,7 +1036,7 @@ msgid "DSA requires the hash length to be a multiple of 8 bits\n"
 msgstr "DSA requires the hash length to be a multiple of 8 bits\n"
 
 #: agent/pksign.c:185 sm/certcheck.c:103 dirmngr/crlcache.c:1819
-#: dirmngr/ocsp.c:458 dirmngr/validate.c:1141
+#: dirmngr/ocsp.c:461 dirmngr/validate.c:1141
 #, c-format
 msgid "%s key uses an unsafe (%u bit) hash\n"
 msgstr "%s key uses an unsafe (%u bit) hash\n"
@@ -1520,8 +1520,8 @@ msgstr "lock ‘[1m%s[0m’ not made: %s\n"
 msgid "waiting for lock %s...\n"
 msgstr "waiting for lock %s...\n"
 
-#: common/init.c:174 sm/gpgsm.c:946 dirmngr/dirmngr.c:1057
-#: dirmngr/dirmngr.c:1066
+#: common/init.c:174 sm/gpgsm.c:946 dirmngr/dirmngr.c:1069
+#: dirmngr/dirmngr.c:1078
 #, c-format
 msgid "%s is too old (need %s, have %s)\n"
 msgstr "%s is too old (need %s, have %s)\n"
@@ -1757,7 +1757,7 @@ msgid "OpenPGP card no. %s detected\n"
 msgstr "OpenPGP card no. %s detected\n"
 
 #: g10/card-util.c:103 g10/card-util.c:2372 g10/delkey.c:164 g10/keyedit.c:1561
-#: g10/keygen.c:5711 g10/revoke.c:214 g10/revoke.c:639
+#: g10/keygen.c:5714 g10/revoke.c:214 g10/revoke.c:639
 #, c-format
 msgid "can't do this in batch mode\n"
 msgstr "can't do this in batch mode\n"
@@ -1774,8 +1774,8 @@ msgstr "Reset Code not or not anymore available\n"
 
 #: g10/card-util.c:146 g10/card-util.c:1501 g10/card-util.c:1759
 #: g10/card-util.c:1853 g10/keyedit.c:491 g10/keyedit.c:512 g10/keyedit.c:526
-#: g10/keygen.c:2488 g10/keygen.c:2675 g10/keygen.c:2916 g10/keygen.c:3233
-#: g10/keygen.c:3334 sm/certreqgen-ui.c:166 sm/certreqgen-ui.c:292
+#: g10/keygen.c:2488 g10/keygen.c:2675 g10/keygen.c:2916 g10/keygen.c:3235
+#: g10/keygen.c:3337 sm/certreqgen-ui.c:166 sm/certreqgen-ui.c:292
 #: sm/certreqgen-ui.c:326 tools/gpg-card.c:530
 msgid "Your selection? "
 msgstr "Your selection? "
@@ -1850,7 +1850,7 @@ msgstr "URL to retrieve public key: "
 #: g10/encrypt.c:1049 g10/encrypt.c:1146 g10/decrypt-data.c:522
 #: g10/import.c:421 g10/import.c:771 g10/import.c:830 dirmngr/crlcache.c:662
 #: dirmngr/crlcache.c:667 dirmngr/crlcache.c:921 dirmngr/crlcache.c:927
-#: dirmngr/dirmngr.c:1829 tools/gpgconf.c:529 tools/gpgconf.c:577
+#: dirmngr/dirmngr.c:1841 tools/gpgconf.c:529 tools/gpgconf.c:577
 #: tools/gpg-card.c:446
 #, c-format
 msgid "error reading '%s': %s\n"
@@ -1912,7 +1912,7 @@ msgstr "key operation not possible: %s\n"
 msgid "not an OpenPGP card"
 msgstr "not an OpenPGP card"
 
-#: g10/card-util.c:1325 g10/keygen.c:5731 g10/keygen.c:7090
+#: g10/card-util.c:1325 g10/keygen.c:5734 g10/keygen.c:7093
 #, c-format
 msgid "error getting current key info: %s\n"
 msgstr "error getting current key info: %s\n"
@@ -1980,7 +1980,7 @@ msgstr "   (%d) ECC\n"
 
 #: g10/card-util.c:1511 g10/card-util.c:1771 g10/card-util.c:1873
 #: g10/keyedit.c:1013 g10/keygen.c:2520 g10/keygen.c:2548 g10/keygen.c:2682
-#: g10/keygen.c:2968 g10/keygen.c:3261 g10/keygen.c:3354 g10/revoke.c:840
+#: g10/keygen.c:2968 g10/keygen.c:3264 g10/keygen.c:3357 g10/revoke.c:840
 msgid "Invalid selection.\n"
 msgstr "Invalid selection.\n"
 
@@ -2779,7 +2779,7 @@ msgstr "|USER-ID|use USER-ID to sign or decrypt"
 msgid "Options for unattended use"
 msgstr "Options for unattended use"
 
-#: g10/gpg.c:939 sm/gpgsm.c:443 dirmngr/dirmngr.c:297
+#: g10/gpg.c:939 sm/gpgsm.c:443 dirmngr/dirmngr.c:299
 msgid "Other options"
 msgstr "Other options"
 
@@ -3188,7 +3188,7 @@ msgstr "%s not allowed with %s!\n"
 msgid "%s makes no sense with %s!\n"
 msgstr "%s makes no sense with %s!\n"
 
-#: g10/gpg.c:4034 sm/gpgsm.c:1662 dirmngr/dirmngr.c:1288
+#: g10/gpg.c:4034 sm/gpgsm.c:1662 dirmngr/dirmngr.c:1300
 #, c-format
 msgid "WARNING: running with faked system time: "
 msgstr "WARNING: running with faked system time: "
@@ -3665,7 +3665,7 @@ msgstr "key %s: no valid user IDs\n"
 msgid "this may be caused by a missing self-signature\n"
 msgstr "this may be caused by a missing self-signature\n"
 
-#: g10/import.c:2234 g10/import.c:3603
+#: g10/import.c:2234 g10/import.c:3606
 #, c-format
 msgid "key %s: public key not found: %s\n"
 msgstr "key %s: public key not found: %s\n"
@@ -3680,7 +3680,7 @@ msgstr "key %s: new key - skipped\n"
 msgid "no writable keyring found: %s\n"
 msgstr "no writable keyring found: %s\n"
 
-#: g10/import.c:2285 g10/import.c:2387 g10/import.c:3678
+#: g10/import.c:2285 g10/import.c:2387 g10/import.c:3681
 #, c-format
 msgid "error writing keyring '%s': %s\n"
 msgstr "error writing keyring '%s': %s\n"
@@ -3818,152 +3818,152 @@ msgstr "Key is no longer used"
 msgid "User ID is no longer valid"
 msgstr "User ID is no longer valid"
 
-#: g10/import.c:3550 g10/keylist.c:1372 g10/keylist.c:1556 g10/pkclist.c:87
+#: g10/import.c:3553 g10/keylist.c:1372 g10/keylist.c:1556 g10/pkclist.c:87
 #, c-format
 msgid "reason for revocation: "
 msgstr "reason for revocation: "
 
-#: g10/import.c:3596
+#: g10/import.c:3599
 #, c-format
 msgid "key %s: no public key - can't apply revocation certificate\n"
 msgstr "key %s: no public key - can't apply revocation certificate\n"
 
-#: g10/import.c:3625
+#: g10/import.c:3628
 #, c-format
 msgid "key %s: can't locate original keyblock: %s\n"
 msgstr "key %s: can't locate original keyblock: %s\n"
 
-#: g10/import.c:3632
+#: g10/import.c:3635
 #, c-format
 msgid "key %s: can't read original keyblock: %s\n"
 msgstr "key %s: can't read original keyblock: %s\n"
 
-#: g10/import.c:3652
+#: g10/import.c:3655
 #, c-format
 msgid "key %s: invalid revocation certificate: %s - rejected\n"
 msgstr "key %s: invalid revocation certificate: %s - rejected\n"
 
-#: g10/import.c:3687
+#: g10/import.c:3690
 #, c-format
 msgid "key %s: \"%s\" revocation certificate imported\n"
 msgstr "key %s: “[1m%s[0m” revocation certificate imported\n"
 
-#: g10/import.c:3773
+#: g10/import.c:3776
 #, c-format
 msgid "key %s: no user ID for signature\n"
 msgstr "key %s: no user ID for signature\n"
 
-#: g10/import.c:3790
+#: g10/import.c:3793
 #, c-format
 msgid "key %s: unsupported public key algorithm on user ID \"%s\"\n"
 msgstr "key %s: unsupported public key algorithm on user ID “[1m%s[0m”\n"
 
-#: g10/import.c:3792
+#: g10/import.c:3795
 #, c-format
 msgid "key %s: invalid self-signature on user ID \"%s\"\n"
 msgstr "key %s: invalid self-signature on user ID “[1m%s[0m”\n"
 
-#: g10/import.c:3809 g10/import.c:3837 g10/import.c:3893
+#: g10/import.c:3812 g10/import.c:3840 g10/import.c:3896
 #, c-format
 msgid "key %s: unsupported public key algorithm\n"
 msgstr "key %s: unsupported public key algorithm\n"
 
-#: g10/import.c:3810
+#: g10/import.c:3813
 #, c-format
 msgid "key %s: invalid direct key signature\n"
 msgstr "key %s: invalid direct key signature\n"
 
-#: g10/import.c:3824
+#: g10/import.c:3827
 #, c-format
 msgid "key %s: no subkey for key binding\n"
 msgstr "key %s: no subkey for key binding\n"
 
-#: g10/import.c:3839
+#: g10/import.c:3842
 #, c-format
 msgid "key %s: invalid subkey binding\n"
 msgstr "key %s: invalid subkey binding\n"
 
-#: g10/import.c:3858
+#: g10/import.c:3861
 #, c-format
 msgid "key %s: removed multiple subkey binding\n"
 msgstr "key %s: removed multiple subkey binding\n"
 
-#: g10/import.c:3882
+#: g10/import.c:3885
 #, c-format
 msgid "key %s: no subkey for key revocation\n"
 msgstr "key %s: no subkey for key revocation\n"
 
-#: g10/import.c:3895
+#: g10/import.c:3898
 #, c-format
 msgid "key %s: invalid subkey revocation\n"
 msgstr "key %s: invalid subkey revocation\n"
 
-#: g10/import.c:3910
+#: g10/import.c:3913
 #, c-format
 msgid "key %s: removed multiple subkey revocation\n"
 msgstr "key %s: removed multiple subkey revocation\n"
 
-#: g10/import.c:3957
+#: g10/import.c:3960
 #, c-format
 msgid "key %s: skipped user ID \"%s\"\n"
 msgstr "key %s: skipped user ID “[1m%s[0m”\n"
 
-#: g10/import.c:3984
+#: g10/import.c:3987
 #, c-format
 msgid "key %s: skipped subkey\n"
 msgstr "key %s: skipped subkey\n"
 
-#: g10/import.c:4016
+#: g10/import.c:4019
 #, c-format
 msgid "key %s: non exportable signature (class 0x%02X) - skipped\n"
 msgstr "key %s: non exportable signature (class 0x%02X) - skipped\n"
 
-#: g10/import.c:4027
+#: g10/import.c:4030
 #, c-format
 msgid "key %s: revocation certificate at wrong place - skipped\n"
 msgstr "key %s: revocation certificate at wrong place - skipped\n"
 
-#: g10/import.c:4055
+#: g10/import.c:4058
 #, c-format
 msgid "key %s: invalid revocation certificate: %s - skipped\n"
 msgstr "key %s: invalid revocation certificate: %s - skipped\n"
 
-#: g10/import.c:4079
+#: g10/import.c:4082
 #, c-format
 msgid "key %s: subkey signature in wrong place - skipped\n"
 msgstr "key %s: subkey signature in wrong place - skipped\n"
 
-#: g10/import.c:4087
+#: g10/import.c:4090
 #, c-format
 msgid "key %s: unexpected signature class (0x%02X) - skipped\n"
 msgstr "key %s: unexpected signature class (0x%02X) - skipped\n"
 
-#: g10/import.c:4260
+#: g10/import.c:4263
 #, c-format
 msgid "key %s: duplicated user ID detected - merged\n"
 msgstr "key %s: duplicated user ID detected - merged\n"
 
-#: g10/import.c:4367
+#: g10/import.c:4370
 #, c-format
 msgid "key %s: duplicated subkeys detected - merged\n"
 msgstr "key %s: duplicated subkeys detected - merged\n"
 
-#: g10/import.c:4432
+#: g10/import.c:4435
 #, c-format
 msgid "WARNING: key %s may be revoked: fetching revocation key %s\n"
 msgstr "WARNING: key %s may be revoked: fetching revocation key %s\n"
 
-#: g10/import.c:4448
+#: g10/import.c:4451
 #, c-format
 msgid "WARNING: key %s may be revoked: revocation key %s not present.\n"
 msgstr "WARNING: key %s may be revoked: revocation key %s not present.\n"
 
-#: g10/import.c:4514
+#: g10/import.c:4517
 #, c-format
 msgid "key %s: \"%s\" revocation certificate added\n"
 msgstr "key %s: “[1m%s[0m” revocation certificate added\n"
 
-#: g10/import.c:4552
+#: g10/import.c:4555
 #, c-format
 msgid "key %s: direct key signature added\n"
 msgstr "key %s: direct key signature added\n"
@@ -4659,7 +4659,7 @@ msgstr "setting the primary user ID failed: %s\n"
 msgid "setting the ownertrust to '%s' failed: %s\n"
 msgstr "setting the ownertrust to ‘[1m%s[0m’ failed: %s\n"
 
-#: g10/keyedit.c:2983 g10/keyedit.c:5171 g10/keygen.c:4731 g10/keygen.c:4785
+#: g10/keyedit.c:2983 g10/keyedit.c:5171 g10/keygen.c:4734 g10/keygen.c:4788
 #, c-format
 msgid "\"%s\" is not a fingerprint\n"
 msgstr "“[1m%s[0m” is not a fingerprint\n"
@@ -4791,7 +4791,7 @@ msgstr ""
 "unless you restart the program.\n"
 
 #: g10/keyedit.c:4345 g10/keyedit.c:4812 g10/keyserver.c:358
-#: g10/mainproc.c:2461 g10/tofu.c:1789 g10/trust.c:430 dirmngr/ocsp.c:889
+#: g10/mainproc.c:2461 g10/tofu.c:1789 g10/trust.c:430 dirmngr/ocsp.c:892
 msgid "revoked"
 msgstr "revoked"
 
@@ -4917,7 +4917,7 @@ msgstr "You may not add a designated revoker to a PGP 2.x-style key.\n"
 msgid "Enter the user ID of the designated revoker: "
 msgstr "Enter the user ID of the designated revoker: "
 
-#: g10/keyedit.c:4956 g10/keygen.c:4746
+#: g10/keyedit.c:4956 g10/keygen.c:4749
 #, c-format
 msgid "cannot appoint a PGP 2.x style key as a designated revoker\n"
 msgstr "cannot appoint a PGP 2.x style key as a designated revoker\n"
@@ -5305,7 +5305,7 @@ msgstr "   (%d) RSA (set your own capabilities)%s\n"
 msgid "   (%d) ECC (sign and encrypt)%s\n"
 msgstr "   (%d) ECC (sign and encrypt)%s\n"
 
-#: g10/keygen.c:2650 g10/keygen.c:3226 g10/keygen.c:3329
+#: g10/keygen.c:2650 g10/keygen.c:3228 g10/keygen.c:3332
 msgid " *default*"
 msgstr " *default*"
 
@@ -5357,13 +5357,13 @@ msgstr "No key with this keygrip\n"
 msgid "Not a valid keygrip (expecting 40 hex digits)\n"
 msgstr "Not a valid keygrip (expecting 40 hex digits)\n"
 
-#: g10/keygen.c:2817 g10/keygen.c:2827 g10/keygen.c:4154 g10/keygen.c:4165
+#: g10/keygen.c:2817 g10/keygen.c:2827 g10/keygen.c:4157 g10/keygen.c:4168
 #: sm/certreqgen-ui.c:231 sm/certreqgen-ui.c:240
 #, c-format
 msgid "error reading the card: %s\n"
 msgstr "error reading the card: %s\n"
 
-#: g10/keygen.c:2821 g10/keygen.c:4158 sm/certreqgen-ui.c:234
+#: g10/keygen.c:2821 g10/keygen.c:4161 sm/certreqgen-ui.c:234
 #, c-format
 msgid "Serial number of the card: %s\n"
 msgstr "Serial number of the card: %s\n"
@@ -5392,16 +5392,16 @@ msgstr "What keysize do you want for the subkey? (%u) "
 msgid "Requested keysize is %u bits\n"
 msgstr "Requested keysize is %u bits\n"
 
-#: g10/keygen.c:3178
+#: g10/keygen.c:3179
 msgid "Please select which elliptic curve you want:\n"
 msgstr "Please select which elliptic curve you want:\n"
 
-#: g10/keygen.c:3317
+#: g10/keygen.c:3320
 #, c-format
 msgid "Please select the %s variant you want:\n"
 msgstr "Please select the %s variant you want:\n"
 
-#: g10/keygen.c:3468
+#: g10/keygen.c:3471
 msgid ""
 "Please specify how long the key should be valid.\n"
 "         0 = key does not expire\n"
@@ -5417,7 +5417,7 @@ msgstr ""
 "      <n>m = key expires in n months\n"
 "      <n>y = key expires in n years\n"
 
-#: g10/keygen.c:3479
+#: g10/keygen.c:3482
 msgid ""
 "Please specify how long the signature should be valid.\n"
 "         0 = signature does not expire\n"
@@ -5433,38 +5433,38 @@ msgstr ""
 "      <n>m = signature expires in n months\n"
 "      <n>y = signature expires in n years\n"
 
-#: g10/keygen.c:3502
+#: g10/keygen.c:3505
 msgid "Key is valid for? (0) "
 msgstr "Key is valid for? (0) "
 
-#: g10/keygen.c:3507
+#: g10/keygen.c:3510
 #, c-format
 msgid "Signature is valid for? (%s) "
 msgstr "Signature is valid for? (%s) "
 
-#: g10/keygen.c:3523 g10/keygen.c:3548
+#: g10/keygen.c:3526 g10/keygen.c:3551
 msgid "invalid value\n"
 msgstr "invalid value\n"
 
-#: g10/keygen.c:3530
+#: g10/keygen.c:3533
 msgid "Key does not expire at all\n"
 msgstr "Key does not expire at all\n"
 
-#: g10/keygen.c:3531
+#: g10/keygen.c:3534
 msgid "Signature does not expire at all\n"
 msgstr "Signature does not expire at all\n"
 
-#: g10/keygen.c:3536
+#: g10/keygen.c:3539
 #, c-format
 msgid "Key expires at %s\n"
 msgstr "Key expires at %s\n"
 
-#: g10/keygen.c:3537
+#: g10/keygen.c:3540
 #, c-format
 msgid "Signature expires at %s\n"
 msgstr "Signature expires at %s\n"
 
-#: g10/keygen.c:3541
+#: g10/keygen.c:3544
 msgid ""
 "Your system can't display dates beyond 2038.\n"
 "However, it will be correctly handled up to 2106.\n"
@@ -5472,11 +5472,11 @@ msgstr ""
 "Your system can't display dates beyond 2038.\n"
 "However, it will be correctly handled up to 2106.\n"
 
-#: g10/keygen.c:3554
+#: g10/keygen.c:3557
 msgid "Is this correct? (y/N) "
 msgstr "Is this correct? (y/N) "
 
-#: g10/keygen.c:3622
+#: g10/keygen.c:3625
 msgid ""
 "\n"
 "GnuPG needs to construct a user ID to identify your key.\n"
@@ -5490,7 +5490,7 @@ msgstr ""
 #. but you should keep your existing translation.  In case
 #. the new string is not translated this old string will
 #. be used.
-#: g10/keygen.c:3637
+#: g10/keygen.c:3640
 msgid ""
 "\n"
 "You need a user ID to identify your key; the software constructs the user "
@@ -5506,41 +5506,41 @@ msgstr ""
 "    “[1mHeinrich Heine (Der Dichter) <heinrichh@duesseldorf.de>[0m”\n"
 "\n"
 
-#: g10/keygen.c:3656
+#: g10/keygen.c:3659
 msgid "Real name: "
 msgstr "Real name: "
 
-#: g10/keygen.c:3665
+#: g10/keygen.c:3668
 msgid "Invalid character in name\n"
 msgstr "Invalid character in name\n"
 
-#: g10/keygen.c:3666
+#: g10/keygen.c:3669
 #, c-format
 msgid "The characters '%s' and '%s' may not appear in name\n"
 msgstr "The characters ‘[1m%s[0m’ and ‘[1m%s[0m’ may not appear in name\n"
 
-#: g10/keygen.c:3676
+#: g10/keygen.c:3679
 msgid "Email address: "
 msgstr "Email address: "
 
-#: g10/keygen.c:3682
+#: g10/keygen.c:3685
 msgid "Not a valid email address\n"
 msgstr "Not a valid email address\n"
 
-#: g10/keygen.c:3691
+#: g10/keygen.c:3694
 msgid "Comment: "
 msgstr "Comment: "
 
-#: g10/keygen.c:3697
+#: g10/keygen.c:3700
 msgid "Invalid character in comment\n"
 msgstr "Invalid character in comment\n"
 
-#: g10/keygen.c:3733
+#: g10/keygen.c:3736
 #, c-format
 msgid "You are using the '%s' character set.\n"
 msgstr "You are using the ‘[1m%s[0m’ character set.\n"
 
-#: g10/keygen.c:3739
+#: g10/keygen.c:3742
 #, c-format
 msgid ""
 "You selected this USER-ID:\n"
@@ -5551,11 +5551,11 @@ msgstr ""
 "    “[1m%s[0m”\n"
 "\n"
 
-#: g10/keygen.c:3744
+#: g10/keygen.c:3747
 msgid "Please don't put the email address into the real name or the comment\n"
 msgstr "Please don't put the email address into the real name or the comment\n"
 
-#: g10/keygen.c:3752
+#: g10/keygen.c:3755
 msgid "Such a user ID already exists on this key!\n"
 msgstr "Such a user ID already exists on this key!\n"
 
@@ -5570,31 +5570,31 @@ msgstr "Such a user ID already exists on this key!\n"
 #. o = Okay (ready, continue)
 #. q = Quit
 #.
-#: g10/keygen.c:3769
+#: g10/keygen.c:3772
 msgid "NnCcEeOoQq"
 msgstr "NnCcEeOoQq"
 
-#: g10/keygen.c:3779
+#: g10/keygen.c:3782
 msgid "Change (N)ame, (C)omment, (E)mail or (Q)uit? "
 msgstr "Change (N)ame, (C)omment, (E)mail or (Q)uit? "
 
-#: g10/keygen.c:3780
+#: g10/keygen.c:3783
 msgid "Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? "
 msgstr "Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? "
 
-#: g10/keygen.c:3785
+#: g10/keygen.c:3788
 msgid "Change (N)ame, (E)mail, or (Q)uit? "
 msgstr "Change (N)ame, (E)mail, or (Q)uit? "
 
-#: g10/keygen.c:3786
+#: g10/keygen.c:3789
 msgid "Change (N)ame, (E)mail, or (O)kay/(Q)uit? "
 msgstr "Change (N)ame, (E)mail, or (O)kay/(Q)uit? "
 
-#: g10/keygen.c:3805
+#: g10/keygen.c:3808
 msgid "Please correct the error first\n"
 msgstr "Please correct the error first\n"
 
-#: g10/keygen.c:3854
+#: g10/keygen.c:3857
 msgid ""
 "We need to generate a lot of random bytes. It is a good idea to perform\n"
 "some other action (type on the keyboard, move the mouse, utilize the\n"
@@ -5606,18 +5606,18 @@ msgstr ""
 "disks) during the prime generation; this gives the random number\n"
 "generator a better chance to gain enough entropy.\n"
 
-#: g10/keygen.c:4305
+#: g10/keygen.c:4308
 #, c-format
 msgid "WARNING: v4 is specified, but overridden by v5.\n"
 msgstr "WARNING: v4 is specified, but overridden by v5.\n"
 
-#: g10/keygen.c:5509 g10/keygen.c:5583 g10/keygen.c:5601 g10/keygen.c:5630
-#: g10/keygen.c:6100 g10/keygen.c:6728 g10/keygen.c:7058 g10/keygen.c:7168
+#: g10/keygen.c:5512 g10/keygen.c:5586 g10/keygen.c:5604 g10/keygen.c:5633
+#: g10/keygen.c:6103 g10/keygen.c:6731 g10/keygen.c:7061 g10/keygen.c:7171
 #, c-format
 msgid "Key generation failed: %s\n"
 msgstr "Key generation failed: %s\n"
 
-#: g10/keygen.c:5518
+#: g10/keygen.c:5521
 #, c-format
 msgid ""
 "About to create a key for:\n"
@@ -5628,45 +5628,45 @@ msgstr ""
 "    “[1m%s[0m”\n"
 "\n"
 
-#: g10/keygen.c:5520
+#: g10/keygen.c:5523
 msgid "Continue? (Y/n) "
 msgstr "Continue? (Y/n) "
 
-#: g10/keygen.c:5541
+#: g10/keygen.c:5544
 #, c-format
 msgid "A key for \"%s\" already exists\n"
 msgstr "A key for “[1m%s[0m” already exists\n"
 
-#: g10/keygen.c:5546
+#: g10/keygen.c:5549
 msgid "Create anyway? (y/N) "
 msgstr "Create anyway? (y/N) "
 
-#: g10/keygen.c:5552
+#: g10/keygen.c:5555
 #, c-format
 msgid "creating anyway\n"
 msgstr "creating anyway\n"
 
-#: g10/keygen.c:6087
+#: g10/keygen.c:6090
 #, c-format
 msgid "Note: Use \"%s %s\" for a full featured key generation dialog.\n"
 msgstr "Note: Use “[1m%s %s[0m” for a full featured key generation dialog.\n"
 
-#: g10/keygen.c:6132
+#: g10/keygen.c:6135
 #, c-format
 msgid "Key generation canceled.\n"
 msgstr "Key generation canceled.\n"
 
-#: g10/keygen.c:6191
+#: g10/keygen.c:6194
 #, c-format
 msgid "can't create backup file '%s': %s\n"
 msgstr "can't create backup file '%s': %s\n"
 
-#: g10/keygen.c:6211
+#: g10/keygen.c:6214
 #, c-format
 msgid "Note: backup of card key saved to '%s'\n"
 msgstr "Note: backup of card key saved to ‘[1m%s[0m’\n"
 
-#: g10/keygen.c:6322
+#: g10/keygen.c:6325
 msgid ""
 "Warning: Although the key has been written to the card, a backup file was\n"
 "         not properly written to the disk.  You may want to repeat the\n"
@@ -5676,26 +5676,26 @@ msgstr ""
 "         not properly written to the disk.  You may want to repeat the\n"
 "         entire operation or just create a new encryption key on the card.\n"
 
-#: g10/keygen.c:6400 g10/keygen.c:6660
+#: g10/keygen.c:6403 g10/keygen.c:6663
 #, c-format
 msgid "writing public key to '%s'\n"
 msgstr "writing public key to ‘[1m%s[0m’\n"
 
-#: g10/keygen.c:6654
+#: g10/keygen.c:6657
 #, c-format
 msgid "no writable public keyring found: %s\n"
 msgstr "no writable public keyring found: %s\n"
 
-#: g10/keygen.c:6668
+#: g10/keygen.c:6671
 #, c-format
 msgid "error writing public keyring '%s': %s\n"
 msgstr "error writing public keyring '%s': %s\n"
 
-#: g10/keygen.c:6696
+#: g10/keygen.c:6699
 msgid "public and secret key created and signed.\n"
 msgstr "public and secret key created and signed.\n"
 
-#: g10/keygen.c:6715
+#: g10/keygen.c:6718
 msgid ""
 "Note that this key cannot be used for encryption.  You may want to use\n"
 "the command \"--edit-key\" to generate a subkey for this purpose.\n"
@@ -5703,41 +5703,41 @@ msgstr ""
 "Note that this key cannot be used for encryption.  You may want to use\n"
 "the command “[1m--edit-key[0m” to generate a subkey for this purpose.\n"
 
-#: g10/keygen.c:6740
+#: g10/keygen.c:6743
 #, c-format
 msgid "Note: The key has been created with one or more ADSK!\n"
 msgstr "Note: The key has been created with one or more ADSK!\n"
 
-#: g10/keygen.c:6903 g10/keygen.c:7118
+#: g10/keygen.c:6906 g10/keygen.c:7121
 #, c-format
 msgid ""
 "key has been created %lu second in future (time warp or clock problem)\n"
 msgstr ""
 "key has been created %lu second in future (time warp or clock problem)\n"
 
-#: g10/keygen.c:6905 g10/keygen.c:7120
+#: g10/keygen.c:6908 g10/keygen.c:7123
 #, c-format
 msgid ""
 "key has been created %lu seconds in future (time warp or clock problem)\n"
 msgstr ""
 "key has been created %lu seconds in future (time warp or clock problem)\n"
 
-#: g10/keygen.c:6916 g10/keygen.c:7131
+#: g10/keygen.c:6919 g10/keygen.c:7134
 #, c-format
 msgid "Note: creating subkeys for v3 keys is not OpenPGP compliant\n"
 msgstr "Note: creating subkeys for v3 keys is not OpenPGP compliant\n"
 
-#: g10/keygen.c:6930 g10/keygen.c:6932
+#: g10/keygen.c:6933 g10/keygen.c:6935
 #, c-format
 msgid "Secret parts of primary key are not available.\n"
 msgstr "Secret parts of primary key are not available.\n"
 
-#: g10/keygen.c:6939 g10/keygen.c:6941
+#: g10/keygen.c:6942 g10/keygen.c:6944
 #, c-format
 msgid "Secret parts of primary key are stored on-card.\n"
 msgstr "Secret parts of primary key are stored on-card.\n"
 
-#: g10/keygen.c:6971 g10/keygen.c:7145
+#: g10/keygen.c:6974 g10/keygen.c:7148
 msgid "Really create? (y/N) "
 msgstr "Really create? (y/N) "
 
@@ -6214,7 +6214,7 @@ msgstr "binary"
 msgid "textmode"
 msgstr "textmode"
 
-#: g10/mainproc.c:2565 g10/trust.c:112 dirmngr/ocsp.c:890
+#: g10/mainproc.c:2565 g10/trust.c:112 dirmngr/ocsp.c:893
 msgid "unknown"
 msgstr "unknown"
 
@@ -8493,7 +8493,7 @@ msgstr "|N|Initial New PIN"
 msgid "run in multi server mode (foreground)"
 msgstr "run in multi server mode (foreground)"
 
-#: scd/scdaemon.c:138 sm/gpgsm.c:289 dirmngr/dirmngr.c:206
+#: scd/scdaemon.c:138 sm/gpgsm.c:289 dirmngr/dirmngr.c:207
 msgid "|LEVEL|set the debugging level to LEVEL"
 msgstr "|LEVEL|set the debugging level to LEVEL"
 
@@ -8555,12 +8555,12 @@ msgid "please use the option '--daemon' to run the program in the background\n"
 msgstr ""
 "please use the option ‘[1m--daemon[0m’ to run the program in the background\n"
 
-#: scd/scdaemon.c:1246 dirmngr/dirmngr.c:2285
+#: scd/scdaemon.c:1246 dirmngr/dirmngr.c:2297
 #, c-format
 msgid "handler for fd %d started\n"
 msgstr "handler for fd %d started\n"
 
-#: scd/scdaemon.c:1259 dirmngr/dirmngr.c:2293
+#: scd/scdaemon.c:1259 dirmngr/dirmngr.c:2305
 #, c-format
 msgid "handler for fd %d terminated\n"
 msgstr "handler for fd %d terminated\n"
@@ -8632,7 +8632,7 @@ msgstr "looking up issuer at external location\n"
 msgid "number of issuers matching: %d\n"
 msgstr "number of issuers matching: %d\n"
 
-#: sm/certchain.c:741 dirmngr/ocsp.c:752
+#: sm/certchain.c:741 dirmngr/ocsp.c:755
 #, c-format
 msgid "can't get authorityInfoAccess: %s\n"
 msgstr "can't get authorityInfoAccess: %s\n"
@@ -8839,14 +8839,14 @@ msgstr "switching to chain model"
 msgid "validation model used: %s"
 msgstr "validation model used: %s"
 
-#: sm/certcheck.c:113 dirmngr/crlcache.c:1829 dirmngr/ocsp.c:467
+#: sm/certcheck.c:113 dirmngr/crlcache.c:1829 dirmngr/ocsp.c:470
 #: dirmngr/validate.c:1150
 #, c-format
 msgid "a %u bit hash is not valid for a %u bit %s key\n"
 msgstr "a %u bit hash is not valid for a %u bit %s key\n"
 
 #: sm/certcheck.c:239 sm/certcheck.c:263 dirmngr/crlcache.c:1552
-#: dirmngr/crlcache.c:1576 dirmngr/dirmngr.c:1539 dirmngr/validate.c:916
+#: dirmngr/crlcache.c:1576 dirmngr/dirmngr.c:1551 dirmngr/validate.c:916
 #: dirmngr/validate.c:940
 #, c-format
 msgid "out of core\n"
@@ -8857,7 +8857,7 @@ msgstr "out of core\n"
 msgid "(this is the MD2 algorithm)\n"
 msgstr "(this is the MD2 algorithm)\n"
 
-#: sm/certdump.c:81 sm/certdump.c:109 sm/certdump.c:232 dirmngr/ocsp.c:891
+#: sm/certdump.c:81 sm/certdump.c:109 sm/certdump.c:232 dirmngr/ocsp.c:894
 msgid "none"
 msgstr "none"
 
@@ -9917,7 +9917,7 @@ msgstr "unknown hash algorithm ‘[1m%s[0m’\n"
 msgid "gcry_md_open for algorithm %d failed: %s\n"
 msgstr "gcry_md_open for algorithm %d failed: %s\n"
 
-#: dirmngr/crlcache.c:1859 dirmngr/ocsp.c:503
+#: dirmngr/crlcache.c:1859 dirmngr/ocsp.c:506
 #, c-format
 msgid "creating S-expression failed: %s\n"
 msgstr "creating S-expression failed: %s\n"
@@ -10287,135 +10287,135 @@ msgstr "absolute file name expected\n"
 msgid "looking up '%s'\n"
 msgstr "looking up ‘[1m%s[0m’\n"
 
-#: dirmngr/dirmngr.c:182
+#: dirmngr/dirmngr.c:183
 msgid "list the contents of the CRL cache"
 msgstr "list the contents of the CRL cache"
 
-#: dirmngr/dirmngr.c:183
+#: dirmngr/dirmngr.c:184
 msgid "|FILE|load CRL from FILE into cache"
 msgstr "|FILE|load CRL from FILE into cache"
 
-#: dirmngr/dirmngr.c:184
+#: dirmngr/dirmngr.c:185
 msgid "|URL|fetch a CRL from URL"
 msgstr "|URL|fetch a CRL from URL"
 
-#: dirmngr/dirmngr.c:185
+#: dirmngr/dirmngr.c:186
 msgid "shutdown the dirmngr"
 msgstr "shutdown the dirmngr"
 
-#: dirmngr/dirmngr.c:186
+#: dirmngr/dirmngr.c:187
 msgid "flush the cache"
 msgstr "flush the cache"
 
-#: dirmngr/dirmngr.c:220
+#: dirmngr/dirmngr.c:221
 msgid "allow online software version check"
 msgstr "allow online software version check"
 
-#: dirmngr/dirmngr.c:223
+#: dirmngr/dirmngr.c:224
 msgid "|N|do not return more than N items in one query"
 msgstr "|N|do not return more than N items in one query"
 
-#: dirmngr/dirmngr.c:231
+#: dirmngr/dirmngr.c:232
 msgid "Network related options"
 msgstr "Network related options"
 
-#: dirmngr/dirmngr.c:233
+#: dirmngr/dirmngr.c:234
 msgid "route all network traffic via Tor"
 msgstr "route all network traffic via Tor"
 
-#: dirmngr/dirmngr.c:245
+#: dirmngr/dirmngr.c:246
 msgid "Configuration for HTTP servers"
 msgstr "Configuration for HTTP servers"
 
-#: dirmngr/dirmngr.c:247
+#: dirmngr/dirmngr.c:248
 msgid "inhibit the use of HTTP"
 msgstr "inhibit the use of HTTP"
 
-#: dirmngr/dirmngr.c:249
+#: dirmngr/dirmngr.c:250
 msgid "ignore HTTP CRL distribution points"
 msgstr "ignore HTTP CRL distribution points"
 
-#: dirmngr/dirmngr.c:251
+#: dirmngr/dirmngr.c:252
 msgid "|URL|redirect all HTTP requests to URL"
 msgstr "|URL|redirect all HTTP requests to URL"
 
-#: dirmngr/dirmngr.c:253
+#: dirmngr/dirmngr.c:254
 msgid "use system's HTTP proxy setting"
 msgstr "use system's HTTP proxy setting"
 
-#: dirmngr/dirmngr.c:256
+#: dirmngr/dirmngr.c:258
 msgid "Configuration for OpenPGP servers"
 msgstr "Configuration for OpenPGP servers"
 
-#: dirmngr/dirmngr.c:259
+#: dirmngr/dirmngr.c:261
 msgid "|URL|use keyserver at URL"
 msgstr "|URL|use keyserver at URL"
 
-#: dirmngr/dirmngr.c:261
+#: dirmngr/dirmngr.c:263
 msgid "|FILE|use the CA certificates in FILE for HKP over TLS"
 msgstr "|FILE|use the CA certificates in FILE for HKP over TLS"
 
-#: dirmngr/dirmngr.c:263
+#: dirmngr/dirmngr.c:265
 msgid "Configuration for X.509 servers"
 msgstr "Configuration for X.509 servers"
 
-#: dirmngr/dirmngr.c:265
+#: dirmngr/dirmngr.c:267
 msgid "inhibit the use of LDAP"
 msgstr "inhibit the use of LDAP"
 
-#: dirmngr/dirmngr.c:267
+#: dirmngr/dirmngr.c:269
 msgid "ignore LDAP CRL distribution points"
 msgstr "ignore LDAP CRL distribution points"
 
-#: dirmngr/dirmngr.c:269
+#: dirmngr/dirmngr.c:271
 msgid "|HOST|use HOST for LDAP queries"
 msgstr "|HOST|use HOST for LDAP queries"
 
-#: dirmngr/dirmngr.c:271
+#: dirmngr/dirmngr.c:273
 msgid "do not use fallback hosts with --ldap-proxy"
 msgstr "do not use fallback hosts with --ldap-proxy"
 
-#: dirmngr/dirmngr.c:273
+#: dirmngr/dirmngr.c:275
 msgid "|SPEC|use this keyserver to lookup keys"
 msgstr "|SPEC|use this keyserver to lookup keys"
 
-#: dirmngr/dirmngr.c:275
+#: dirmngr/dirmngr.c:277
 msgid "|FILE|read LDAP server list from FILE"
 msgstr "|FILE|read LDAP server list from FILE"
 
-#: dirmngr/dirmngr.c:277
+#: dirmngr/dirmngr.c:279
 msgid "add new servers discovered in CRL distribution points to serverlist"
 msgstr "add new servers discovered in CRL distribution points to serverlist"
 
-#: dirmngr/dirmngr.c:280
+#: dirmngr/dirmngr.c:282
 msgid "|N|set LDAP timeout to N seconds"
 msgstr "|N|set LDAP timeout to N seconds"
 
-#: dirmngr/dirmngr.c:283
+#: dirmngr/dirmngr.c:285
 msgid "Configuration for OCSP"
 msgstr "Configuration for OCSP"
 
-#: dirmngr/dirmngr.c:285
+#: dirmngr/dirmngr.c:287
 msgid "allow sending OCSP requests"
 msgstr "allow sending OCSP requests"
 
-#: dirmngr/dirmngr.c:287
+#: dirmngr/dirmngr.c:289
 msgid "ignore certificate contained OCSP service URLs"
 msgstr "ignore certificate contained OCSP service URLs"
 
-#: dirmngr/dirmngr.c:289
+#: dirmngr/dirmngr.c:291
 msgid "|URL|use OCSP responder at URL"
 msgstr "|URL|use OCSP responder at URL"
 
-#: dirmngr/dirmngr.c:291
+#: dirmngr/dirmngr.c:293
 msgid "|FPR|OCSP response signed by FPR"
 msgstr "|FPR|OCSP response signed by FPR"
 
-#: dirmngr/dirmngr.c:299
+#: dirmngr/dirmngr.c:301
 msgid "force loading of outdated CRLs"
 msgstr "force loading of outdated CRLs"
 
-#: dirmngr/dirmngr.c:312
+#: dirmngr/dirmngr.c:314
 msgid ""
 "@\n"
 "(See the \"info\" manual for a complete listing of all commands and "
@@ -10425,11 +10425,11 @@ msgstr ""
 "(See the “[1minfo[0m” manual for a complete listing of all commands and "
 "options)\n"
 
-#: dirmngr/dirmngr.c:474
+#: dirmngr/dirmngr.c:476
 msgid "Usage: @DIRMNGR@ [options] (-h for help)"
 msgstr "Usage: @DIRMNGR@ [options] (-h for help)"
 
-#: dirmngr/dirmngr.c:476
+#: dirmngr/dirmngr.c:478
 msgid ""
 "Syntax: @DIRMNGR@ [options] [command [args]]\n"
 "Keyserver, CRL, and OCSP access for @GNUPG@\n"
@@ -10437,103 +10437,103 @@ msgstr ""
 "Syntax: @DIRMNGR@ [options] [command [args]]\n"
 "Keyserver, CRL, and OCSP access for @GNUPG@\n"
 
-#: dirmngr/dirmngr.c:556
+#: dirmngr/dirmngr.c:558
 #, c-format
 msgid "valid debug levels are: %s\n"
 msgstr "valid debug levels are: %s\n"
 
-#: dirmngr/dirmngr.c:651 tools/gpgconf.c:801 tools/gpgconf.c:836
+#: dirmngr/dirmngr.c:653 tools/gpgconf.c:801 tools/gpgconf.c:836
 #: tools/gpgconf.c:936
 #, c-format
 msgid "usage: %s [options] "
 msgstr "usage: %s [options] "
 
-#: dirmngr/dirmngr.c:1422
+#: dirmngr/dirmngr.c:1434
 #, c-format
 msgid "colons are not allowed in the socket name\n"
 msgstr "colons are not allowed in the socket name\n"
 
-#: dirmngr/dirmngr.c:1521
+#: dirmngr/dirmngr.c:1533
 #, c-format
 msgid "error forking process: %s\n"
 msgstr "error forking process: %s\n"
 
-#: dirmngr/dirmngr.c:1656 dirmngr/server.c:1955
+#: dirmngr/dirmngr.c:1668 dirmngr/server.c:1955
 #, c-format
 msgid "fetching CRL from '%s' failed: %s\n"
 msgstr "fetching CRL from ‘[1m%s[0m’ failed: %s\n"
 
-#: dirmngr/dirmngr.c:1662 dirmngr/server.c:1961
+#: dirmngr/dirmngr.c:1674 dirmngr/server.c:1961
 #, c-format
 msgid "processing CRL from '%s' failed: %s\n"
 msgstr "processing CRL from ‘[1m%s[0m’ failed: %s\n"
 
-#: dirmngr/dirmngr.c:1806
+#: dirmngr/dirmngr.c:1818
 #, c-format
 msgid "%s:%u: line too long - skipped\n"
 msgstr "%s:%u: line too long - skipped\n"
 
-#: dirmngr/dirmngr.c:1866 dirmngr/dirmngr.c:1955
+#: dirmngr/dirmngr.c:1878 dirmngr/dirmngr.c:1967
 #, c-format
 msgid "%s:%u: invalid fingerprint detected\n"
 msgstr "%s:%u: invalid fingerprint detected\n"
 
-#: dirmngr/dirmngr.c:1907 dirmngr/dirmngr.c:1933 tools/gpgconf-comp.c:3593
+#: dirmngr/dirmngr.c:1919 dirmngr/dirmngr.c:1945 tools/gpgconf-comp.c:3593
 #, c-format
 msgid "%s:%u: read error: %s\n"
 msgstr "%s:%u: read error: %s\n"
 
-#: dirmngr/dirmngr.c:1968
+#: dirmngr/dirmngr.c:1980
 #, c-format
 msgid "%s:%u: garbage at end of line ignored\n"
 msgstr "%s:%u: garbage at end of line ignored\n"
 
-#: dirmngr/dirmngr.c:2055
+#: dirmngr/dirmngr.c:2067
 #, c-format
 msgid "SIGHUP received - re-reading configuration and flushing caches\n"
 msgstr "SIGHUP received - re-reading configuration and flushing caches\n"
 
-#: dirmngr/dirmngr.c:2098
+#: dirmngr/dirmngr.c:2110
 #, c-format
 msgid "SIGUSR2 received - no action defined\n"
 msgstr "SIGUSR2 received - no action defined\n"
 
-#: dirmngr/dirmngr.c:2103
+#: dirmngr/dirmngr.c:2115
 #, c-format
 msgid "SIGTERM received - shutting down ...\n"
 msgstr "SIGTERM received - shutting down ...\n"
 
-#: dirmngr/dirmngr.c:2105
+#: dirmngr/dirmngr.c:2117
 #, c-format
 msgid "SIGTERM received - still %d active connections\n"
 msgstr "SIGTERM received - still %d active connections\n"
 
-#: dirmngr/dirmngr.c:2110
+#: dirmngr/dirmngr.c:2122
 #, c-format
 msgid "shutdown forced\n"
 msgstr "shutdown forced\n"
 
-#: dirmngr/dirmngr.c:2118
+#: dirmngr/dirmngr.c:2130
 #, c-format
 msgid "SIGINT received - immediate shutdown\n"
 msgstr "SIGINT received - immediate shutdown\n"
 
-#: dirmngr/dirmngr.c:2125
+#: dirmngr/dirmngr.c:2137
 #, c-format
 msgid "signal %d received - no action defined\n"
 msgstr "signal %d received - no action defined\n"
 
-#: dirmngr/http.c:2713 dirmngr/ocsp.c:258
+#: dirmngr/http.c:2713 dirmngr/ocsp.c:261
 #, c-format
 msgid "error accessing '%s': http status %u\n"
 msgstr "error accessing '%s': http status %u\n"
 
-#: dirmngr/http.c:4446 dirmngr/ocsp.c:232
+#: dirmngr/http.c:4446 dirmngr/ocsp.c:235
 #, c-format
 msgid "URL '%s' redirected to '%s' (%u)\n"
 msgstr "URL ‘[1m%s[0m’ redirected to ‘[1m%s[0m’ (%u)\n"
 
-#: dirmngr/http.c:4452 dirmngr/ocsp.c:249
+#: dirmngr/http.c:4452 dirmngr/ocsp.c:252
 #, c-format
 msgid "too many redirections\n"
 msgstr "too many redirections\n"
@@ -10677,121 +10677,121 @@ msgstr "error building OCSP request: %s\n"
 msgid "error connecting to '%s': %s\n"
 msgstr "error connecting to '%s': %s\n"
 
-#: dirmngr/ocsp.c:221 dirmngr/ocsp.c:273
+#: dirmngr/ocsp.c:224 dirmngr/ocsp.c:276
 #, c-format
 msgid "error reading HTTP response for '%s': %s\n"
 msgstr "error reading HTTP response for '%s': %s\n"
 
-#: dirmngr/ocsp.c:284
+#: dirmngr/ocsp.c:287
 #, c-format
 msgid "error parsing OCSP response for '%s': %s\n"
 msgstr "error parsing OCSP response for '%s': %s\n"
 
-#: dirmngr/ocsp.c:309 dirmngr/ocsp.c:340
+#: dirmngr/ocsp.c:312 dirmngr/ocsp.c:343
 #, c-format
 msgid "OCSP responder at '%s' status: %s\n"
 msgstr "OCSP responder at ‘[1m%s[0m’ status: %s\n"
 
-#: dirmngr/ocsp.c:325
+#: dirmngr/ocsp.c:328
 #, c-format
 msgid "failed to establish a hashing context for OCSP: %s\n"
 msgstr "failed to establish a hashing context for OCSP: %s\n"
 
-#: dirmngr/ocsp.c:335
+#: dirmngr/ocsp.c:338
 #, c-format
 msgid "hashing the OCSP response for '%s' failed: %s\n"
 msgstr "hashing the OCSP response for ‘[1m%s[0m’ failed: %s\n"
 
-#: dirmngr/ocsp.c:379
+#: dirmngr/ocsp.c:382
 #, c-format
 msgid "not signed by a default OCSP signer's certificate"
 msgstr "not signed by a default OCSP signer's certificate"
 
-#: dirmngr/ocsp.c:585
+#: dirmngr/ocsp.c:588
 #, c-format
 msgid "allocating list item failed: %s\n"
 msgstr "allocating list item failed: %s\n"
 
-#: dirmngr/ocsp.c:601 dirmngr/ocsp.c:794
+#: dirmngr/ocsp.c:604 dirmngr/ocsp.c:797
 #, c-format
 msgid "error getting responder ID: %s\n"
 msgstr "error getting responder ID: %s\n"
 
-#: dirmngr/ocsp.c:645
+#: dirmngr/ocsp.c:648
 #, c-format
 msgid "no suitable certificate found to verify the OCSP response\n"
 msgstr "no suitable certificate found to verify the OCSP response\n"
 
-#: dirmngr/ocsp.c:693 dirmngr/validate.c:659
+#: dirmngr/ocsp.c:696 dirmngr/validate.c:659
 #, c-format
 msgid "issuer certificate not found: %s\n"
 msgstr "issuer certificate not found: %s\n"
 
-#: dirmngr/ocsp.c:703
+#: dirmngr/ocsp.c:706
 #, c-format
 msgid "caller did not return the target certificate\n"
 msgstr "caller did not return the target certificate\n"
 
-#: dirmngr/ocsp.c:710
+#: dirmngr/ocsp.c:713
 #, c-format
 msgid "caller did not return the issuing certificate\n"
 msgstr "caller did not return the issuing certificate\n"
 
-#: dirmngr/ocsp.c:720
+#: dirmngr/ocsp.c:723
 #, c-format
 msgid "failed to allocate OCSP context: %s\n"
 msgstr "failed to allocate OCSP context: %s\n"
 
-#: dirmngr/ocsp.c:759
+#: dirmngr/ocsp.c:762
 #, c-format
 msgid "no default OCSP responder defined\n"
 msgstr "no default OCSP responder defined\n"
 
-#: dirmngr/ocsp.c:765
+#: dirmngr/ocsp.c:768
 #, c-format
 msgid "no default OCSP signer defined\n"
 msgstr "no default OCSP signer defined\n"
 
-#: dirmngr/ocsp.c:772
+#: dirmngr/ocsp.c:775
 #, c-format
 msgid "using default OCSP responder '%s'\n"
 msgstr "using default OCSP responder ‘[1m%s[0m’\n"
 
-#: dirmngr/ocsp.c:777
+#: dirmngr/ocsp.c:780
 #, c-format
 msgid "using OCSP responder '%s'\n"
 msgstr "using OCSP responder ‘[1m%s[0m’\n"
 
-#: dirmngr/ocsp.c:834
+#: dirmngr/ocsp.c:837
 #, c-format
 msgid "error getting OCSP status for target certificate: %s\n"
 msgstr "error getting OCSP status for target certificate: %s\n"
 
-#: dirmngr/ocsp.c:887
+#: dirmngr/ocsp.c:890
 #, c-format
 msgid "certificate status is: %s  (this=%s  next=%s)\n"
 msgstr "certificate status is: %s  (this=%s  next=%s)\n"
 
-#: dirmngr/ocsp.c:888
+#: dirmngr/ocsp.c:891
 msgid "good"
 msgstr "good"
 
-#: dirmngr/ocsp.c:894
+#: dirmngr/ocsp.c:897
 #, c-format
 msgid "certificate has been revoked at: %s due to: %s\n"
 msgstr "certificate has been revoked at: %s due to: %s\n"
 
-#: dirmngr/ocsp.c:919
+#: dirmngr/ocsp.c:922
 #, c-format
 msgid "OCSP responder returned a status in the future\n"
 msgstr "OCSP responder returned a status in the future\n"
 
-#: dirmngr/ocsp.c:931
+#: dirmngr/ocsp.c:934
 #, c-format
 msgid "OCSP responder returned a non-current status\n"
 msgstr "OCSP responder returned a non-current status\n"
 
-#: dirmngr/ocsp.c:946
+#: dirmngr/ocsp.c:949
 #, c-format
 msgid "OCSP responder returned an too old status\n"
 msgstr "OCSP responder returned an too old status\n"
