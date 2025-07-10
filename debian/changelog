@@ -1,3 +1,9 @@
+gnupg2 (2.5.9-1) experimental; urgency=medium
+
+  * new upstream development release
+
+ -- meik michalke <meik.michalke@gnupg.com>  Thu, 10 Jul 2025 17:15:10 +0200
+
 gnupg2 (2.5.8-2) experimental; urgency=medium
 
   * added 2.5.8/0001-gpg-Re-add-the-revocation-reason-to-the-sigclass-in-.patch
