@@ -1,3 +1,9 @@
+gnupg2 (2.5.10-1) experimental; urgency=medium
+
+  * new upstream development release
+
+ -- meik michalke <meik.michalke@gnupg.com>  Mon, 28 Jul 2025 11:05:52 +0200
+
 gnupg2 (2.5.9-1) experimental; urgency=medium
 
   * new upstream development release
