@@ -30,7 +30,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg 2_2.2.43-6\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-07-25 15:52+0200\n"
+"POT-Creation-Date: 2025-07-30 10:32+0200\n"
 "PO-Revision-Date: 2024-06-16 12:57+0200\n"
 "Last-Translator: Frans Spiesschaert <Frans.Spiesschaert@yucom.be>\n"
 "Language-Team: Debian Dutch l10n Team <debian-l10n-dutch@lists.debian.org>\n"
@@ -255,7 +255,7 @@ msgstr "ssh-sleutels groter dan %d bits worden niet ondersteund\n"
 #: agent/command-ssh.c:890 common/dotlock.c:991 common/dotlock.c:994
 #: g10/card-util.c:1004 g10/export.c:1553 g10/gpg.c:1498 g10/keygen.c:6391
 #: g10/keyring.c:1329 g10/keyring.c:1642 g10/openfile.c:293 g10/photoid.c:638
-#: g10/photoid.c:656 g10/sign.c:1142 g10/sign.c:1507 g10/tdbio.c:739
+#: g10/photoid.c:656 g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739
 #: tools/gpg-card.c:499
 #, c-format
 msgid "can't create '%s': %s\n"
@@ -266,8 +266,8 @@ msgstr "kan '%s' niet aanmaken: %s\n"
 #: g10/decrypt.c:186 g10/decrypt.c:199 g10/encrypt.c:487 g10/encrypt.c:898
 #: g10/gpg.c:1499 g10/import.c:386 g10/import.c:573 g10/import.c:808
 #: g10/keygen.c:5244 g10/keyring.c:1668 g10/openfile.c:197 g10/openfile.c:211
-#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1122 g10/sign.c:1366
-#: g10/sign.c:1488 g10/sign.c:1662 g10/tdbdump.c:146 g10/tdbdump.c:150
+#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1125 g10/sign.c:1369
+#: g10/sign.c:1491 g10/sign.c:1665 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
 #: sm/gpgsm.c:1978 sm/gpgsm.c:2010 sm/gpgsm.c:2065 sm/gpgsm.c:2079
 #: sm/gpgsm.c:2085 sm/gpgsm.c:2113 sm/gpgsm.c:2465 sm/gpgsm.c:2504
@@ -1728,7 +1728,7 @@ msgstr "doorspelen van aanvraag %s aan de client is mislukt\n"
 msgid "Enter passphrase: "
 msgstr "Voer wachtwoordzin in: "
 
-#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:489
+#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:492
 #: sm/call-agent.c:249 sm/encrypt.c:689 sm/sign.c:640
 #, c-format
 msgid "%s is not compliant with %s mode\n"
@@ -2408,7 +2408,7 @@ msgid "WARNING: key %s is not suitable for encryption in %s mode\n"
 msgstr ""
 "WAARSCHUWING: sleutel %s is niet geschikt voor versleuteling in %s-modus\n"
 
-#: g10/encrypt.c:511 g10/sign.c:1679
+#: g10/encrypt.c:511 g10/sign.c:1682
 #, c-format
 msgid "error creating passphrase: %s\n"
 msgstr "fout bij het maken van de wachtwoordzin: %s\n"
@@ -2423,18 +2423,18 @@ msgstr "kan geen SKESK-pakket gebruiken omwille van de S2K-modus\n"
 msgid "using cipher %s.%s\n"
 msgstr "versleutelingsalgoritme %s.%s wordt gebruikt\n"
 
-#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:850
+#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:853
 #, c-format
 msgid "WARNING: '%s' is an empty file\n"
 msgstr "WAARSCHUWING: '%s' is een leeg bestand\n"
 
-#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1298
+#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1301
 #, c-format
 msgid "'%s' already compressed\n"
 msgstr "'%s' is reeds gecomprimeerd\n"
 
 #: g10/encrypt.c:742 g10/gpg.c:4273 g10/gpg.c:4321 g10/sig-check.c:173
-#: g10/sign.c:467 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
+#: g10/sign.c:470 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
 #, c-format
 msgid "digest algorithm '%s' may not be used in %s mode\n"
 msgstr "u mag hashalgoritme '%s' niet gebruiken in %s-modus\n"
@@ -2444,7 +2444,7 @@ msgstr "u mag hashalgoritme '%s' niet gebruiken in %s-modus\n"
 msgid "reading from '%s'\n"
 msgstr "lezen van '%s'\n"
 
-#: g10/encrypt.c:1023 g10/sign.c:1319
+#: g10/encrypt.c:1023 g10/sign.c:1322
 #, c-format
 msgid ""
 "WARNING: forcing compression algorithm %s (%d) violates recipient "
@@ -2527,7 +2527,7 @@ msgid " - skipped"
 msgstr " - overgeslagen"
 
 #: g10/export.c:1557 g10/import.c:2257 g10/openfile.c:202 g10/openfile.c:296
-#: g10/sign.c:1146 g10/sign.c:1511
+#: g10/sign.c:1149 g10/sign.c:1514
 #, c-format
 msgid "writing to '%s'\n"
 msgstr "schrijven naar '%s'\n"
@@ -4470,7 +4470,7 @@ msgid "Really sign? (y/N) "
 msgstr "Echt ondertekenen? (j/N) "
 
 #: g10/keyedit.c:1159 g10/keyedit.c:6781 g10/keyedit.c:6864 g10/keyedit.c:6993
-#: g10/keyedit.c:7055 g10/sign.c:552
+#: g10/keyedit.c:7055 g10/sign.c:555
 #, c-format
 msgid "signing failed: %s\n"
 msgstr "ondertekenen is mislukt: %s\n"
@@ -7481,7 +7481,7 @@ msgstr "%s sleutel %s gebruikt een onveilige (%zu bits) hash\n"
 msgid "%s key %s requires a %zu bit or larger hash (hash is %s)\n"
 msgstr "%s sleutel %s vereist een hash van %zu bits of meer (hash is %s)\n"
 
-#: g10/sig-check.c:81 g10/sign.c:479 sm/sign.c:827 sm/verify.c:503
+#: g10/sig-check.c:81 g10/sign.c:482 sm/sign.c:827 sm/verify.c:503
 #, c-format
 msgid "key %s may not be used for signing in %s mode\n"
 msgstr "u mag sleutel %s niet gebruiken om te ondertekenen in de %s-modus\n"
@@ -7524,7 +7524,7 @@ msgid_plural "public key %s is %lu days newer than the signature\n"
 msgstr[0] "publieke sleutel %s is %lu dag recenter dan de handtekening\n"
 msgstr[1] "publieke sleutel %s is %lu dagen recenter dan de handtekening\n"
 
-#: g10/sig-check.c:391 g10/sign.c:436
+#: g10/sig-check.c:391 g10/sign.c:439
 #, c-format
 msgid ""
 "key %s was created %lu second in the future (time warp or clock problem)\n"
@@ -7596,7 +7596,7 @@ msgstr ""
 "WAARSCHUWING: kan notatie niet expanderen met %% (te groot).\n"
 "              De niet-geëxpandeerde versie wordt gebruikt.\n"
 
-#: g10/sign.c:149
+#: g10/sign.c:152
 #, c-format
 msgid ""
 "WARNING: unable to %%-expand policy URL (too large).  Using unexpanded.\n"
@@ -7604,7 +7604,7 @@ msgstr ""
 "WAARSCHUWING: kan richtlijn-URL niet expanderen met %% (te groot).\n"
 "              De niet-geëxpandeerde versie wordt gebruikt.\n"
 
-#: g10/sign.c:172
+#: g10/sign.c:175
 #, c-format
 msgid ""
 "WARNING: unable to %%-expand preferred keyserver URL (too large).  Using "
@@ -7614,12 +7614,12 @@ msgstr ""
 "%% (te groot).\n"
 "              De niet-geëxpandeerde versie wordt gebruikt.\n"
 
-#: g10/sign.c:558
+#: g10/sign.c:561
 #, c-format
 msgid "%s/%s signature from: \"%s\"\n"
 msgstr "%s/%s handtekening van: \"%s\"\n"
 
-#: g10/sign.c:1182
+#: g10/sign.c:1185
 #, c-format
 msgid ""
 "WARNING: forcing digest algorithm %s (%d) violates recipient preferences\n"
@@ -7627,12 +7627,12 @@ msgstr ""
 "WAARSCHUWING: het hash-algoritme %s (%d) dwingend opleggen is in strijd\n"
 "              met de voorkeuren van de ontvanger\n"
 
-#: g10/sign.c:1350
+#: g10/sign.c:1353
 #, c-format
 msgid "signing:"
 msgstr "bezig met ondertekenen:"
 
-#: g10/sign.c:1688
+#: g10/sign.c:1691
 #, fuzzy, c-format
 #| msgid "%s encryption will be used\n"
 msgid "%s.%s encryption will be used\n"

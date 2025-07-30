@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg 2.5.7\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-07-25 15:52+0200\n"
+"POT-Creation-Date: 2025-07-30 10:32+0200\n"
 "PO-Revision-Date: 2025-06-03 13:59+0900\n"
 "Last-Translator: NIIBE Yutaka <gniibe@fsij.org>\n"
 "Language-Team: none\n"
@@ -233,7 +233,7 @@ msgstr "ssh鍵で%dビットより大きいものはサポートされません\
 #: agent/command-ssh.c:890 common/dotlock.c:991 common/dotlock.c:994
 #: g10/card-util.c:1004 g10/export.c:1553 g10/gpg.c:1498 g10/keygen.c:6391
 #: g10/keyring.c:1329 g10/keyring.c:1642 g10/openfile.c:293 g10/photoid.c:638
-#: g10/photoid.c:656 g10/sign.c:1142 g10/sign.c:1507 g10/tdbio.c:739
+#: g10/photoid.c:656 g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739
 #: tools/gpg-card.c:499
 #, c-format
 msgid "can't create '%s': %s\n"
@@ -244,8 +244,8 @@ msgstr "'%s'が作成できません: %s\n"
 #: g10/decrypt.c:186 g10/decrypt.c:199 g10/encrypt.c:487 g10/encrypt.c:898
 #: g10/gpg.c:1499 g10/import.c:386 g10/import.c:573 g10/import.c:808
 #: g10/keygen.c:5244 g10/keyring.c:1668 g10/openfile.c:197 g10/openfile.c:211
-#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1122 g10/sign.c:1366
-#: g10/sign.c:1488 g10/sign.c:1662 g10/tdbdump.c:146 g10/tdbdump.c:150
+#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1125 g10/sign.c:1369
+#: g10/sign.c:1491 g10/sign.c:1665 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
 #: sm/gpgsm.c:1978 sm/gpgsm.c:2010 sm/gpgsm.c:2065 sm/gpgsm.c:2079
 #: sm/gpgsm.c:2085 sm/gpgsm.c:2113 sm/gpgsm.c:2465 sm/gpgsm.c:2504
@@ -1662,7 +1662,7 @@ msgstr "プロキシ%sのクライアントへの問い合わせが失敗しま�
 msgid "Enter passphrase: "
 msgstr "パスフレーズを入力: "
 
-#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:489
+#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:492
 #: sm/call-agent.c:249 sm/encrypt.c:689 sm/sign.c:640
 #, c-format
 msgid "%s is not compliant with %s mode\n"
@@ -2305,7 +2305,7 @@ msgstr "暗号アルゴリズム'%s'を%sモードで使うことはできませ
 msgid "WARNING: key %s is not suitable for encryption in %s mode\n"
 msgstr "*警告*: 鍵%sは、%sモードでは、暗号化に適しません\n"
 
-#: g10/encrypt.c:511 g10/sign.c:1679
+#: g10/encrypt.c:511 g10/sign.c:1682
 #, c-format
 msgid "error creating passphrase: %s\n"
 msgstr "パスフレーズの作成エラー: %s\n"
@@ -2320,18 +2320,18 @@ msgstr "S2Kモードのため、SKESKパケットを使えません\n"
 msgid "using cipher %s.%s\n"
 msgstr "暗号方式 %s.%s を使います\n"
 
-#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:850
+#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:853
 #, c-format
 msgid "WARNING: '%s' is an empty file\n"
 msgstr "*警告*: '%s'は空のファイルです\n"
 
-#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1298
+#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1301
 #, c-format
 msgid "'%s' already compressed\n"
 msgstr "'%s'はもう圧縮済みです\n"
 
 #: g10/encrypt.c:742 g10/gpg.c:4273 g10/gpg.c:4321 g10/sig-check.c:173
-#: g10/sign.c:467 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
+#: g10/sign.c:470 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
 #, c-format
 msgid "digest algorithm '%s' may not be used in %s mode\n"
 msgstr "ダイジェスト・アルゴリズム'%s'を%sモードで使うことはできません\n"
@@ -2341,7 +2341,7 @@ msgstr "ダイジェスト・アルゴリズム'%s'を%sモードで使うこと
 msgid "reading from '%s'\n"
 msgstr "'%s'から読み込み\n"
 
-#: g10/encrypt.c:1023 g10/sign.c:1319
+#: g10/encrypt.c:1023 g10/sign.c:1322
 #, c-format
 msgid ""
 "WARNING: forcing compression algorithm %s (%d) violates recipient "
@@ -2417,7 +2417,7 @@ msgid " - skipped"
 msgstr " - スキップされました"
 
 #: g10/export.c:1557 g10/import.c:2257 g10/openfile.c:202 g10/openfile.c:296
-#: g10/sign.c:1146 g10/sign.c:1511
+#: g10/sign.c:1149 g10/sign.c:1514
 #, c-format
 msgid "writing to '%s'\n"
 msgstr "'%s'への書き込み\n"
@@ -4265,7 +4265,7 @@ msgid "Really sign? (y/N) "
 msgstr "本当に署名しますか? (y/N) "
 
 #: g10/keyedit.c:1159 g10/keyedit.c:6781 g10/keyedit.c:6864 g10/keyedit.c:6993
-#: g10/keyedit.c:7055 g10/sign.c:552
+#: g10/keyedit.c:7055 g10/sign.c:555
 #, c-format
 msgid "signing failed: %s\n"
 msgstr "署名に失敗しました: %s\n"
@@ -7112,7 +7112,7 @@ msgid "%s key %s requires a %zu bit or larger hash (hash is %s)\n"
 msgstr ""
 "%s鍵%sは%zuビットあるいはより大きいハッシュを必要とします(今のハッシュは%s)\n"
 
-#: g10/sig-check.c:81 g10/sign.c:479 sm/sign.c:827 sm/verify.c:503
+#: g10/sig-check.c:81 g10/sign.c:482 sm/sign.c:827 sm/verify.c:503
 #, c-format
 msgid "key %s may not be used for signing in %s mode\n"
 msgstr "鍵%sを署名のために%sモードで使うことはできません\n"
@@ -7149,7 +7149,7 @@ msgid "public key %s is %lu day newer than the signature\n"
 msgid_plural "public key %s is %lu days newer than the signature\n"
 msgstr[0] "公開鍵%sは、署名よりも%lu日、新しいものです\n"
 
-#: g10/sig-check.c:391 g10/sign.c:436
+#: g10/sig-check.c:391 g10/sign.c:439
 #, c-format
 msgid ""
 "key %s was created %lu second in the future (time warp or clock problem)\n"
@@ -7204,25 +7204,25 @@ msgstr "鍵%s: 副鍵対応への署名に対する副鍵がありません\n"
 msgid "WARNING: unable to %%-expand notation (too large).  Using unexpanded.\n"
 msgstr "*警告*: 表記を%%拡張不能 (大きすぎ)。拡張せずに使用。\n"
 
-#: g10/sign.c:149
+#: g10/sign.c:152
 #, c-format
 msgid ""
 "WARNING: unable to %%-expand policy URL (too large).  Using unexpanded.\n"
 msgstr "*警告*: ポリシーURLを%%拡張不能 (大きすぎ)。拡張せずに使用。\n"
 
-#: g10/sign.c:172
+#: g10/sign.c:175
 #, c-format
 msgid ""
 "WARNING: unable to %%-expand preferred keyserver URL (too large).  Using "
 "unexpanded.\n"
 msgstr "*警告*: 優先鍵サーバURLを%%拡張不能 (大きすぎ)。拡張せずに使用。\n"
 
-#: g10/sign.c:558
+#: g10/sign.c:561
 #, c-format
 msgid "%s/%s signature from: \"%s\"\n"
 msgstr "%s/%s署名。署名者:\"%s\"\n"
 
-#: g10/sign.c:1182
+#: g10/sign.c:1185
 #, c-format
 msgid ""
 "WARNING: forcing digest algorithm %s (%d) violates recipient preferences\n"
@@ -7230,12 +7230,12 @@ msgstr ""
 "*警告*: ダイジェスト・アルゴリズム %s (%d) の強制が、受取人の優先指定と対立し"
 "ます\n"
 
-#: g10/sign.c:1350
+#: g10/sign.c:1353
 #, c-format
 msgid "signing:"
 msgstr "署名:"
 
-#: g10/sign.c:1688
+#: g10/sign.c:1691
 #, c-format
 msgid "%s.%s encryption will be used\n"
 msgstr "%s.%s暗号化を使用します\n"
