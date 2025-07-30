@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# this is recommended to resolve conflicts between
+# old and new versions after an update
+/usr/bin/gpgconf --kill all
