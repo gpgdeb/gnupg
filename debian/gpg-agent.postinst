@@ -1,5 +1,13 @@
 #!/bin/sh
 
-# this is recommended to resolve conflicts between
-# old and new versions after an update
-/usr/bin/gpgconf --kill all
+# to resolve conflicts between old and new versions after an update
+# it is recommended to kill the old running gpg-agent.
+# usually, a user does this by calling '/usr/bin/gpgconf --kill all'
+# but package installation is not done by that user.
+#
+# we therefore remove all its main sockets in /var/run/user/*/gnupg/
+# gpg-agent will start a new instance when it's needed the next time
+# refreshing also its other sockets like S.gpg-agent.browser or
+# S.gpg-agent.ssh
+
+rm /var/run/user/*/gnupg/S.gpg-agent

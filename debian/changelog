@@ -1,3 +1,9 @@
+gnupg2 (2.5.11-3) unstable; urgency=medium
+
+  * changed method of gpg-agent postinst kill to ensure it's done for all users
+
+ -- meik michalke <meik.michalke@gnupg.com>  Wed, 30 Jul 2025 17:21:56 +0200
+
 gnupg2 (2.5.11-2) unstable; urgency=medium
 
   * added postinst script to restart services after gpg-agent update
