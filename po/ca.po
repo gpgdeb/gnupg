@@ -27,7 +27,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg 1.4.0\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-07-25 15:52+0200\n"
+"POT-Creation-Date: 2025-07-30 10:32+0200\n"
 "PO-Revision-Date: 2005-02-04 02:04+0100\n"
 "Last-Translator: Jordi Mallach <jordi@gnu.org>\n"
 "Language-Team: Catalan <ca@dodds.net>\n"
@@ -254,7 +254,7 @@ msgstr "l'algoritme de protecció %d%s no està suportat\n"
 #: agent/command-ssh.c:890 common/dotlock.c:991 common/dotlock.c:994
 #: g10/card-util.c:1004 g10/export.c:1553 g10/gpg.c:1498 g10/keygen.c:6391
 #: g10/keyring.c:1329 g10/keyring.c:1642 g10/openfile.c:293 g10/photoid.c:638
-#: g10/photoid.c:656 g10/sign.c:1142 g10/sign.c:1507 g10/tdbio.c:739
+#: g10/photoid.c:656 g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739
 #: tools/gpg-card.c:499
 #, fuzzy, c-format
 #| msgid "can't create `%s': %s\n"
@@ -266,8 +266,8 @@ msgstr "no s'ha pogut crear «%s»: %s\n"
 #: g10/decrypt.c:186 g10/decrypt.c:199 g10/encrypt.c:487 g10/encrypt.c:898
 #: g10/gpg.c:1499 g10/import.c:386 g10/import.c:573 g10/import.c:808
 #: g10/keygen.c:5244 g10/keyring.c:1668 g10/openfile.c:197 g10/openfile.c:211
-#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1122 g10/sign.c:1366
-#: g10/sign.c:1488 g10/sign.c:1662 g10/tdbdump.c:146 g10/tdbdump.c:150
+#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1125 g10/sign.c:1369
+#: g10/sign.c:1491 g10/sign.c:1665 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
 #: sm/gpgsm.c:1978 sm/gpgsm.c:2010 sm/gpgsm.c:2065 sm/gpgsm.c:2079
 #: sm/gpgsm.c:2085 sm/gpgsm.c:2113 sm/gpgsm.c:2465 sm/gpgsm.c:2504
@@ -1786,7 +1786,7 @@ msgstr "no s'ha pogut posar «%s» en la base de dades de confiança - %s\n"
 msgid "Enter passphrase: "
 msgstr "Introduïu la contrasenya: "
 
-#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:489
+#: g10/call-agent.c:322 g10/encrypt.c:202 g10/encrypt.c:461 g10/sign.c:492
 #: sm/call-agent.c:249 sm/encrypt.c:689 sm/sign.c:640
 #, fuzzy, c-format
 #| msgid "%s does not yet work with %s\n"
@@ -2472,7 +2472,7 @@ msgstr "no podeu usar l'algorisme de xifratge «%s» mentre esteu en mode %s\n"
 msgid "WARNING: key %s is not suitable for encryption in %s mode\n"
 msgstr "AVÍS: %s és una opció desaconsellada.\n"
 
-#: g10/encrypt.c:511 g10/sign.c:1679
+#: g10/encrypt.c:511 g10/sign.c:1682
 #, c-format
 msgid "error creating passphrase: %s\n"
 msgstr "error en la creació de la contrasenya: %s\n"
@@ -2488,20 +2488,20 @@ msgstr "no es pot usar un paquet asimètric ESK al estar en mode S2K\n"
 msgid "using cipher %s.%s\n"
 msgstr "Ha fallat el procés de signatura: %s\n"
 
-#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:850
+#: g10/encrypt.c:611 g10/encrypt.c:959 g10/sign.c:853
 #, fuzzy, c-format
 #| msgid "WARNING: `%s' is an empty file\n"
 msgid "WARNING: '%s' is an empty file\n"
 msgstr "AVÍS: «%s» és un fitxer buit\n"
 
-#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1298
+#: g10/encrypt.c:639 g10/encrypt.c:988 g10/sign.c:1301
 #, fuzzy, c-format
 #| msgid "`%s' already compressed\n"
 msgid "'%s' already compressed\n"
 msgstr "«%s» ja està comprimida\n"
 
 #: g10/encrypt.c:742 g10/gpg.c:4273 g10/gpg.c:4321 g10/sig-check.c:173
-#: g10/sign.c:467 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
+#: g10/sign.c:470 sm/gpgsm.c:1772 sm/gpgsm.c:1782 sm/sign.c:813 sm/verify.c:511
 #, fuzzy, c-format
 msgid "digest algorithm '%s' may not be used in %s mode\n"
 msgstr "no podeu usar l'algorisme de resum %s mentre esteu en mode %s\n"
@@ -2512,7 +2512,7 @@ msgstr "no podeu usar l'algorisme de resum %s mentre esteu en mode %s\n"
 msgid "reading from '%s'\n"
 msgstr "s'està llegint des de «%s»\n"
 
-#: g10/encrypt.c:1023 g10/sign.c:1319
+#: g10/encrypt.c:1023 g10/sign.c:1322
 #, fuzzy, c-format
 msgid ""
 "WARNING: forcing compression algorithm %s (%d) violates recipient "
@@ -2605,7 +2605,7 @@ msgid " - skipped"
 msgstr "%s: es descarta: %s\n"
 
 #: g10/export.c:1557 g10/import.c:2257 g10/openfile.c:202 g10/openfile.c:296
-#: g10/sign.c:1146 g10/sign.c:1511
+#: g10/sign.c:1149 g10/sign.c:1514
 #, fuzzy, c-format
 #| msgid "writing to `%s'\n"
 msgid "writing to '%s'\n"
@@ -4613,7 +4613,7 @@ msgid "Really sign? (y/N) "
 msgstr "Signar realment? "
 
 #: g10/keyedit.c:1159 g10/keyedit.c:6781 g10/keyedit.c:6864 g10/keyedit.c:6993
-#: g10/keyedit.c:7055 g10/sign.c:552
+#: g10/keyedit.c:7055 g10/sign.c:555
 #, c-format
 msgid "signing failed: %s\n"
 msgstr "Ha fallat el procés de signatura: %s\n"
@@ -7670,7 +7670,7 @@ msgstr ""
 msgid "%s key %s requires a %zu bit or larger hash (hash is %s)\n"
 msgstr ""
 
-#: g10/sig-check.c:81 g10/sign.c:479 sm/sign.c:827 sm/verify.c:503
+#: g10/sig-check.c:81 g10/sign.c:482 sm/sign.c:827 sm/verify.c:503
 #, fuzzy, c-format
 #| msgid "you may not use %s while in %s mode\n"
 msgid "key %s may not be used for signing in %s mode\n"
@@ -7712,7 +7712,7 @@ msgstr[0] "la clau pública %08lX és %lu segons anterior a la signatura\n"
 msgstr[1] "la clau pública %08lX és %lu segons anterior a la signatura\n"
 
 # Werner FIXME: Use ngettext. jm
-#: g10/sig-check.c:391 g10/sign.c:436
+#: g10/sig-check.c:391 g10/sign.c:439
 #, fuzzy, c-format
 msgid ""
 "key %s was created %lu second in the future (time warp or clock problem)\n"
@@ -7787,7 +7787,7 @@ msgstr ""
 "AVÍS: no s'ha pogut %%-expandir la notació (massa gran). S'utilitza no "
 "expandida.\n"
 
-#: g10/sign.c:149
+#: g10/sign.c:152
 #, fuzzy, c-format
 msgid ""
 "WARNING: unable to %%-expand policy URL (too large).  Using unexpanded.\n"
@@ -7795,7 +7795,7 @@ msgstr ""
 "AVÍS: no s'ha pogut %%-expandir l'url de política (massa gran). S'utilitza "
 "no expandida.\n"
 
-#: g10/sign.c:172
+#: g10/sign.c:175
 #, fuzzy, c-format
 msgid ""
 "WARNING: unable to %%-expand preferred keyserver URL (too large).  Using "
@@ -7804,24 +7804,24 @@ msgstr ""
 "AVÍS: no s'ha pogut %%-expandir l'url de política (massa gran). S'utilitza "
 "no expandida.\n"
 
-#: g10/sign.c:558
+#: g10/sign.c:561
 #, fuzzy, c-format
 msgid "%s/%s signature from: \"%s\"\n"
 msgstr "%s signatura de: «%s»\n"
 
-#: g10/sign.c:1182
+#: g10/sign.c:1185
 #, fuzzy, c-format
 msgid ""
 "WARNING: forcing digest algorithm %s (%d) violates recipient preferences\n"
 msgstr ""
 "forçar l'algoritme de digest %s (%d) viola les preferències del destinatari\n"
 
-#: g10/sign.c:1350
+#: g10/sign.c:1353
 #, c-format
 msgid "signing:"
 msgstr "signatura:"
 
-#: g10/sign.c:1688
+#: g10/sign.c:1691
 #, fuzzy, c-format
 #| msgid "%s encryption will be used\n"
 msgid "%s.%s encryption will be used\n"
