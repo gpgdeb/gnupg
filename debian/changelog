@@ -1,3 +1,9 @@
+gnupg2 (2.5.11-2) unstable; urgency=medium
+
+  * added postinst script to restart services after gpg-agent update
+
+ -- meik michalke <meik.michalke@gnupg.com>  Wed, 30 Jul 2025 15:59:47 +0200
+
 gnupg2 (2.5.11-1) unstable; urgency=medium
 
   * new upstream development release, fixing a regression introduced with 2.5.10
