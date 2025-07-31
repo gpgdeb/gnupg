@@ -10,4 +10,6 @@
 # refreshing also its other sockets like S.gpg-agent.browser or
 # S.gpg-agent.ssh
 
-rm /var/run/user/*/gnupg/S.gpg-agent
+echo "Stopping all gpg-agents..."
+find /var/run/user/ -name S.gpg-agent -exec rm {} \; 2>/dev/null
+echo "gpg-agent (re)starts automatically when needed. Or run 'gpgconf --launch gpg-agent' manually if you need one now, e.g. for ssh support."
