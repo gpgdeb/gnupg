@@ -1,8 +1,9 @@
 gnupg2 (2.5.11-3) unstable; urgency=medium
 
+  * added two patches from upstream fixing a regression in gpgtar
   * changed method of gpg-agent postinst kill to ensure it's done for all users
 
- -- meik michalke <meik.michalke@gnupg.com>  Wed, 30 Jul 2025 17:21:56 +0200
+ -- meik michalke <meik.michalke@gnupg.com>  Thu, 31 Jul 2025 15:26:43 +0200
 
 gnupg2 (2.5.11-2) unstable; urgency=medium
 
