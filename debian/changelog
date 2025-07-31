@@ -1,3 +1,9 @@
+gnupg2 (2.4.8-3) UNRELEASED; urgency=medium
+
+  * added postinst script to kill running gpg-agents after updates
+
+ -- meik michalke <meik.michalke@gnupg.com>  Thu, 31 Jul 2025 11:19:16 +0200
+
 gnupg2 (2.4.8-2) experimental; urgency=medium
 
   * fixed patch to avoid false warning of beta version
