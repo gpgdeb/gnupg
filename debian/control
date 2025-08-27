@@ -87,6 +87,7 @@ Multi-Arch: foreign
 Depends:
  gpgconf (= ${binary:Version}),
  pinentry-curses | pinentry,
+ scdaemon (= ${source:Version}),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
@@ -95,7 +96,6 @@ Recommends:
 Suggests:
  dbus-user-session,
  pinentry-gnome3,
- scdaemon,
  tpm2daemon,
 Replaces:
  gnupg-agent (<< 2.1.21-4),
