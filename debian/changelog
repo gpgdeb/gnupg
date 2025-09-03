@@ -1,3 +1,9 @@
+gnupg2 (2.5.12-1) unstable; urgency=medium
+
+  * new upstream development release
+
+ -- meik michalke <meik.michalke@gnupg.com>  Wed, 03 Sep 2025 08:48:03 +0200
+
 gnupg2 (2.5.11-3) unstable; urgency=medium
 
   * added two patches from upstream fixing a regression in gpgtar
