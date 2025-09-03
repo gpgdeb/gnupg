@@ -252,6 +252,8 @@ Depends:
  gpg-agent (>= ${source:Version}),
  gpgsm (<< ${source:Version}.1~),
  gpgsm (>= ${source:Version}),
+ scdaemon (<< ${source:Version}.1~),
+ scdaemon (>= ${source:Version}),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
