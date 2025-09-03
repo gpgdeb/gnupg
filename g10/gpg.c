@@ -379,6 +379,8 @@ enum cmd_and_opt_values
     oNoAutoKeyRetrieve,
     oAutoKeyImport,
     oNoAutoKeyImport,
+    oAutoKeyUpload,
+    oNoAutoKeyUpload,
     oUseAgent,
     oNoUseAgent,
     oGpgAgentInfo,
@@ -808,6 +810,8 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_s_n (oNoAutoKeyImport, "no-auto-key-import", "@"),
   ARGPARSE_s_n (oAutoKeyRetrieve, "auto-key-retrieve", "@"),
   ARGPARSE_s_n (oNoAutoKeyRetrieve, "no-auto-key-retrieve", "@"),
+  ARGPARSE_s_n (oAutoKeyUpload, "auto-key-upload", "@"),
+  ARGPARSE_s_n (oNoAutoKeyUpload, "no-auto-key-upload", "@"),
   ARGPARSE_s_n (oIncludeKeyBlock, "include-key-block",
                 N_("include the public key in signatures")),
   ARGPARSE_s_n (oNoIncludeKeyBlock, "no-include-key-block", "@"),
@@ -2518,7 +2522,7 @@ main (int argc, char **argv)
                                             | IMPORT_COLLAPSE_SUBKEYS
                                             | IMPORT_CLEAN);
     opt.keyserver_options.export_options = EXPORT_ATTRIBUTES;
-    opt.keyserver_options.options = 0;
+    opt.keyserver_options.options = KEYSERVER_UPDATE_BEFORE_SEND;
     opt.verify_options = (LIST_SHOW_UID_VALIDITY
                           | VERIFY_SHOW_POLICY_URLS
                           | VERIFY_SHOW_STD_NOTATIONS
@@ -3605,6 +3609,9 @@ main (int argc, char **argv)
 	  case oNoAutoKeyRetrieve:
             opt.keyserver_options.options &= ~KEYSERVER_AUTO_KEY_RETRIEVE;
             break;
+
+          case oAutoKeyUpload: opt.flags.auto_key_upload = 1; break;
+          case oNoAutoKeyUpload: opt.flags.auto_key_upload = 0; break;
 
 	  case oShowOnlySessionKey:
             opt.show_only_session_key = 1;
@@ -5016,7 +5023,7 @@ main (int argc, char **argv)
           const char *x_fpr, *x_expire;
 
           if (argc < 2)
-            wrong_args ("--quick-set-exipre FINGERPRINT EXPIRE [SUBKEY-FPRS]");
+            wrong_args ("--quick-set-expire FINGERPRINT EXPIRE [SUBKEY-FPRS]");
           x_fpr = *argv++; argc--;
           x_expire = *argv++; argc--;
           keyedit_quick_set_expire (ctrl, x_fpr, x_expire, argv);
@@ -5072,9 +5079,9 @@ main (int argc, char **argv)
 	for( ; argc; argc--, argv++ )
 	    append_to_strlist2( &sl, *argv, utf8_strings );
 	if( cmd == aSendKeys )
-            rc = keyserver_export (ctrl, sl );
+          rc = keyserver_export (ctrl, sl, 0 );
 	else if( cmd == aRecvKeys )
-            rc = keyserver_import (ctrl, sl );
+          rc = keyserver_import (ctrl, sl, 0);
 	else
           {
             export_stats_t stats = export_new_stats ();
