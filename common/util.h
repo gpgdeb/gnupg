@@ -39,9 +39,6 @@
  * libgpg-error version.  Define them here.
  * Example: (#if GPG_ERROR_VERSION_NUMBER < 0x011500 // 1.21)
  */
-#if GPGRT_VERSION_NUMBER  < 0x013800 /* 1.56 */
-# define GPG_ERR_UNEXPECTED_PACKET 216
-#endif
 
 
 #ifndef EXTERN_UNLESS_MAIN_MODULE
@@ -240,6 +237,13 @@ const char *get_keyalgo_string (enum gcry_pk_algos algo,
 
 
 /*-- homedir.c --*/
+#ifdef HAVE_W32_SYSTEM
+int gnupg_isatty (int fd);
+extern int windows_semihosted_by_wine;
+#else
+#define gnupg_isatty(a)  isatty ((a))
+#endif
+
 const char *standard_homedir (void);
 void gnupg_set_homedir (const char *newdir);
 void gnupg_maybe_make_homedir (const char *fname, int quiet);
@@ -309,12 +313,21 @@ char *gnupg_get_help_string (const char *key, int only_current_locale);
 const char *gnupg_messages_locale_name (void);
 
 /*-- kem.c --*/
-gpg_error_t gnupg_ecc_kem_kdf (void *kek, size_t kek_len,
+gpg_error_t
+gpgsm_ecc_kem_kdf (void *kek, size_t kek_len,
+                   int hashalgo, const void *ecdh, size_t ecdh_len,
+                   const unsigned char *wrap, size_t wrap_len,
+                   const unsigned char *ukm, size_t ukm_len);
+
+gpg_error_t gnupg_ecc_kem_kdf (void *kek, size_t kek_len, int is_pgp,
                                int hashalgo, const void *ecdh, size_t ecdh_len,
-                               const void *ecc_ct, size_t ecc_ct_len,
-                               const void *ecc_pk, size_t ecc_pk_len,
-                               unsigned char *kdf_params,
+                               const unsigned char *kdf_params,
                                size_t kdf_params_len);
+
+gpg_error_t gnupg_ecc_kem_simple_kdf (void *kek, size_t kek_len, int hashalgo,
+                                      const void *ecdh, size_t ecdh_len,
+                                      const void *ecc_ct, size_t ecc_ct_len,
+                                      const void *ecc_pk, size_t ecc_pk_len);
 
 gpg_error_t gnupg_kem_combiner  (void *kek, size_t kek_len,
                                  const void *ecc_ss, size_t ecc_ss_len,
@@ -426,8 +439,6 @@ _gnupg_ttyname (int fd)
 #else /*HAVE_TTYNAME*/
 # define gnupg_ttyname(n) ttyname ((n))
 #endif /*HAVE_TTYNAME */
-
-#define gnupg_isatty(a)  isatty ((a))
 
 
 /*-- Macros to replace ctype ones to avoid locale problems. --*/

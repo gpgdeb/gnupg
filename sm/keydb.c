@@ -447,25 +447,13 @@ keydb_add_resource (ctrl_t ctrl, const char *url, int force, int *auto_created)
           err = gpg_error (GPG_ERR_RESOURCE_LIMIT);
         else
           {
-            KEYBOX_HANDLE kbxhd;
-
             all_resources[used_resources].type = rt;
             all_resources[used_resources].u.kr = NULL; /* Not used here */
             all_resources[used_resources].token = token;
 
-            /* Do a compress run if needed and the keybox is not locked. */
-            kbxhd = keybox_new_x509 (token, 0);
-            if (kbxhd)
-              {
-                if (!keybox_lock (kbxhd, 1, 0))
-                  {
-                    keybox_compress (kbxhd);
-                    keybox_lock (kbxhd, 0, 0);
-                  }
-
-                keybox_release (kbxhd);
-              }
-
+            /* Do a compress run if needed and no other user is
+             * currently using the keybox. */
+            keybox_compress_when_no_other_users (token, 0);
             used_resources++;
           }
       }
@@ -820,7 +808,7 @@ lock_all (KEYDB_HANDLE hd)
 {
   int i, rc = 0;
 
-  if (hd->use_keyboxd)
+  if (hd->keep_lock)
     return 0;
 
   /* Fixme: This locking scheme may lead to deadlock if the resources
@@ -862,14 +850,31 @@ lock_all (KEYDB_HANDLE hd)
 }
 
 static void
+do_fp_close (KEYDB_HANDLE hd)
+{
+  int i;
+
+  for (i=0; i < hd->used; i++)
+    {
+      switch (hd->active[i].type)
+        {
+        case KEYDB_RESOURCE_TYPE_NONE:
+          break;
+        case KEYDB_RESOURCE_TYPE_KEYBOX:
+          keybox_fp_close (hd->active[i].u.kr);
+          break;
+        }
+    }
+}
+
+static void
 unlock_all (KEYDB_HANDLE hd)
 {
   int i;
 
-  if (hd->use_keyboxd)
-    return;
+  do_fp_close (hd);
 
-  if (!hd->locked || hd->keep_lock)
+  if (!hd->locked)
     return;
 
   for (i=hd->used-1; i >= 0; i--)
@@ -1091,8 +1096,8 @@ keydb_get_flags (KEYDB_HANDLE hd, int which, int idx, unsigned int *value)
    that some flag values can't be updated and thus may return an
    error, some other flag values may be masked out before an update.
    Returns 0 on success or an error code. */
-gpg_error_t
-keydb_set_flags (KEYDB_HANDLE hd, int which, int idx, unsigned int value)
+static gpg_error_t
+do_set_flags (KEYDB_HANDLE hd, int which, int idx, unsigned int value)
 {
   gpg_error_t err = 0;
 
@@ -1186,8 +1191,8 @@ store_inq_cb (void *opaque, const char *line)
 /*
  * Insert a new Certificate into one of the resources.
  */
-gpg_error_t
-keydb_insert_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
+static gpg_error_t
+do_insert_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
 {
   gpg_error_t err;
   int idx;
@@ -1221,6 +1226,12 @@ keydb_insert_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
       goto leave;
     }
 
+  if (!hd->locked)
+    {
+      err = gpg_error (GPG_ERR_NOT_LOCKED);
+      goto leave;
+    }
+
   if ( hd->found >= 0 && hd->found < hd->used)
     idx = hd->found;
   else if ( hd->current >= 0 && hd->current < hd->used)
@@ -1228,12 +1239,6 @@ keydb_insert_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
   else
     {
       err = gpg_error (GPG_ERR_GENERAL);
-      goto leave;
-    }
-
-  if (!hd->locked)
-    {
-      err = gpg_error (GPG_ERR_NOT_LOCKED);
       goto leave;
     }
 
@@ -1249,8 +1254,6 @@ keydb_insert_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
       err = keybox_insert_cert (hd->active[idx].u.kr, cert, digest);
       break;
     }
-
-  unlock_all (hd);
 
  leave:
   if (DBG_CLOCK)
@@ -1275,6 +1278,18 @@ keydb_update_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
   if (!hd)
     return gpg_error (GPG_ERR_INV_VALUE);
 
+  if (hd->use_keyboxd)
+    {
+      /* FIXME */
+      goto leave;
+    }
+
+  if (!hd->locked)
+    {
+      err = gpg_error (GPG_ERR_NOT_LOCKED);
+      goto leave;
+    }
+
   if ( hd->found < 0 || hd->found >= hd->used)
     return gpg_error (GPG_ERR_NOT_FOUND);
 
@@ -1283,16 +1298,6 @@ keydb_update_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
 
   if (DBG_CLOCK)
     log_clock ("%s: enter (hd=%p)\n", __func__, hd);
-
-  if (hd->use_keyboxd)
-    {
-      /* FIXME */
-      goto leave;
-    }
-
-  err = lock_all (hd);
-  if (err)
-    goto leave;
 
   gpgsm_get_fingerprint (cert, GCRY_MD_SHA1, digest, NULL); /* kludge*/
 
@@ -1307,7 +1312,6 @@ keydb_update_cert (KEYDB_HANDLE hd, ksba_cert_t cert)
       break;
     }
 
-  unlock_all (hd);
  leave:
   if (DBG_CLOCK)
     log_clock ("%s: leave (err=%s)\n", __func__, gpg_strerror (err));
@@ -1372,8 +1376,6 @@ keydb_delete (KEYDB_HANDLE hd)
       err = keybox_delete (hd->active[hd->found].u.kr);
       break;
     }
-
-  unlock_all (hd);
 
  leave:
   if (DBG_CLOCK)
@@ -1974,7 +1976,7 @@ keydb_store_cert (ctrl_t ctrl, ksba_cert_t cert, int ephemeral, int *existed)
 
   if (!kh->use_keyboxd)
     {
-      rc = lock_all (kh);
+      rc = keydb_lock (kh);
       if (rc)
         return rc;
     }
@@ -2019,7 +2021,7 @@ keydb_store_cert (ctrl_t ctrl, ksba_cert_t cert, int ephemeral, int *existed)
       return rc;
     }
 
-  rc = keydb_insert_cert (kh, cert);
+  rc = do_insert_cert (kh, cert);
   if (rc)
     {
       log_error (_("error storing certificate: %s\n"), gpg_strerror (rc));
@@ -2031,7 +2033,7 @@ keydb_store_cert (ctrl_t ctrl, ksba_cert_t cert, int ephemeral, int *existed)
 }
 
 
-/* This is basically keydb_set_flags but it implements a complete
+/* This is basically do_set_flags but it implements a complete
    transaction by locating the certificate in the DB and updating the
    flags. */
 gpg_error_t
@@ -2093,7 +2095,7 @@ keydb_set_cert_flags (ctrl_t ctrl, ksba_cert_t cert, int ephemeral,
 
   if (value != old_value)
     {
-      err = keydb_set_flags (kh, which, idx, value);
+      err = do_set_flags (kh, which, idx, value);
       if (err)
         {
           log_error (_("error storing flags: %s\n"), gpg_strerror (err));
@@ -2185,7 +2187,7 @@ keydb_clear_some_cert_flags (ctrl_t ctrl, strlist_t names)
       value = (old_value & ~VALIDITY_REVOKED);
       if (value != old_value)
         {
-          err = keydb_set_flags (hd, KEYBOX_FLAG_VALIDITY, 0, value);
+          err = do_set_flags (hd, KEYBOX_FLAG_VALIDITY, 0, value);
           if (err)
             {
               log_error (_("error storing flags: %s\n"), gpg_strerror (err));
