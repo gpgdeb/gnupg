@@ -70,6 +70,7 @@ int keybox_is_writable (void *token);
 
 KEYBOX_HANDLE keybox_new_openpgp (void *token, int secret);
 KEYBOX_HANDLE keybox_new_x509 (void *token, int secret);
+void keybox_fp_close (KEYBOX_HANDLE hd);
 void keybox_release (KEYBOX_HANDLE hd);
 void keybox_push_found_state (KEYBOX_HANDLE hd);
 void keybox_pop_found_state (KEYBOX_HANDLE hd);
@@ -119,7 +120,7 @@ int keybox_update_cert (KEYBOX_HANDLE hd, ksba_cert_t cert,
 int keybox_set_flags (KEYBOX_HANDLE hd, int what, int idx, unsigned int value);
 
 int keybox_delete (KEYBOX_HANDLE hd);
-int keybox_compress (KEYBOX_HANDLE hd);
+void keybox_compress_when_no_other_users (void *token, int for_openpgp);
 
 
 /*--  --*/
