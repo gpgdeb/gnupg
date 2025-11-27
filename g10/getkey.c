@@ -613,6 +613,7 @@ get_pubkey_fast (ctrl_t ctrl, PKT_public_key * pk, u32 * keyid)
 
 /* Return the key block for the key with key id KEYID or NULL, if an
  * error occurs.  Use release_kbnode() to release the key block.
+ * The only supported FLAGS bit is GETKEY_ALLOW_ADSK.
  *
  * The self-signed data has already been merged into the public key
  * using merge_selfsigs.  */
@@ -633,7 +634,7 @@ get_pubkeyblock_ext (ctrl_t ctrl, u32 * keyid, unsigned int flags)
   ctx.items[0].mode = KEYDB_SEARCH_MODE_LONG_KID;
   ctx.items[0].u.kid[0] = keyid[0];
   ctx.items[0].u.kid[1] = keyid[1];
-  ctx.allow_adsk = !!(flags & GET_PUBKEYBLOCK_FLAG_ADSK);
+  ctx.allow_adsk = !!(flags & GETKEY_ALLOW_ADSK);
   rc = lookup (ctrl, &ctx, 0, &keyblock, NULL);
   getkey_end (ctrl, &ctx);
 
@@ -788,12 +789,17 @@ leave:
    can use free_public_key, which calls release_public_key_parts(PK)
    and then xfree(PK)).
 
-   If WANT_SECRET is set, then only keys with an available secret key
-   (either locally or via key registered on a smartcard) are returned.
+   If the GETKEY_WANT_SECRET bit is set in FLAGS, then only keys with
+   an available secret key (either locally or via key registered on a
+   smartcard) are returned.
 
-   If INCLUDE_UNUSABLE is set, then unusable keys (see the
-   documentation for skip_unusable for an exact definition) are
-   skipped unless they are looked up by key id or by fingerprint.
+   If the GETKEY_WITH_UNUSABLE bit is set in FLAGS, then unusable keys
+   (see the documentation for skip_unusable for an exact definition)
+   are skipped unless they are looked up by key id or by fingerprint.
+
+   If the GETKEY_ALLOW_ADSK bit is set in FLAGS, ADSK keys are always
+   returned.  Without that they are only returned if they have been
+   requested by PK->REQ_USAGE.
 
    If RET_KB is not NULL, the keyblock is returned in *RET_KB.  This
    should be freed using release_kbnode().
@@ -809,17 +815,16 @@ leave:
    (if want_secret is set) is returned if the key is not found.  */
 static int
 key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
-	    PKT_public_key *pk,
-	    int want_secret, int include_unusable,
-	    KBNODE * ret_kb, KEYDB_HANDLE * ret_kdbhd)
+	    PKT_public_key *pk, unsigned int flags,
+	    kbnode_t *ret_kb, KEYDB_HANDLE *ret_kdbhd)
 {
   int rc = 0;
   int n;
   strlist_t r;
   strlist_t namelist_expanded = NULL;
   GETKEY_CTX ctx;
-  KBNODE help_kb = NULL;
-  KBNODE found_key = NULL;
+  kbnode_t help_kb = NULL;
+  kbnode_t found_key = NULL;
 
   if (retctx)
     {
@@ -837,7 +842,7 @@ key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
       ctx = xmalloc_clear (sizeof *ctx);
       ctx->nitems = 1;
       ctx->items[0].mode = KEYDB_SEARCH_MODE_FIRST;
-      if (!include_unusable)
+      if (!(flags & GETKEY_WITH_UNUSABLE))
         {
           ctx->items[0].skipfnc = skip_unusable;
           ctx->items[0].skipfncvalue = ctrl;
@@ -872,7 +877,7 @@ key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
 	      rc = gpg_err_code (err); /* FIXME: remove gpg_err_code.  */
 	      goto leave;
 	    }
-	  if (!include_unusable
+	  if (!(flags & GETKEY_WITH_UNUSABLE)
 	      && ctx->items[n].mode != KEYDB_SEARCH_MODE_SHORT_KID
 	      && ctx->items[n].mode != KEYDB_SEARCH_MODE_LONG_KID
 	      && ctx->items[n].mode != KEYDB_SEARCH_MODE_FPR)
@@ -883,7 +888,8 @@ key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
 	}
     }
 
-  ctx->want_secret = want_secret;
+  ctx->want_secret = !!(flags & GETKEY_WANT_SECRET);
+  ctx->allow_adsk  = !!(flags & GETKEY_ALLOW_ADSK);
   ctx->kr_handle = keydb_new (ctrl);
   if (!ctx->kr_handle)
     {
@@ -898,6 +904,7 @@ key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
   if (ret_kdbhd)
     keydb_lock (ctx->kr_handle);
 
+
   if (pk)
     {
       /* It is a bit tricky to allow returning an ADSK key: lookup
@@ -908,7 +915,7 @@ key_byname (ctrl_t ctrl, GETKEY_CTX *retctx, strlist_t namelist,
         ctx->allow_adsk = 1;
     }
 
-  rc = lookup (ctrl, ctx, want_secret, ret_kb, &found_key);
+  rc = lookup (ctrl, ctx, ctx->want_secret, ret_kb, &found_key);
   if (!rc && pk)
     {
       pk_from_block (pk, *ret_kb, found_key);
@@ -1126,8 +1133,9 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
        * only try the local keyring).  In this case, lookup NAME in
        * the local keyring.  */
       add_to_strlist (&namelist, name);
-      rc = key_byname (ctrl, retctx, namelist, pk, 0,
-		       include_unusable, ret_keyblock, ret_kdbhd);
+      rc = key_byname (ctrl, retctx, namelist, pk,
+		       include_unusable? GETKEY_WITH_UNUSABLE:0,
+                       ret_keyblock, ret_kdbhd);
     }
 
   /* If the requested name resembles a valid mailbox and automatic
@@ -1176,8 +1184,9 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
                     }
                   add_to_strlist (&namelist, name);
                   rc = key_byname (ctrl, anylocalfirst ? retctx : NULL,
-                                   namelist, pk, 0,
-                                   include_unusable, ret_keyblock, ret_kdbhd);
+                                   namelist, pk,
+                                   include_unusable ? GETKEY_WITH_UNUSABLE : 0,
+                                   ret_keyblock, ret_kdbhd);
                 }
 	      break;
 
@@ -1386,8 +1395,9 @@ get_pubkey_byname (ctrl_t ctrl, enum get_pubkey_modes mode,
 		  *retctx = NULL;
 		}
 	      rc = key_byname (ctrl, anylocalfirst ? retctx : NULL,
-			       namelist, pk, 0,
-			       include_unusable, ret_keyblock, ret_kdbhd);
+			       namelist, pk,
+			       include_unusable ? GETKEY_WITH_UNUSABLE : 0,
+                               ret_keyblock, ret_kdbhd);
 	    }
 	  if (!rc)
 	    {
@@ -2258,16 +2268,16 @@ get_seckey_default (ctrl_t ctrl, PKT_public_key *pk)
 {
   gpg_error_t err;
   strlist_t namelist = NULL;
-  int include_unusable = 1;
+  unsigned int flags = GETKEY_WANT_SECRET | GETKEY_WITH_UNUSABLE;
 
 
   const char *def_secret_key = parse_def_secret_key (ctrl);
   if (def_secret_key)
     add_to_strlist (&namelist, def_secret_key);
   else
-    include_unusable = 0;
+    flags &= ~GETKEY_WITH_UNUSABLE;
 
-  err = key_byname (ctrl, NULL, namelist, pk, 1, include_unusable, NULL, NULL);
+  err = key_byname (ctrl, NULL, namelist, pk, flags, NULL, NULL);
 
   free_strlist (namelist);
 
@@ -2299,8 +2309,9 @@ get_seckey_default (ctrl_t ctrl, PKT_public_key *pk)
  * database does an OR of the terms, not an AND.)  If NAMES is
  * NULL, then all results are returned.
  *
- * If WANT_SECRET is set, then only keys with an available secret key
- * (either locally or via key registered on a smartcard) are returned.
+ * If GETKEY_WANT_SECRET is set in FLAGS, only keys with an available
+ * secret key (either locally or via key registered on a smartcard)
+ * are returned.
  *
  * This function does not skip unusable keys (see the documentation
  * for skip_unusable for an exact definition).
@@ -2313,9 +2324,10 @@ get_seckey_default (ctrl_t ctrl, PKT_public_key *pk)
  * (if want_secret is set) is returned if the key is not found.  */
 gpg_error_t
 getkey_bynames (ctrl_t ctrl, getkey_ctx_t *retctx, PKT_public_key *pk,
-                strlist_t names, int want_secret, kbnode_t *ret_keyblock)
+                strlist_t names, unsigned int flags, kbnode_t *ret_keyblock)
 {
-  return key_byname (ctrl, retctx, names, pk, want_secret, 1,
+  return key_byname (ctrl, retctx, names, pk,
+                     (flags | GETKEY_WITH_UNUSABLE),
                      ret_keyblock, NULL);
 }
 
@@ -2366,8 +2378,11 @@ getkey_byname (ctrl_t ctrl, getkey_ctx_t *retctx, PKT_public_key *pk,
 {
   gpg_error_t err;
   strlist_t namelist = NULL;
-  int with_unusable = 1;
   const char *def_secret_key = NULL;
+  unsigned int flags = GETKEY_WITH_UNUSABLE;
+
+  if (want_secret)
+    flags |= GETKEY_WANT_SECRET;
 
   if (want_secret && !name)
     def_secret_key = parse_def_secret_key (ctrl);
@@ -2377,10 +2392,9 @@ getkey_byname (ctrl_t ctrl, getkey_ctx_t *retctx, PKT_public_key *pk,
   else if (name)
     add_to_strlist (&namelist, name);
   else
-    with_unusable = 0;
+    flags &= ~GETKEY_WITH_UNUSABLE;
 
-  err = key_byname (ctrl, retctx, namelist, pk, want_secret, with_unusable,
-                    ret_keyblock, NULL);
+  err = key_byname (ctrl, retctx, namelist, pk, flags, ret_keyblock, NULL);
 
   /* FIXME: Check that we really return GPG_ERR_NO_SECKEY if
      WANT_SECRET has been used.  */
@@ -4275,13 +4289,15 @@ get_seckey_default_or_card (ctrl_t ctrl, PKT_public_key *pk,
   if (!fpr_card || (def_secret_key && *def_secret_key
                     && def_secret_key[strlen (def_secret_key)-1] == '!'))
     {
-      err = key_byname (ctrl, NULL, namelist, pk, 1, 0, NULL, NULL);
+      err = key_byname (ctrl, NULL, namelist, pk, GETKEY_WANT_SECRET,
+                        NULL, NULL);
     }
   else
     { /* Default key is specified and card key is also available.  */
       kbnode_t k, keyblock = NULL;
 
-      err = key_byname (ctrl, NULL, namelist, pk, 1, 0, &keyblock, NULL);
+      err = key_byname (ctrl, NULL, namelist, pk, GETKEY_WANT_SECRET,
+                        &keyblock, NULL);
       if (err)
         goto leave;
       for (k = keyblock; k; k = k->next)

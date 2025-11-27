@@ -1039,9 +1039,9 @@ radix64_read( armor_filter_context_t *afx, IOBUF a, size_t *retn,
 	    checkcrc++;
 	    break;
 	}
-        else if (c == '-'
-                 && afx->buffer_pos + 8 < afx->buffer_len
-                 && !strncmp (afx->buffer, "-----END ", 8)) {
+        else if (afx->buffer_pos == 1 && c == '-'
+                 && afx->buffer_len > 9
+                 && !strncmp (afx->buffer, "-----END ", 9)) {
             break; /* End in --dearmor mode or No CRC.  */
         }
 	else {
@@ -1312,8 +1312,8 @@ armor_filter( void *opaque, int control,
 	n = 0;
 	if( afx->buffer_len ) {
             /* Copy the data from AFX->BUFFER to BUF.  */
-	    for(; n < size && afx->buffer_pos < afx->buffer_len; n++ )
-		buf[n++] = afx->buffer[afx->buffer_pos++];
+            for(; n < size && afx->buffer_pos < afx->buffer_len;)
+                buf[n++] = afx->buffer[afx->buffer_pos++];
 	    if( afx->buffer_pos >= afx->buffer_len )
 		afx->buffer_len = 0;
 	}
