@@ -57,6 +57,7 @@ described here.
     - ssb :: Secret subkey (secondary key)
     - uid :: User id
     - uat :: User attribute (same as user id except for field 10).
+    - pfc :: preference record [*]
     - sig :: Signature
     - rev :: Revocation signature
     - rvs :: Revocation signature (standalone) [since 2.2.9]
@@ -304,6 +305,19 @@ described here.
     without running a --with-sigs listing.
 
 ** Special fields
+
+*** PFC - Preferences on User ID
+
+    - Field 1 :: "pfc"
+    - Field 2 :: RFU
+    - Field 3 :: Symmetric algo preferences (decimal, comma delimited)
+    - Field 4 :: Digest algo preferences (decimal, comma delimited)
+    - Field 5 :: Compress algo preferences (decimal, comma delimited)
+    - Field 6 :: AEAD algo preferences (decimal, comma delimited)
+    - Field 7 :: RFU
+    - Field 8 :: RFU
+    - Field 9 :: Comma delimited flags.  For example:
+                 "mdc", "aead", "no-ks-modify
 
 *** PKD - Public key data
 
@@ -1562,15 +1576,18 @@ CREATE TABLE signatures (
          - The serial number. Regardless of what the length octet
            indicates no more than 16 octets are stored.
   - 3 :: The internal representation of a private key: For v4 keys we
-         first write 4 octets big endian length of the following
-         s-expression with the protected or unprotected private key;
-         for v5 keys this is not necessarily because that length
-         header is always there.  The actual data are N octets of
-         s-expression.  Any protection (including the real S2K) is
-         part of that data.  Note that the public key aparemters are
-         repeated in th s-expression.
+    first write 4 octets big endian length of the following
+    s-expression(s) with the protected or unprotected private key; for
+    v5 keys this is not necessarily because that length header is
+    always there.  The actual data are N octets of s-expression.  Any
+    protection (including the real S2K) is part of that data.  For a
+    composite key (aka PQ/T hybrid) the two s-expressions are combined
+    in a new s-expression using this layout:
+       (composite-key(<ecckey>)(<kyberkey>)).
+    Note that the respective public key parameters are repeated in the
+    s-expressions.
 
-  Note that gpg stores the GNU S2K Extension Number internally as an
+  Note that gpg internally stores the GNU S2K Extension Number as an
   S2K Specifier with an offset of 1000.
 
 

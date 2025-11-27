@@ -1082,7 +1082,7 @@ agent_keytotpm (ctrl_t ctrl, const char *hexgrip)
 
   if (strchr (hexgrip, ','))
     {
-      log_error ("storing a part of a dual key is not yet supported\n");
+      log_error ("storing a part of a composite key is not yet supported\n");
       return gpg_error (GPG_ERR_NOT_IMPLEMENTED);
     }
 
@@ -1117,7 +1117,7 @@ agent_keytocard (const char *hexgrip, int keyno, int force,
 
   if (strchr (hexgrip, ','))
     {
-      log_error ("storing a part of a dual key is not yet supported\n");
+      log_error ("storing a part of a composite key is not yet supported\n");
       return gpg_error (GPG_ERR_NOT_IMPLEMENTED);
     }
 
@@ -2484,8 +2484,6 @@ agent_get_keyinfo (ctrl_t ctrl, const char *hexkeygrip,
   if (err)
     return err;
 
-  /* FIXME: Support dual keys.  Maybe under the assumption that the
-   *        first key might be on a card.  */
   if (!hexkeygrip)
     return gpg_error (GPG_ERR_INV_VALUE);
   s = strchr (hexkeygrip, ',');
@@ -3106,7 +3104,8 @@ inq_import_key_parms (void *opaque, const char *line)
 
 /* Call the agent to import a key into the agent.  */
 gpg_error_t
-agent_import_key (ctrl_t ctrl, const char *desc, char **cache_nonce_addr,
+agent_import_key (ctrl_t ctrl, const char *desc, int mode1003,
+                  char **cache_nonce_addr,
                   const void *key, size_t keylen, int unattended, int force,
 		  u32 *keyid, u32 *mainkeyid, int pubkey_algo, u32 timestamp)
 {
@@ -3127,6 +3126,12 @@ agent_import_key (ctrl_t ctrl, const char *desc, char **cache_nonce_addr,
   if (err)
     return err;
   dfltparm.ctx = agent_ctx;
+
+  /* Check that the gpg-agent supports the --mode1003 option.  */
+  if (mode1003 && assuan_transact (agent_ctx,
+                                   "GETINFO cmd_has_option IMPORT_KEY mode1003",
+                                   NULL, NULL, NULL, NULL, NULL, NULL))
+    return gpg_error (GPG_ERR_NOT_SUPPORTED);
 
   /* Do not use our cache of secret keygrips anymore - this command
    * would otherwise requiring to update that cache.  */
@@ -3157,9 +3162,10 @@ agent_import_key (ctrl_t ctrl, const char *desc, char **cache_nonce_addr,
   parm.key    = key;
   parm.keylen = keylen;
 
-  snprintf (line, sizeof line, "IMPORT_KEY%s%s%s%s%s",
+  snprintf (line, sizeof line, "IMPORT_KEY%s%s%s%s%s%s",
             *timestamparg? timestamparg : "",
             unattended? " --unattended":"",
+            mode1003? " --mode1003":"",
             force? " --force":"",
             cache_nonce_addr && *cache_nonce_addr? " ":"",
             cache_nonce_addr && *cache_nonce_addr? *cache_nonce_addr:"");
@@ -3228,7 +3234,7 @@ agent_export_key (ctrl_t ctrl, const char *hexkeygrip, const char *desc,
 
   snprintf (line, DIM(line), "EXPORT_KEY %s%s%s %s",
             mode1003? "--mode1003" : openpgp_protected ? "--openpgp ":"",
-            cache_nonce_addr && *cache_nonce_addr? "--cache-nonce=":"",
+            cache_nonce_addr && *cache_nonce_addr? " --cache-nonce=":"",
             cache_nonce_addr && *cache_nonce_addr? *cache_nonce_addr:"",
             hexkeygrip);
 
@@ -3314,7 +3320,7 @@ agent_delete_key (ctrl_t ctrl, const char *hexkeygrip, const char *desc,
         return err;
     }
 
-  /* FIXME: Shall we add support to DELETE_KEY for dual keys?  */
+  /* FIXME: Shall we add support to DELETE_KEY for composite keys?  */
   snprintf (line, DIM(line), "DELETE_KEY%s %s",
             force? " --force":"", hexkeygrip);
   err = assuan_transact (agent_ctx, line, NULL, NULL,
