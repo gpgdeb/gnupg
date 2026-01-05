@@ -601,7 +601,8 @@ migrate_from_v1_to_v2 (void)
   err = run_sql_statement (sql);
   if (err)
     goto leave;
-  err = run_sql_statement ("INSERT INTO fingerprint_new"
+  err = run_sql_statement ("INSERT"
+                           " INTO fingerprint_new(fpr,kid,keygrip,subkey,ubid)"
                            " SELECT * FROM fingerprint");
   if (err)
     goto leave;
@@ -793,8 +794,6 @@ create_or_open_database (ctrl_t ctrl, const char *filename)
     {
       log_error (_("error creating database '%s': %s\n"),
                  filename, gpg_strerror (err));
-      if (dotlock_is_locked (database_lock))
-        dotlock_release (database_lock);
       dotlock_destroy (database_lock);
       database_lock = NULL;
     }
@@ -1453,10 +1452,10 @@ be_sqlite_search (ctrl_t ctrl,
                          gpg_strerror (err));
               uid_no = 0;
             }
-          else if (n < 0)
-            uid_no = 0;
+          else if (n < 1)
+            uid_no = 0;  /* Also the reserved index for the X.509 issuer.  */
           else
-            uid_no = n + 1;
+            uid_no = n;
         }
       else
         uid_no = 0;
@@ -1473,9 +1472,9 @@ be_sqlite_search (ctrl_t ctrl,
               goto leave;
             }
           else if (n < 0)
-            pk_no = 0;
+            pk_no = 0;  /* (should not be seen.) */
           else
-            pk_no = n + 1;
+            pk_no = n;
         }
       else
         pk_no = 0;
@@ -1723,7 +1722,7 @@ be_sqlite_store (ctrl_t ctrl, backend_handle_t backend_hd,
     }
   else
     {
-      err = _keybox_parse_openpgp (blob, bloblen, NULL, &info);
+      err = _keybox_parse_openpgp (blob, bloblen, 0, NULL, &info);
       if (err)
         {
           log_info ("error parsing OpenPGP blob: %s\n", gpg_strerror (err));
