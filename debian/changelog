@@ -1,3 +1,10 @@
+gnupg2 (2.5.16-1) unstable; urgency=medium
+
+  * new upstream stable release
+  * 2.5.16 is now officially stable and is planned to become 2.6 soon
+
+ -- meik michalke <meik.michalke@gnupg.com>  Mon, 05 Jan 2026 07:49:18 +0100
+
 gnupg2 (2.5.14-1) unstable; urgency=medium
 
   * new upstream development release
