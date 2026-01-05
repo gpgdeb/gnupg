@@ -1050,7 +1050,7 @@ finalize_rereadable_options (void)
 
 
 static void
-thread_init_once (void)
+agent_thread_init_once (void)
 {
   static int npth_initialized = 0;
 
@@ -1073,7 +1073,7 @@ thread_init_once (void)
 static void
 initialize_modules (void)
 {
-  thread_init_once ();
+  agent_thread_init_once ();
   initialize_module_cache ();
   initialize_module_call_pinentry ();
   initialize_module_daemon ();
@@ -1460,7 +1460,7 @@ main (int argc, char **argv)
 
   if (debug_wait && pipe_server)
     {
-      thread_init_once ();
+      agent_thread_init_once ();
       log_debug ("waiting for debugger - my pid is %u .....\n",
                  (unsigned int)getpid());
       gnupg_sleep (debug_wait);
@@ -1855,6 +1855,9 @@ main (int argc, char **argv)
         }
 
       log_info ("%s %s started\n", gpgrt_strusage(11), gpgrt_strusage(13) );
+#ifdef HAVE_W32_SYSTEM
+      w32_ack_to_frontend ();
+#endif
       handle_connections (fd, fd_extra, fd_browser, fd_ssh,
                           reliable_homedir_inotify);
       assuan_sock_close (fd);

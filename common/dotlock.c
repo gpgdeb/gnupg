@@ -159,7 +159,7 @@
    which is the core of the installed atexit handler.  In case your
    application wants to disable locking completely it may call
 
-     disable_locking ()
+     dotlock_disable ()
 
    before any locks are created.
 
@@ -186,8 +186,6 @@
    module are:
 
      DOTLOCK_USE_PTHREAD  - Define if POSIX threads are in use.
-
-     DOTLOCK_GLIB_LOGGING - Define this to use Glib logging functions.
 
      DOTLOCK_EXT_SYM_PREFIX - Prefix all external symbols with the
                               string to which this macro evaluates.
@@ -304,10 +302,6 @@
 # include <pthread.h>
 #endif
 
-#ifdef DOTLOCK_GLIB_LOGGING
-# include <glib.h>
-#endif
-
 #ifdef GNUPG_MAJOR_VERSION
 # include "util.h"
 # include "common-defs.h"
@@ -337,7 +331,7 @@
 # define xfree(a)	   free ((a))
 #endif
 
-/* Wrapper to set ERRNO (required for W32CE).  */
+/* Wrapper to set ERRNO.  */
 #ifdef GPG_ERROR_VERSION
 #  define my_set_errno(e)  gpg_err_set_errno ((e))
 #else
@@ -359,16 +353,6 @@
 # define my_error_2(a,b,c)  log_error ((a), (b), (c))
 # define my_debug_1(a,b)    log_debug ((a), (b))
 # define my_fatal_0(a)      log_fatal ((a))
-#elif defined (DOTLOCK_GLIB_LOGGING)
-# define my_info_0(a)       g_message ((a))
-# define my_info_1(a,b)     g_message ((a), (b))
-# define my_info_2(a,b,c)   g_message ((a), (b), (c))
-# define my_info_3(a,b,c,d) g_message ((a), (b), (c), (d))
-# define my_error_0(a)      g_warning ((a))
-# define my_error_1(a,b)    g_warning ((a), (b))
-# define my_error_2(a,b,c)  g_warning ((a), (b), (c))
-# define my_debug_1(a,b)    g_debug ((a), (b))
-# define my_fatal_0(a)      g_error ((a))
 #else
 # define my_info_0(a)       fprintf (stderr, (a))
 # define my_info_1(a,b)     fprintf (stderr, (a), (b))
@@ -390,12 +374,12 @@
 struct dotlock_handle
 {
   struct dotlock_handle *next;
-  char *lockname;            /* Name of the actual lockfile.          */
-  unsigned int locked:1;     /* Lock status.                          */
-  unsigned int disable:1;    /* If true, locking is disabled.         */
-  unsigned int use_o_excl:1; /* Use open (O_EXCL) for locking.        */
-  unsigned int by_parent:1;  /* Parent does the locking.              */
-  unsigned int no_write:1;   /* No write to the lockfile.             */
+  char *lockname;             /* Name of the actual lockfile.          */
+  unsigned int locked     :1; /* Lock status.                          */
+  unsigned int disable    :1; /* If true, locking is disabled.         */
+  unsigned int use_o_excl :1; /* Use open (O_EXCL) for locking.        */
+  unsigned int by_parent  :1; /* Parent does the locking.              */
+  unsigned int no_write   :1; /* No write to the lockfile.             */
 
   int extra_fd;              /* A place for the caller to store an FD.  */
 
@@ -476,10 +460,8 @@ map_w32_to_errno (DWORD w32_err)
       return EIO;
     }
 }
-#endif /*HAVE_DOSISH_SYSTEM*/
 
 
-#ifdef HAVE_W32_SYSTEM
 static int
 any8bitchar (const char *string)
 {
@@ -489,7 +471,7 @@ any8bitchar (const char *string)
         return 1;
   return 0;
 }
-#endif /*HAVE_W32_SYSTEM*/
+#endif /*HAVE_DOSISH_SYSTEM*/
 
 
 
@@ -998,6 +980,7 @@ dotlock_create_w32 (dotlock_t h, const char *file_to_lock)
       my_set_errno (saveerrno);
       return NULL;
     }
+  UNLOCK_all_lockfiles ();
   return h;
 }
 #endif /*HAVE_DOSISH_SYSTEM*/
@@ -1022,10 +1005,11 @@ dotlock_create_w32 (dotlock_t h, const char *file_to_lock)
    This can be used to set a callback between these calls.
 
    FLAGS may include DOTLOCK_LOCK_BY_PARENT bit, when it's the parent
-   process controlling the lock.  This is used by dotlock util.
+   process controlling the lock.  This is used by dotlock_tool in
+   gpgconf.
 
    FLAGS may include DOTLOCK_LOCKED bit, when it should not create the
-   lockfile, but to unlock.  This is used by dotlock util.
+   lockfile, but to unlock.  This is used by dotlock_tool in gpgconf.
 
    The function returns an new handle which needs to be released using
    destroy_dotlock but gets also released at the termination of the
@@ -1517,7 +1501,7 @@ dotlock_take_w32 (dotlock_t h, long timeout)
         h->info_cb (h, h->info_cb_value, DOTLOCK_FILE_ERROR,
                     _("lock '%s' not made: %s\n"),
                     h->lockname, w32_strerror (w32err));
-      _set_errno (map_w32_to_errno (w32err));
+      my_set_errno (map_w32_to_errno (w32err));
       return -1;
     }
 
@@ -1564,7 +1548,7 @@ dotlock_take (dotlock_t h, long timeout)
 
   if ( h->locked )
     {
-      my_debug_1 ("Oops, '%s' is already locked\n", h->lockname);
+      my_info_1 ("Oops, '%s' is already locked\n", h->lockname);
       return 0;
     }
 
@@ -1675,10 +1659,13 @@ dotlock_release (dotlock_t h)
 
   if ( !h->locked )
     {
-      my_debug_1 ("Oops, '%s' is not locked\n", h->lockname);
-      if (h->info_cb)
-        h->info_cb (h, h->info_cb_value, DOTLOCK_NOT_LOCKED,
-                    "Oops, '%s' is not locked\n", h->lockname);
+      if (!never_lock)
+        {
+          my_info_1 ("Oops, '%s' is not locked\n", h->lockname);
+          if (h->info_cb)
+            h->info_cb (h, h->info_cb_value, DOTLOCK_NOT_LOCKED,
+                        "Oops, '%s' is not locked\n", h->lockname);
+        }
       return 0;
     }
 
