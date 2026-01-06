@@ -3,5 +3,9 @@ set -e
 echo debian/tmp/usr/share/locale
 if ! echo ${DEB_BUILD_PROFILES} | grep -q nodoc ; then
 	echo 'usr/share/gnupg/help.*.txt'
+	echo 'usr/share/gnupg/mail-tube.*.txt'
+	echo 'usr/share/gnupg/wks-utils.*.txt'
 	echo usr/share/gnupg/help.txt
+	echo usr/share/gnupg/mail-tube.txt
+	echo usr/share/gnupg/wks-utils.txt
 fi
