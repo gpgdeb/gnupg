@@ -19,7 +19,7 @@ the datestamp unreproducible.
 
 --- a/doc/Makefile.am
 +++ b/doc/Makefile.am
-@@ -168,15 +168,6 @@ $(myman_pages) $(myhtmlman_pages) gnupg.
+@@ -166,15 +166,6 @@ $(myman_pages) $(myhtmlman_pages) gnupg.
  
  dist-hook: defsincdate
  
