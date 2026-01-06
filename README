@@ -1,6 +1,6 @@
                        The GNU Privacy Guard
                       =======================
-                            Version 2.4
+                           Version 2.5
 
           Copyright 1997-2019 Werner Koch
           Copyright 1998-2021 Free Software Foundation, Inc.
@@ -25,9 +25,12 @@
   can be freely used, modified and distributed under the terms of the
   GNU General Public License.
 
+  Note that this is considered the stable version of GnuPG.
+
+
 * BUILD INSTRUCTIONS
 
-  GnuPG 2.4 depends on the following GnuPG related packages:
+  GnuPG 2.6 depends on the following GnuPG related packages:
 
     npth         (https://gnupg.org/ftp/gcrypt/npth/)
     libgpg-error (https://gnupg.org/ftp/gcrypt/libgpg-error/)
@@ -83,21 +86,45 @@
 ** Quick build method on Unix
 
   To quickly build all required software without installing it, the
-  Speedo target may be used:
+  Speedo target may be used.  But first you need to make sure that the
+  toolchain is installed.  On a Debian based system it should be
+  sufficient to run as root:
+
+    apt-get install build-essential libusb-1.0-0-dev libsqlite3-dev \
+                    libldap-dev libreadline-dev patchelf
+
+  (libldap-dev and libreadline-dev are not strictly necessary but
+   are highly suggested.)
+
+  Then as regular user run
 
     make -f build-aux/speedo.mk native
 
   This target downloads all required libraries and does a native build
-  of GnuPG to PLAY/inst/.  GNU make and the patchelf tool are
-  required.  After the build the entire software including all
-  libraries can be installed into an arbitrary location using for
-  example:
+  of GnuPG to PLAY/inst/.  After the build the entire software
+  including all libraries can be installed into an arbitrary location
+  using for example:
 
-    make -f build-aux/speedo.mk install SYSROOT=/usr/local/gnupg24
-    ldconfig -n /usr/local/gnupg24/lib
+    make -f build-aux/speedo.mk install SYSROOT=/usr/local/gnupg26
 
-  and adding /usr/local/gnupg24/bin to PATH.
+  and run the binaries like
 
+    /usr/local/gnupg26/bin/gpg
+
+  which will also start any daemon from the same directory.  Make sure
+  to stop already running daemons or use a different GNUPGHOME.
+
+  If you want to use the gnupg-w32-n.m.n_somedate.tar.xz tarball you
+  only need to change the first make invocation to
+
+      make -f build-aux/speedo.mk this-native
+
+  The advantage of this alternative tarball is that all libraries are
+  included and thus the Makefile does not need to download new
+  tarballs.  Note that in any case all downloaded files come with
+  signatures which are verified by the Makefile commands.  The
+  patchelf command is required to change the search path for the
+  shared libraries in the binaries to relative directories.
 
 ** Specific build problems on some machines:
 
@@ -111,6 +138,13 @@
 
   Add other options as needed.
 
+*** Cygwin
+
+  Although Cygwin (Posix emulation on top of Windows) is not
+  officially supported, GnuPG can be build for that platform.  It
+  might be required to invoke configure like this:
+
+    ./configure  ac_cv_type_SOCKET=no
 
 *** Systems without a full C99 compiler
 
@@ -192,8 +226,18 @@
   remote use gpg-agent because the no-autostart feature on the remote
   site will not work as expected.
 
-  Thus the recommendation is not to use the --supervised option.  All
-  GnuPG components handle the startup of their daemons on their own.
+  If your systems already comes with a systemd enabled GnuPG, you
+  should thus tell it not to start its own GnuPG daemons by running
+  the following three commands once:
+
+    systemctl --user mask --now gpg-agent.service \
+              gpg-agent.socket gpg-agent-ssh.socket \
+              gpg-agent-extra.socket gpg-agent-browser.socket
+    systemctl --user mask --now dirmngr.service dirmngr.socket
+    systemctl --user mask --now keyboxd.service keyboxd.socket
+
+  This way all GnuPG components can handle the startup of their
+  daemons on their own and start the correct version.
 
   The only problem is that for using GnuPG's ssh-agent protocol
   support, the gpg-agent must have been started before ssh.  This can

@@ -58,20 +58,11 @@ strtimestamp_r (ksba_isotime_t atime)
 
 /* Hash the data for a detached signature.  Returns 0 on success.  */
 static gpg_error_t
-hash_data (int fd, gcry_md_hd_t md)
+hash_data (estream_t fp, gcry_md_hd_t md)
 {
   gpg_error_t err = 0;
-  estream_t fp;
   char buffer[4096];
   int nread;
-
-  fp = es_fdopen_nc (fd, "rb");
-  if (!fp)
-    {
-      err = gpg_error_from_syserror ();
-      log_error ("fdopen(%d) failed: %s\n", fd, gpg_strerror (err));
-      return err;
-    }
 
   do
     {
@@ -82,20 +73,20 @@ hash_data (int fd, gcry_md_hd_t md)
   if (es_ferror (fp))
     {
       err = gpg_error_from_syserror ();
-      log_error ("read error on fd %d: %s\n", fd, gpg_strerror (err));
+      log_error ("read error on fp %p: %s\n", fp, gpg_strerror (err));
     }
-  es_fclose (fp);
   return err;
 }
 
 
 
 
-/* Perform a verify operation.  To verify detached signatures, DATA_FD
-   must be different than -1.  With OUT_FP given and a non-detached
+/* Perform a verify operation.  To verify detached signatures, DATA_FP
+   must be different than NULL.  With OUT_FP given and a non-detached
    signature, the signed material is written to that stream.  */
 int
-gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
+gpgsm_verify (ctrl_t ctrl, estream_t in_fp, estream_t data_fp,
+              estream_t out_fp)
 {
   int i, rc;
   gnupg_ksba_io_t b64reader = NULL;
@@ -111,7 +102,6 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
   const char *algoid;
   int algo;
   int is_detached, maybe_detached;
-  estream_t in_fp = NULL;
   char *p;
 
   audit_set_type (ctrl->audit, AUDIT_TYPE_VERIFY);
@@ -119,7 +109,7 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
   /* Although we detect detached signatures during the parsing phase,
    * we need to know it earlier and thus accept the caller idea of
    * what to verify.  */
-  maybe_detached = (data_fd != -1);
+  maybe_detached = (data_fp != NULL);
 
   kh = keydb_new (ctrl);
   if (!kh)
@@ -129,14 +119,6 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
       goto leave;
     }
 
-
-  in_fp = es_fdopen_nc (in_fd, "rb");
-  if (!in_fp)
-    {
-      rc = gpg_error_from_syserror ();
-      log_error ("fdopen() failed: %s\n", strerror (errno));
-      goto leave;
-    }
 
   rc = gnupg_ksba_create_reader
     (&b64reader, ((ctrl->is_pem? GNUPG_KSBA_IO_PEM : 0)
@@ -247,7 +229,7 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
             }
           if (is_detached)
             {
-              if (data_fd == -1)
+              if (!data_fp)
                 {
                   log_info ("detached signature w/o data "
                             "- assuming certs-only\n");
@@ -255,7 +237,7 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
                 }
               else
                 audit_log_ok (ctrl->audit, AUDIT_DATA_HASHING,
-                              hash_data (data_fd, data_md));
+                              hash_data (data_fp, data_md));
             }
           else
             {
@@ -280,7 +262,7 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
         }
     }
 
-  if (data_fd != -1 && !is_detached)
+  if (data_fp && !is_detached)
     {
       log_error ("data given for a non-detached signature\n");
       rc = gpg_error (GPG_ERR_CONFLICT);
@@ -319,12 +301,14 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
       unsigned int pkalgoflags, verifyflags;
 
       rc = ksba_cms_get_issuer_serial (cms, signer, &issuer, &serial);
-      if (!signer && gpg_err_code (rc) == GPG_ERR_NO_DATA
-          && data_fd == -1 && is_detached)
+      if (!signer && gpg_err_code (rc) == GPG_ERR_NO_DATA)
         {
           log_info ("certs-only message accepted\n");
-          rc = 0;
-          break;
+          if (!data_fp && is_detached)
+            {
+              rc = 0;
+              break;
+            }
         }
       if (rc)
         {
@@ -719,7 +703,7 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
             if (*qualbuffer)
               {
                 log_info (_("This is a qualified signature\n"));
-                if (!opt.qualsig_approval)
+                if (!opt.qualsig_approval && !opt.no_qes_note)
                   log_info
                     (_("Note, that this software is not officially approved "
                        "to create or verify such signatures.\n"));
@@ -756,7 +740,6 @@ gpgsm_verify (ctrl_t ctrl, int in_fd, int data_fd, estream_t out_fp)
   gnupg_ksba_destroy_writer (b64writer);
   keydb_release (kh);
   gcry_md_close (data_md);
-  es_fclose (in_fp);
 
   if (rc)
     {

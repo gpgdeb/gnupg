@@ -160,7 +160,7 @@ unregister_secured_file (const char *fname)
 /* Return true if FD is corresponds to a secured file.  Using -1 for
    FS is allowed and will return false. */
 int
-is_secured_file (int fd)
+is_secured_file (gnupg_fd_t fd)
 {
 #ifdef ENABLE_SELINUX_HACKS
   struct stat buf;
@@ -750,6 +750,8 @@ openpgp_pk_test_algo2 (pubkey_algo_t algo, unsigned int use)
         ga = GCRY_PK_ELG;
       break;
 
+    case PUBKEY_ALGO_KYBER:     ga = GCRY_PK_KEM; break;
+
     default:
       break;
     }
@@ -799,6 +801,18 @@ openpgp_pk_algo_usage ( int algo )
       case PUBKEY_ALGO_ECDSA:
       case PUBKEY_ALGO_EDDSA:
           use = PUBKEY_USAGE_CERT | PUBKEY_USAGE_SIG | PUBKEY_USAGE_AUTH;
+          break;
+
+      case PUBKEY_ALGO_KYBER:
+          use = PUBKEY_USAGE_ENC | PUBKEY_USAGE_RENC;
+          break;
+
+      case PUBKEY_ALGO_DIL3_25519:
+      case PUBKEY_ALGO_DIL5_448:
+      case PUBKEY_ALGO_SPHINX_SHA2:
+          use = PUBKEY_USAGE_CERT | PUBKEY_USAGE_SIG;
+          break;
+
       default:
           break;
     }
@@ -822,6 +836,7 @@ openpgp_pk_algo_name (pubkey_algo_t algo)
     case PUBKEY_ALGO_ECDH:      return "ECDH";
     case PUBKEY_ALGO_ECDSA:     return "ECDSA";
     case PUBKEY_ALGO_EDDSA:     return "EDDSA";
+    case PUBKEY_ALGO_KYBER:     return "Kyber";
     default: return "?";
     }
 }
@@ -1216,7 +1231,10 @@ obsolete_scdaemon_option (const char *configname, unsigned int configlineno,
 
 /*
  * Wrapper around gcry_cipher_map_name to provide a fallback using the
- * "Sn" syntax as used by the preference strings.
+ * "Sn" syntax as used by the preference strings.  Note that only the
+ * second syntax does a check on the actual availibily of the
+ * algorithm.  That might make a difference in case Libgcrypt is
+ * running in FIPS mode.
  */
 int
 string_to_cipher_algo (const char *string)
@@ -1563,25 +1581,37 @@ parse_options(char *str,unsigned int *options,
 {
   char *tok;
 
-  if (str && (!strcmp (str, "help") || !strcmp (str, "full-help")))
+  if (str && (!strcmp (str, "help")
+              || !strcmp (str, "full-help") || !strcmp (str, "fullhelp")))
     {
       int i,maxlen=0;
       int full = *str == 'f';
+      int set;
 
       /* Figure out the longest option name so we can line these up
 	 neatly. */
       for(i=0;opts[i].name;i++)
-	if(opts[i].help && maxlen<strlen(opts[i].name))
+	if((full || opts[i].help) && maxlen<strlen(opts[i].name))
 	  maxlen=strlen(opts[i].name);
 
       for(i=0;opts[i].name;i++)
         if(opts[i].help)
-	  es_printf("%s%*s%s\n",opts[i].name,
-                    maxlen+2-(int)strlen(opts[i].name),"",_(opts[i].help));
+          {
+            set = (*options & opts[i].bit);
+            es_printf("%s%*s%s%s%s%s\n",opts[i].name,
+                      maxlen+2-(int)strlen(opts[i].name),"",_(opts[i].help),
+                      set?"  [":"", set? _("enabled"):"", set?"]":"");
+          }
+
       if (full)
         for (i=0; opts[i].name; i++)
           if(!opts[i].help)
-            es_printf("%s\n",opts[i].name);
+            {
+              set = (*options & opts[i].bit);
+              es_printf("%s%*s%s%s%s\n",opts[i].name,
+                        set? (maxlen+2-(int)strlen(opts[i].name)):0,"",
+                        set?"[":"", set? _("enabled"):"", set?"]":"");
+            }
 
       g10_exit(0);
     }
@@ -1711,6 +1741,7 @@ pubkey_get_npkey (pubkey_algo_t algo)
     case PUBKEY_ALGO_ECDSA:     return 2;
     case PUBKEY_ALGO_ELGAMAL:   return 3;
     case PUBKEY_ALGO_EDDSA:     return 2;
+    case PUBKEY_ALGO_KYBER:     return 3;
     default: return 0;
     }
 }
@@ -1731,6 +1762,7 @@ pubkey_get_nskey (pubkey_algo_t algo)
     case PUBKEY_ALGO_ECDSA:     return 3;
     case PUBKEY_ALGO_ELGAMAL:   return 4;
     case PUBKEY_ALGO_EDDSA:     return 3;
+    case PUBKEY_ALGO_KYBER:     return 5;
     default: return 0;
     }
 }
@@ -1770,6 +1802,7 @@ pubkey_get_nenc (pubkey_algo_t algo)
     case PUBKEY_ALGO_ECDSA:     return 0;
     case PUBKEY_ALGO_ELGAMAL:   return 2;
     case PUBKEY_ALGO_EDDSA:     return 0;
+    case PUBKEY_ALGO_KYBER:     return 3;
     default: return 0;
     }
 }

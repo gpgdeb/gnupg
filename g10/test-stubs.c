@@ -202,8 +202,8 @@ keyserver_import_keyid (u32 *keyid, void *dummy, unsigned int flags)
 }
 
 int
-keyserver_import_fprint (ctrl_t ctrl, const byte *fprint,size_t fprint_len,
-			 struct keyserver_spec *keyserver, unsigned int flags)
+keyserver_import_fpr (ctrl_t ctrl, const byte *fprint,size_t fprint_len,
+		      struct keyserver_spec *keyserver, unsigned int flags)
 {
   (void)ctrl;
   (void)fprint;
@@ -214,8 +214,8 @@ keyserver_import_fprint (ctrl_t ctrl, const byte *fprint,size_t fprint_len,
 }
 
 int
-keyserver_import_fprint_ntds (ctrl_t ctrl,
-                              const byte *fprint, size_t fprint_len)
+keyserver_import_fpr_ntds (ctrl_t ctrl,
+                           const byte *fprint, size_t fprint_len)
 {
   (void)ctrl;
   (void)fprint;
@@ -298,7 +298,7 @@ import_included_key_block (ctrl_t ctrl, kbnode_t keyblock)
  * No encryption here but mainproc links to these functions.
  */
 gpg_error_t
-get_session_key (ctrl_t ctrl, struct pubkey_enc_list *k, DEK *dek)
+get_session_key (ctrl_t ctrl, struct seskey_enc_list *k, DEK *dek)
 {
   (void)ctrl;
   (void)k;
@@ -569,6 +569,15 @@ tofu_notice_key_changed (ctrl_t ctrl, kbnode_t kb)
   (void) kb;
 
   return 0;
+}
+
+
+const char *
+revocation_reason_code_to_str (int code, char **freeme)
+{
+  (void)code;
+  *freeme = NULL;
+  return "";
 }
 
 int

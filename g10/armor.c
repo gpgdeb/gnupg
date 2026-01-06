@@ -162,6 +162,14 @@ push_armor_filter (armor_filter_context_t *afx, iobuf_t iobuf)
 }
 
 
+/* This function returns true if the armor filter detected that the
+ * input was indeed armored.  Gives a valid result only after the
+ * first PGP packet has been read.  */
+int
+was_armored (armor_filter_context_t *afx)
+{
+  return (afx && !afx->inp_bypass);
+}
 
 
 
@@ -502,7 +510,9 @@ parse_header_line( armor_filter_context_t *afx, byte *line, unsigned int len )
       {
 	if( (hashes=parse_hash_header( line )) )
 	  afx->hashes |= hashes;
-	else if( strlen(line) > 15 && !memcmp( line, "NotDashEscaped:", 15 ) )
+	else if ((opt.compat_flags & COMPAT_ALLOW_NOT_DASH_ESCAPED)
+                 && strlen (line) > 15
+                 && !memcmp( line, "NotDashEscaped:", 15 ) )
 	  afx->not_dash_escaped = 1;
 	else
 	  {
@@ -1031,9 +1041,9 @@ radix64_read( armor_filter_context_t *afx, IOBUF a, size_t *retn,
 	    checkcrc++;
 	    break;
 	}
-        else if (c == '-'
-                 && afx->buffer_pos + 8 < afx->buffer_len
-                 && !strncmp (afx->buffer, "-----END ", 8)) {
+        else if (afx->buffer_pos == 1 && c == '-'
+                 && afx->buffer_len > 9
+                 && !strncmp (afx->buffer, "-----END ", 9)) {
             break; /* End in --dearmor mode or No CRC.  */
         }
 	else {
@@ -1046,11 +1056,13 @@ radix64_read( armor_filter_context_t *afx, IOBUF a, size_t *retn,
     afx->radbuf[0] = val;
 
     if( n )
-      gcry_md_write (afx->crc_md, buf, n);
+      {
+        gcry_md_write (afx->crc_md, buf, n);
+        afx->any_data = 1;
+      }
 
     if( checkcrc ) {
 	gcry_md_final (afx->crc_md);
-	afx->any_data = 1;
 	afx->inp_checked=0;
 	afx->faked = 0;
 	for(;;) { /* skip lf and pad characters */
@@ -1302,8 +1314,8 @@ armor_filter( void *opaque, int control,
 	n = 0;
 	if( afx->buffer_len ) {
             /* Copy the data from AFX->BUFFER to BUF.  */
-	    for(; n < size && afx->buffer_pos < afx->buffer_len; n++ )
-		buf[n++] = afx->buffer[afx->buffer_pos++];
+            for(; n < size && afx->buffer_pos < afx->buffer_len;)
+                buf[n++] = afx->buffer[afx->buffer_pos++];
 	    if( afx->buffer_pos >= afx->buffer_len )
 		afx->buffer_len = 0;
 	}
@@ -1319,7 +1331,7 @@ armor_filter( void *opaque, int control,
 	*ret_len = n;
     }
     else if( control == IOBUFCTRL_UNDERFLOW ) {
-        /* We need some space for the faked packet.  The minmum
+        /* We need some space for the faked packet.  The minimum
          * required size is the PARTIAL_CHUNK size plus a byte for the
          * length itself */
 	if( size < PARTIAL_CHUNK+1 )
@@ -1495,7 +1507,7 @@ armor_filter( void *opaque, int control,
     else if( control == IOBUFCTRL_FREE ) {
 	if( afx->cancel )
 	    ;
-	else if( afx->status ) { /* pad, write cecksum, and bottom line */
+	else if( afx->status ) { /* pad, write checksum, and bottom line */
 	    gcry_md_final (afx->crc_md);
 	    crc = get_afx_crc (afx);
 	    idx = afx->idx;

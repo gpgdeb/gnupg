@@ -40,6 +40,19 @@
    that error counter is set to 0.  After setting the RC the error
    counter will be initialized to 3.
 
+   OPGP Attestation on Yubikeys:
+   <https://developers.yubico.com/PGP/Attestation.html:
+
+   Key-ID: 81
+   CRT:    B6 03 84 01 81
+
+   DOs for Attestation Key metadata:
+
+   0xDA   Algorithm Attributes
+   0xDB   Key Fingerprint
+   0xDC   CA Fingerprint
+   0xDD   Key Generation Date
+   0xD9   User Interaction Flag (UIF)
  */
 
 #include <config.h>
@@ -119,8 +132,16 @@ static struct {
   { 0x00D6, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Signature"},
   { 0x00D7, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Decryption"},
   { 0x00D8, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Authentication"},
-  { 0x00F9, 0,    0, 1, 0, 0, 0, 0, "KDF data object"},
-  { 0x00FA, 0,    0, 1, 0, 0, 0, 2, "Algorithm Information"},
+  { 0x00D9, 0, 0x6E, 1, 0, 0, 0, 0, "UIF for Attestation"},
+  { 0x00DA, 0, 0x6E, 1, 0, 0, 0, 0, "Algorithm Attributes Attestation"},
+  { 0x00DB, 0, 0x6E, 1, 0, 0, 0, 0, "Key Fingerprint Attestation"},
+  { 0x00DC, 0, 0x6E, 1, 0, 0, 0, 0, "CA Fingerprint Attestation"},
+  { 0x00DA, 0, 0x6E, 1, 0, 0, 0, 0, "Key Generation Date Attestation"},
+  { 0x00DE, 1,    0, 1, 0, 0, 0, 0, "Key information" },
+  { 0x00F9, 1,    0, 1, 0, 0, 0, 0, "KDF data object"},
+  { 0x00FA, 1,    0, 1, 0, 0, 0, 2, "Algorithm Information"},
+  { 0x00FB, 1,    0, 1, 0, 0, 0, 2, "Secure Messaging Certificate"},
+  { 0x00FC, 1,    0, 1, 0, 0, 0, 2, "Attestation Certificate"},
   { 0 }
 };
 
@@ -190,7 +211,7 @@ struct app_local_s {
   struct
   {
     unsigned int is_v2:1;              /* Compatible to v2 or later.        */
-    unsigned int is_v3:1;              /* Comatible to v3 or later.         */
+    unsigned int is_v3:1;              /* Compatible to v3 or later.        */
     unsigned int has_button:1;         /* Has confirmation button or not.   */
 
     unsigned int sm_supported:1;       /* Secure Messaging is supported.    */
@@ -1759,7 +1780,7 @@ ecdh_params (const char *curve)
 {
   unsigned int nbits;
 
-  openpgp_curve_to_oid (curve, &nbits, NULL);
+  openpgp_curve_to_oid (curve, &nbits, NULL, -1);
 
   /* See RFC-6637 for those constants.
          0x03: Number of bytes
@@ -1801,7 +1822,7 @@ ecc_read_pubkey (app_t app, ctrl_t ctrl, int meta_update,
     }
 
   curve = app->app_local->keyattr[keyno].ecc.curve;
-  oidstr = openpgp_curve_to_oid (curve, NULL, NULL);
+  oidstr = openpgp_curve_to_oid (curve, NULL, NULL, 0);
   err = openpgp_oid_from_str (oidstr, &oid);
   if (err)
     return err;
@@ -3077,6 +3098,7 @@ do_setattr (app_t app, ctrl_t ctrl, const char *name,
     { "UIF-2",        0x00D7, 0,      3, 5, 1 },
     { "UIF-3",        0x00D8, 0,      3, 5, 1 },
     { "KDF",          0x00F9, 0,      0, 4, 1 },
+    { "GEN-ATTST",    0,      0,      3,21, 1 },  /* Yubikey specific */
     { NULL, 0 }
   };
   int exmode;
@@ -3125,7 +3147,7 @@ do_setattr (app_t app, ctrl_t ctrl, const char *name,
   else
     exmode = 0;
 
-  if (table[idx].special == 4)
+  if (table[idx].special == 4)  /* KDF */
     {
       if (APP_CARD(app)->cardtype == CARDTYPE_YUBIKEY
           || APP_CARD(app)->cardtype == CARDTYPE_GNUK)
@@ -3226,6 +3248,31 @@ do_setattr (app_t app, ctrl_t ctrl, const char *name,
           /* We better reset the curDO.  */
           iso7816_select_data (app_get_slot (app), 0, table[idx].tag);
         }
+    }
+  else if (table[idx].special == 21)
+    {
+      /* Generate attestation.  This will write the attestation to the
+       * respective cert slot and thus delete an existsing certificate
+       * stored there.  The expected value is "OPENPGP.<n>". The APDU
+       * is: CLA=0x80, INS=0xFB, P1=1 (SIG) or 2 (DEC) or 3 (AUT),
+       *     P2=0x00, Lc=0x00, Data=None, Le=0x00
+       */
+      unsigned char apdu[5];
+
+      apdu[0] = 0x80;
+      apdu[1] = 0xfb;
+      if (!ascii_strncasecmp (value, "OPENPGP.1", valuelen))
+        apdu[2] = 0x01;
+      else if (!ascii_strncasecmp (value, "OPENPGP.2", valuelen))
+        apdu[2] = 0x02;
+      else if (!ascii_strncasecmp (value, "OPENPGP.3", valuelen))
+        apdu[2] = 0x03;
+      else
+        return gpg_error (GPG_ERR_INV_ID);
+      apdu[3] = 0;
+
+      rc = iso7816_apdu_direct (app_get_slot (app), apdu, 4, 0,
+                                NULL, NULL, NULL);
     }
   else  /* Standard.  */
     rc = iso7816_put_data (app_get_slot (app),
@@ -3699,6 +3746,9 @@ do_change_pin (app_t app, ctrl_t ctrl,  const char *chvnostr,
           rc = pin2hash_if_kdf (app, chvno, oldpinvalue, &buffer1, &bufferlen1);
           if (!rc)
             rc = pin2hash_if_kdf (app, chvno, pinvalue, &buffer2, &bufferlen2);
+          if (!rc)
+            rc = iso7816_verify (app_get_slot (app),
+                                 0x80 + chvno, buffer1, bufferlen1);
           if (!rc)
             rc = iso7816_change_reference_data (app_get_slot (app),
                                                 0x80 + chvno,
@@ -4194,7 +4244,7 @@ change_keyattr_from_string (app_t app, ctrl_t ctrl,
       else
         {
           nbits = 0;
-          oidstr = openpgp_curve_to_oid (keyalgo, NULL, &algo);
+          oidstr = openpgp_curve_to_oid (keyalgo, NULL, &algo, 0);
           if (!oidstr)
             {
               err = gpg_error (GPG_ERR_INV_DATA);
@@ -4244,7 +4294,7 @@ change_keyattr_from_string (app_t app, ctrl_t ctrl,
       else if (algo == PUBKEY_ALGO_ECDH || algo == PUBKEY_ALGO_ECDSA
                || algo == PUBKEY_ALGO_EDDSA)
         {
-          oidstr = openpgp_curve_to_oid (string+n, NULL, NULL);
+          oidstr = openpgp_curve_to_oid (string+n, NULL, NULL, 0);
           if (!oidstr)
             {
               err = gpg_error (GPG_ERR_INV_DATA);
@@ -4821,7 +4871,7 @@ ecc_writekey (app_t app, ctrl_t ctrl,
       ecdh_param_len = 4;
     }
 
-  oidstr = openpgp_curve_to_oid (curve, &n, NULL);
+  oidstr = openpgp_curve_to_oid (curve, &n, NULL, 0);
   ecc_d_fixed_len = (n+7)/8;
   err = openpgp_oid_from_str (oidstr, &oid);
   if (err)
@@ -5552,7 +5602,7 @@ gen_challenge (app_t app, const void **r_data, size_t *r_datalen)
     {
       unsigned int n;
 
-      openpgp_curve_to_oid (app->app_local->keyattr[2].ecc.curve, &n, NULL);
+      openpgp_curve_to_oid (app->app_local->keyattr[2].ecc.curve, &n, NULL, -1);
       /* No hash algo header, and appropriate length of random octets,
          determined by field size of the curve.  */
       datalen = (n+7)/8;
@@ -5641,14 +5691,15 @@ do_auth (app_t app, ctrl_t ctrl, const char *keyidstr,
 
   if (app->app_local->keyattr[2].key_type == KEY_TYPE_ECC)
     {
-      if (!(app->app_local->keyattr[2].ecc.flags & ECC_FLAG_DJB_TWEAK)
-          && (indatalen == 51 || indatalen == 67 || indatalen == 83))
+      /* This is a heuristic to strip off the OID of digest.  Fully
+         implemented, it would be use of X macro in do_sign above.  */
+      if (indatalen == 51 || indatalen == 67 || indatalen == 83)
         {
           const char *p = (const char *)indata + 19;
           indata = p;
           indatalen -= 19;
         }
-      else
+      else if (indatalen > 15)
         {
           const char *p = (const char *)indata + 15;
           indata = p;

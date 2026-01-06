@@ -38,14 +38,15 @@ struct trustitem_s
 {
   struct
   {
-    int disabled:1;       /* This entry is disabled.  */
-    int for_pgp:1;        /* Set by '*' or 'P' as first flag. */
-    int for_smime:1;      /* Set by '*' or 'S' as first flag. */
-    int relax:1;          /* Relax checking of root certificate
-                             constraints. */
-    int cm:1;             /* Use chain model for validation. */
-    int qual:1;           /* Root CA for qualified signatures.  */
-    int de_vs:1;          /* Root CA for de-vs compliant PKI.    */
+    unsigned int disabled:1;       /* This entry is disabled.  */
+    unsigned int for_pgp:1;        /* Set by '*' or 'P' as first flag. */
+    unsigned int for_smime:1;      /* Set by '*' or 'S' as first flag. */
+    unsigned int relax:1;          /* Relax checking of root certificate
+                                      constraints.  Be default enabled. */
+    unsigned int cm:1;             /* Use chain model for validation. */
+    unsigned int qual:1;           /* Root CA for qualified signatures.  */
+    unsigned int de_vs:1;          /* Root CA for de-vs compliant PKI.    */
+    unsigned int noconsent:1;      /* Do not require a conset for "qual". */
   } flags;
   unsigned char fpr[20];  /* The binary fingerprint. */
 };
@@ -63,7 +64,7 @@ static const char headerblurb[] =
 "# well as empty lines are ignored.  Lines have a length limit but this\n"
 "# is not a serious limitation as the format of the entries is fixed and\n"
 "# checked by gpg-agent.  A non-comment line starts with optional white\n"
-"# space, followed by the SHA-1 fingerpint in hex, followed by a flag\n"
+"# space, followed by the SHA-1 fingerprint in hex, followed by a flag\n"
 "# which may be one of 'P', 'S' or '*' and optionally followed by a list of\n"
 "# other flags.  The fingerprint may be prefixed with a '!' to mark the\n"
 "# key as not trusted.  You should give the gpg-agent a HUP or run the\n"
@@ -161,6 +162,7 @@ read_one_trustfile (const char *fname, int systrust,
   int tableidx;
   size_t tablesize;
   int lnr = 0;
+  int no_trailing_lf = 0;
 
   table = *addr_of_table;
   tablesize = *addr_of_tablesize;
@@ -181,13 +183,17 @@ read_one_trustfile (const char *fname, int systrust,
       n = strlen (line);
       if (!n || line[n-1] != '\n')
         {
+          if (n && es_feof (fp))
+            no_trailing_lf = 1;  /* (The next fgets will break the loop.) */
           /* Eat until end of line. */
           while ( (c=es_getc (fp)) != EOF && c != '\n')
             ;
-          err = gpg_error (*line? GPG_ERR_LINE_TOO_LONG
+          err = gpg_error (*line && !no_trailing_lf? GPG_ERR_LINE_TOO_LONG
                            : GPG_ERR_INCOMPLETE_LINE);
           log_error (_("file '%s', line %d: %s\n"),
                      fname, lnr, gpg_strerror (err));
+          if (no_trailing_lf)
+            err = 0;  /* Clear the error.  */
           continue;
         }
       line[--n] = 0; /* Chop the LF. */
@@ -256,6 +262,7 @@ read_one_trustfile (const char *fname, int systrust,
       ti = table + tableidx;
 
       memset (&ti->flags, 0, sizeof ti->flags);
+      ti->flags.relax = 1;  /* Legacy flag;  use "norelax" to trun it off. */
       if (*p == '!')
         {
           ti->flags.disabled = 1;
@@ -321,10 +328,14 @@ read_one_trustfile (const char *fname, int systrust,
             }
           else if (n == 5 && !memcmp (p, "relax", 5))
             ti->flags.relax = 1;
+          else if (n == 7 && !memcmp (p, "norelax", 7))
+            ti->flags.relax = 0;
           else if (n == 2 && !memcmp (p, "cm", 2))
             ti->flags.cm = 1;
           else if (n == 4 && !memcmp (p, "qual", 4) && systrust)
             ti->flags.qual = 1;
+          else if (n == 9 && !memcmp (p, "noconsent", 9) && systrust)
+            ti->flags.noconsent = 1;
           else if (n == 5 && !memcmp (p, "de-vs", 5) && systrust)
             ti->flags.de_vs = 1;
           else
@@ -430,10 +441,13 @@ read_trustfiles (void)
 
 
 /* Check whether the given fpr is in our trustdb.  We expect FPR to be
-   an all uppercase hexstring of 40 characters.  If ALREADY_LOCKED is
-   true the function assumes that the trusttable is already locked. */
+ * an all uppercase hexstring of 40 characters.  If ALREADY_LOCKED is
+ * true the function assumes that the trusttable is already locked.
+ * If LISTMODE is set, a status line TRUSTLISTFPR is emitted first and
+ * disabled keys are not listed.
+ */
 static gpg_error_t
-istrusted_internal (ctrl_t ctrl, const char *fpr, int *r_disabled,
+istrusted_internal (ctrl_t ctrl, const char *fpr, int listmode, int *r_disabled,
                     int already_locked)
 {
   gpg_error_t err = 0;
@@ -472,6 +486,8 @@ istrusted_internal (ctrl_t ctrl, const char *fpr, int *r_disabled,
       for (ti=trusttable, len = trusttablesize; len; ti++, len--)
         if (!memcmp (ti->fpr, fprbin, 20))
           {
+            if (listmode && ti->flags.disabled)
+              continue;
             if (ti->flags.disabled && r_disabled)
               *r_disabled = 1;
 
@@ -479,18 +495,28 @@ istrusted_internal (ctrl_t ctrl, const char *fpr, int *r_disabled,
                in a locked state.  */
             if (already_locked)
               ;
-            else if (ti->flags.relax || ti->flags.cm || ti->flags.qual
-                     || ti->flags.de_vs)
+            else if (listmode || ti->flags.relax || ti->flags.cm
+                     || ti->flags.qual || ti->flags.de_vs
+                     || ti->flags.noconsent)
               {
                 unlock_trusttable ();
                 locked = 0;
                 err = 0;
-                if (ti->flags.relax)
+                if (listmode)
+                  {
+                    char hexfpr[2*20+1];
+                    bin2hex (ti->fpr, 20, hexfpr);
+                    err = agent_write_status (ctrl,"TRUSTLISTFPR", hexfpr,NULL);
+                  }
+                if (!err && ti->flags.relax)
                   err = agent_write_status (ctrl,"TRUSTLISTFLAG", "relax",NULL);
                 if (!err && ti->flags.cm)
                   err = agent_write_status (ctrl,"TRUSTLISTFLAG", "cm", NULL);
                 if (!err && ti->flags.qual)
                   err = agent_write_status (ctrl,"TRUSTLISTFLAG", "qual",NULL);
+                if (!err && ti->flags.noconsent)
+                  err = agent_write_status (ctrl,"TRUSTLISTFLAG", "noconsent",
+                                            NULL);
                 if (!err && ti->flags.de_vs)
                   err = agent_write_status (ctrl,"TRUSTLISTFLAG", "de-vs",NULL);
               }
@@ -514,20 +540,24 @@ istrusted_internal (ctrl_t ctrl, const char *fpr, int *r_disabled,
 gpg_error_t
 agent_istrusted (ctrl_t ctrl, const char *fpr, int *r_disabled)
 {
-  return istrusted_internal (ctrl, fpr, r_disabled, 0);
+  return istrusted_internal (ctrl, fpr, 0, r_disabled, 0);
 }
 
 
 /* Write all trust entries to FP. */
 gpg_error_t
-agent_listtrusted (void *assuan_context)
+agent_listtrusted (ctrl_t ctrl, void *assuan_context, int status_mode)
 {
   trustitem_t *ti;
   char key[51];
+  int table_locked;
   gpg_error_t err;
   size_t len;
+  strlist_t allhexgrips = NULL;
+  strlist_t sl;
 
   lock_trusttable ();
+  table_locked = 1;
   if (!trusttable)
     {
       err = read_trustfiles ();
@@ -539,6 +569,7 @@ agent_listtrusted (void *assuan_context)
         }
     }
 
+  err = 0;
   if (trusttable)
     {
       for (ti=trusttable, len = trusttablesize; len; ti++, len--)
@@ -546,6 +577,15 @@ agent_listtrusted (void *assuan_context)
           if (ti->flags.disabled)
             continue;
           bin2hex (ti->fpr, 20, key);
+          if (status_mode)
+            {
+              if (!add_to_strlist_try (&allhexgrips, key))
+                {
+                  err = gpg_error_from_syserror ();
+                  goto leave;
+                }
+              continue;
+            }
           key[40] = ' ';
           key[41] = ((ti->flags.for_smime && ti->flags.for_pgp)? '*'
                      : ti->flags.for_smime? 'S': ti->flags.for_pgp? 'P':' ');
@@ -555,8 +595,24 @@ agent_listtrusted (void *assuan_context)
         }
     }
 
-  unlock_trusttable ();
-  return 0;
+  if (status_mode)
+    {
+      unlock_trusttable ();
+      table_locked = 0;
+
+      /* The back and forth converting of the fingerprint and all the
+       * locking and unlocking is somewhat clumsy but helps to re-use
+       * existing code.  */
+      for (sl = allhexgrips; sl; sl = sl->next)
+        if ((err = istrusted_internal (ctrl, sl->d, 1, NULL, 0)))
+          goto leave;
+    }
+
+ leave:
+  if (table_locked)
+    unlock_trusttable ();
+  free_strlist (allhexgrips);
+  return err;
 }
 
 
@@ -736,7 +792,7 @@ agent_marktrusted (ctrl_t ctrl, const char *name, const char *fpr, int flag)
             insert a line break.  The double percent sign is actually
             needed because it is also a printf format string.  If you
             need to insert a plain % sign, you need to encode it as
-            "%%25".  The second "%s" gets replaced by a hexdecimal
+            "%%25".  The second "%s" gets replaced by a hexadecimal
             fingerprint string whereas the first one receives the name
             as stored in the certificate. */
          L_("Please verify that the certificate identified as:%%0A"
@@ -770,7 +826,7 @@ agent_marktrusted (ctrl_t ctrl, const char *name, const char *fpr, int flag)
      sure that nobody else plays with our file and force a reread.  */
   lock_trusttable ();
   clear_trusttable ();
-  if (!istrusted_internal (ctrl, fpr, &is_disabled, 1) || is_disabled)
+  if (!istrusted_internal (ctrl, fpr, 0, &is_disabled, 1) || is_disabled)
     {
       unlock_trusttable ();
       xfree (fprformatted);
@@ -827,8 +883,7 @@ agent_marktrusted (ctrl_t ctrl, const char *name, const char *fpr, int flag)
     }
   else
     es_fputs (nameformatted, fp);
-  es_fprintf (fp, "\n%s%s %c%s\n", yes_i_trust?"":"!", fprformatted, flag,
-              flag == 'S'? " relax":"");
+  es_fprintf (fp, "\n%s%s %c\n", yes_i_trust?"":"!", fprformatted, flag);
   if (es_ferror (fp))
     err = gpg_error_from_syserror ();
 

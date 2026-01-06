@@ -214,6 +214,7 @@ struct
   int no_encrypt_to;
   int encrypt_to_default_key;
   int interactive;
+  strlist_t print_notations;       /* Name of notations to print. */
   struct notation *sig_notations;
   struct notation *cert_notations;
   strlist_t sig_policy_url;
@@ -234,7 +235,8 @@ struct
   int ignore_expiration;
   int command_fd;
   const char *override_session_key;
-  int show_session_key;
+  unsigned int show_session_key:1;
+  unsigned int show_only_session_key:1;
 
   const char *gpg_agent_info;
   int try_all_secrets;
@@ -284,6 +286,8 @@ struct
     unsigned int disable_signer_uid:1;
     unsigned int include_key_block:1;
     unsigned int auto_key_import:1;
+    /* Option to upload new or modified keys to an LDAP server.  */
+    unsigned int auto_key_upload:1;
     /* Flag to enable experimental features from RFC4880bis.  */
     unsigned int rfc4880bis:1;
     /* Hack: --output is not given but OUTFILE was temporary set to "-".  */
@@ -305,6 +309,11 @@ struct
     /* Fail if an operation can't be done in the requested compliance
      * mode.  */
     unsigned int require_compliance:1;
+    /* Fail encryption unless a PQC algorithm is used.  */
+    unsigned int require_pqc_encryption:1;
+    /* Do not use PQC subkeys for encryption.  This is never set if
+     * require_pqc_encryption is also set.  */
+    unsigned int disable_pqc_encryption:1;
     /* Process all signatures even in batch mode.  */
     unsigned int proc_all_sigs:1;
   } flags;
@@ -362,9 +371,11 @@ struct {
 #define DBG_TRUST_VALUE   256	/* debug the trustdb */
 #define DBG_HASHING_VALUE 512	/* debug hashing operations */
 #define DBG_IPC_VALUE     1024  /* debug assuan communication */
+#define DBG_RECSEL_VALUE  2048  /* Debug the record selection */
 #define DBG_CLOCK_VALUE   4096
 #define DBG_LOOKUP_VALUE  8192	/* debug the key lookup */
 #define DBG_EXTPROG_VALUE 16384 /* debug external program calls */
+#define DBG_KEYDB_VALUE   32768 /* debug keydb and keyboxd searches. */
 
 /* Tests for the debugging flags.  */
 #define DBG_PACKET (opt.debug & DBG_PACKET_VALUE)
@@ -375,9 +386,11 @@ struct {
 #define DBG_TRUST  (opt.debug & DBG_TRUST_VALUE)
 #define DBG_HASHING (opt.debug & DBG_HASHING_VALUE)
 #define DBG_IPC     (opt.debug & DBG_IPC_VALUE)
+#define DBG_RECSEL  (opt.debug & DBG_RECSEL_VALUE)
 #define DBG_CLOCK   (opt.debug & DBG_CLOCK_VALUE)
 #define DBG_LOOKUP  (opt.debug & DBG_LOOKUP_VALUE)
 #define DBG_EXTPROG (opt.debug & DBG_EXTPROG_VALUE)
+#define DBG_KEYDB   (opt.debug & DBG_KEYDB_VALUE)
 
 /* FIXME: We need to check why we did not put this into opt. */
 #define DBG_MEMORY    memory_debug_mode
@@ -387,10 +400,17 @@ EXTERN_UNLESS_MAIN_MODULE int memory_debug_mode;
 EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 
 /* Compatibility flags */
-/* #define COMPAT_FOO   1 */
+#define COMPAT_PARALLELIZED   1  /* Use threaded hashing for signatures.  */
+#define COMPAT_T7014_OLD      2  /* Use initial T7014 test data.  */
+#define COMPAT_COMPR_KEYS     4  /* Allow import of compressed keys. (T7014) */
+#define COMPAT_NO_MANU        8  /* Do not include a "manu" notation.  */
+#define COMPAT_SUGGEST_EMBEDDED_NAME 16 /* Show the non-signed
+                                         * embedded filename as
+                                         * suggestion.  */
+#define COMPAT_ALLOW_NOT_DASH_ESCAPED 32 /* Handle NotDashEscaped header.  */
 
 
-/* Compliance test macors.  */
+/* Compliance test macros.  */
 #define GNUPG   (opt.compliance==CO_GNUPG || opt.compliance==CO_DE_VS)
 #define RFC2440 (opt.compliance==CO_RFC2440)
 #define RFC4880 (opt.compliance==CO_RFC4880)
@@ -420,6 +440,7 @@ EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 #define IMPORT_COLLAPSE_SUBKEYS          (1<<16)
 #define IMPORT_BULK                      (1<<17)
 #define IMPORT_IGNORE_ATTRIBUTES         (1<<18)
+#define IMPORT_FORCE_UPDATE              (1<<19)
 
 #define EXPORT_LOCAL_SIGS                (1<<0)
 #define EXPORT_ATTRIBUTES                (1<<1)
@@ -432,6 +453,7 @@ EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 #define EXPORT_REVOCS                    (1<<11)
 #define EXPORT_MODE1003                  (1<<12)
 #define EXPORT_REALCLEAN                 (1<<13)
+#define EXPORT_NO_STATUS                 (1<<20) /*Do not emit status lines.*/
 
 #define LIST_SHOW_PHOTOS                 (1<<0)
 #define LIST_SHOW_POLICY_URLS            (1<<1)
@@ -451,7 +473,11 @@ EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 #define LIST_SHOW_PREF                   (1<<14)
 #define LIST_SHOW_PREF_VERBOSE           (1<<15)
 #define LIST_SHOW_UNUSABLE_SIGS          (1<<16)
+#define LIST_SHOW_X509_NOTATIONS         (1<<17)
+#define LIST_STORE_X509_NOTATIONS        (1<<18)
 #define LIST_SHOW_OWNERTRUST             (1<<19)
+#define LIST_SHOW_TRUSTSIG               (1<<20)
+#define LIST_SHOW_HIDDEN_NOTATIONS       (1<<21)
 
 #define VERIFY_SHOW_PHOTOS               (1<<0)
 #define VERIFY_SHOW_POLICY_URLS          (1<<1)
@@ -462,12 +488,16 @@ EXTERN_UNLESS_MAIN_MODULE int memory_stat_debug_mode;
 #define VERIFY_SHOW_UID_VALIDITY         (1<<5)
 #define VERIFY_SHOW_UNUSABLE_UIDS        (1<<6)
 #define VERIFY_SHOW_PRIMARY_UID_ONLY     (1<<9)
+#define VERIFY_SHOW_HIDDEN_NOTATIONS     (1<<21)
 
 #define KEYSERVER_HTTP_PROXY             (1<<0)
 #define KEYSERVER_TIMEOUT                (1<<1)
 #define KEYSERVER_ADD_FAKE_V3            (1<<2)
 #define KEYSERVER_AUTO_KEY_RETRIEVE      (1<<3)
 #define KEYSERVER_HONOR_KEYSERVER_URL    (1<<4)
+#define KEYSERVER_UPDATE_BEFORE_SEND     (1<<5)
+#define KEYSERVER_LDAP_ONLY              (1<<6) /* Use only LDAP servers.  */
+#define KEYSERVER_WARN_ONLY              (1<<7) /* no error - just warn.   */
 
 
 #endif /*G10_OPTIONS_H*/

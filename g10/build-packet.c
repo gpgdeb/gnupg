@@ -433,7 +433,7 @@ sos_write (iobuf_t out, gcry_mpi_t a, unsigned int *r_nwritten)
  * Write an opaque string to the output stream without length info.
  */
 gpg_error_t
-gpg_mpi_write_nohdr (iobuf_t out, gcry_mpi_t a)
+gpg_mpi_write_opaque_nohdr (iobuf_t out, gcry_mpi_t a)
 {
   int rc;
 
@@ -449,6 +449,45 @@ gpg_mpi_write_nohdr (iobuf_t out, gcry_mpi_t a)
     rc = gpg_error (GPG_ERR_BAD_MPI);
 
   return rc;
+}
+
+
+/*
+ * Write an opaque MPI string with a four-byte octet count to the
+ * output stream.  If R_NWRITTEN is not NULL the number of written
+ * bytes is stored there.  OUT may be NULL in which case only
+ * R_NWRITTEN is updated and error checking is done.
+ */
+gpg_error_t
+gpg_mpi_write_opaque_32 (iobuf_t out, gcry_mpi_t a, unsigned int *r_nwritten)
+{
+  gpg_error_t err;
+
+  if (gcry_mpi_get_flag (a, GCRYMPI_FLAG_OPAQUE))
+    {
+      unsigned int nbits, nbytes;
+      const void *p;
+
+      p = gcry_mpi_get_opaque (a, &nbits);
+      nbytes = (nbits + 7)/8;
+      if (out)
+        {
+          write_32 (out, nbytes);
+          err = p ? iobuf_write (out, p, nbytes) : 0;
+        }
+      else
+        err = 0;
+      if (r_nwritten)
+        *r_nwritten = 4 + (p? nbytes : 0);
+    }
+  else
+    {
+      err = gpg_error (GPG_ERR_BAD_MPI);
+      if (r_nwritten)
+        *r_nwritten = 0;
+    }
+
+  return err;
 }
 
 
@@ -639,8 +678,14 @@ do_key (iobuf_t out, int ctb, PKT_public_key *pk)
     {
       if (   (pk->pubkey_algo == PUBKEY_ALGO_ECDSA && (i == 0))
           || (pk->pubkey_algo == PUBKEY_ALGO_EDDSA && (i == 0))
-          || (pk->pubkey_algo == PUBKEY_ALGO_ECDH  && (i == 0 || i == 2)))
-        err = gpg_mpi_write_nohdr (a, pk->pkey[i]);
+          || (pk->pubkey_algo == PUBKEY_ALGO_ECDH  && (i == 0 || i == 2))
+          || (pk->pubkey_algo == PUBKEY_ALGO_KYBER && (i == 0)))
+        err = gpg_mpi_write_opaque_nohdr (a, pk->pkey[i]);
+      else if (pk->pubkey_algo == PUBKEY_ALGO_KYBER && i == 2)
+        {
+          /* Write a four-octet count prefixed Kyber public key.  */
+          err = gpg_mpi_write_opaque_32 (a, pk->pkey[2], NULL);
+        }
       else if (pk->pubkey_algo == PUBKEY_ALGO_ECDSA
                || pk->pubkey_algo == PUBKEY_ALGO_EDDSA
                || pk->pubkey_algo == PUBKEY_ALGO_ECDH)
@@ -779,9 +824,15 @@ do_key (iobuf_t out, int ctb, PKT_public_key *pk)
 
               for (j=i; j < nskey; j++ )
                 {
-                  if (pk->pubkey_algo == PUBKEY_ALGO_ECDSA
-                      || pk->pubkey_algo == PUBKEY_ALGO_EDDSA
-                      || pk->pubkey_algo == PUBKEY_ALGO_ECDH)
+                  if (pk->pubkey_algo == PUBKEY_ALGO_KYBER && j == 4)
+                    {
+                      if ((err=gpg_mpi_write_opaque_32 (NULL,pk->pkey[j], &n)))
+                        goto leave;
+                    }
+                  else if (pk->pubkey_algo == PUBKEY_ALGO_ECDSA
+                           || pk->pubkey_algo == PUBKEY_ALGO_EDDSA
+                           || pk->pubkey_algo == PUBKEY_ALGO_ECDH
+                           || pk->pubkey_algo == PUBKEY_ALGO_KYBER)
                     {
                       if ((err = sos_write (NULL, pk->pkey[j], &n)))
                         goto leave;
@@ -798,16 +849,26 @@ do_key (iobuf_t out, int ctb, PKT_public_key *pk)
             }
 
           for ( ; i < nskey; i++ )
-            if (pk->pubkey_algo == PUBKEY_ALGO_ECDSA
-                || pk->pubkey_algo == PUBKEY_ALGO_EDDSA
-                || pk->pubkey_algo == PUBKEY_ALGO_ECDH)
-              {
-                if ((err = sos_write (a, pk->pkey[i], NULL)))
-                  goto leave;
-              }
-            else
-              if ((err = gpg_mpi_write (a, pk->pkey[i], NULL)))
-                goto leave;
+            {
+              if (pk->pubkey_algo == PUBKEY_ALGO_KYBER && i == 4)
+                {
+                  err = gpg_mpi_write_opaque_32 (a, pk->pkey[i], NULL);
+                  if (err)
+                    goto leave;
+                }
+              else if (pk->pubkey_algo == PUBKEY_ALGO_ECDSA
+                       || pk->pubkey_algo == PUBKEY_ALGO_EDDSA
+                       || pk->pubkey_algo == PUBKEY_ALGO_ECDH)
+                {
+                  if ((err = sos_write (a, pk->pkey[i], NULL)))
+                    goto leave;
+                }
+              else
+                {
+                  if ((err = gpg_mpi_write (a, pk->pkey[i], NULL)))
+                    goto leave;
+                }
+            }
 
           write_16 (a, ski->csum );
         }
@@ -921,9 +982,19 @@ do_pubkey_enc( IOBUF out, int ctb, PKT_pubkey_enc *enc )
 
   for (i=0; i < n && !rc ; i++ )
     {
-      if (enc->pubkey_algo == PUBKEY_ALGO_ECDH && i == 1)
-        rc = gpg_mpi_write_nohdr (a, enc->data[i]);
-      else if (enc->pubkey_algo == PUBKEY_ALGO_ECDH)
+      /* For Kyber we need to insert the algo before the final data
+       * element because it is not stored in the data array.  */
+      if (enc->pubkey_algo == PUBKEY_ALGO_KYBER && i == 2)
+        iobuf_put (a, enc->seskey_algo);
+
+      if (i == 1 && enc->pubkey_algo == PUBKEY_ALGO_ECDH)
+        rc = gpg_mpi_write_opaque_nohdr (a, enc->data[i]);
+      else if (i == 1 && enc->pubkey_algo == PUBKEY_ALGO_KYBER)
+        rc = gpg_mpi_write_opaque_32 (a, enc->data[i], NULL);
+      else if (i == 2 && enc->pubkey_algo == PUBKEY_ALGO_KYBER)
+        rc = gpg_mpi_write_opaque_nohdr (a, enc->data[i]);
+      else if (enc->pubkey_algo == PUBKEY_ALGO_ECDH
+               || enc->pubkey_algo == PUBKEY_ALGO_KYBER)
         rc = sos_write (a, enc->data[i], NULL);
       else
         rc = gpg_mpi_write (a, enc->data[i], NULL);
@@ -1506,17 +1577,18 @@ notation_value_to_human_readable_string (struct notation *notation)
     return xstrdup (notation->value);
 }
 
+
 /* Turn the notation described by the string STRING into a notation.
-
-   STRING has the form:
-
-     - -name - Delete the notation.
-     - name@domain.name=value - Normal notation
-     - !name@domain.name=value - Notation with critical bit set.
-
-   The caller must free the result using free_notation().  */
+ *
+ * STRING has the form:
+ *
+ *   - -name - Delete the notation.
+ *   - name@domain.name=value - Normal notation
+ *   - !name@domain.name=value - Notation with critical bit set.
+ *
+ * The caller must free the result using free_notation().  */
 struct notation *
-string_to_notation(const char *string,int is_utf8)
+string_to_notation (const char *string, int is_utf8)
 {
   const char *s;
   int saw_at=0;
@@ -1604,6 +1676,22 @@ string_to_notation(const char *string,int is_utf8)
   free_notation(notation);
   return NULL;
 }
+
+
+/* Turn the notation described by NAME and VALUE into a notation.
+ * This will be a human readble non-critical notation.
+ * The caller must free the result using free_notation().  */
+struct notation *
+name_value_to_notation (const char *name, const char *value)
+{
+  struct notation *notation;
+
+  notation = xcalloc (1, sizeof *notation);
+  notation->name = xstrdup (name);
+  notation->value = xstrdup (value);
+  return notation;
+}
+
 
 /* Like string_to_notation, but store opaque data rather than human
    readable data.  */
@@ -1754,6 +1842,72 @@ sig_to_notation(PKT_signature *sig)
 
   return list;
 }
+
+
+/* Return a list of notation data matching NAME.  The caller needs to
+ * to free the list using free_notation.  Other than sig_to_notation
+ * this function does not return the notation in human readable format
+ * but always returns the raw data.  The human readable flag is set
+ * anyway set but .value is always NULL.  */
+struct notation *
+search_sig_notations (PKT_signature *sig, const char *name)
+{
+  const byte *p;
+  size_t len;
+  int seq = 0;
+  int crit;
+  notation_t list = NULL;
+
+  while((p=enum_sig_subpkt (sig, 1, SIGSUBPKT_NOTATION, &len, &seq, &crit)))
+    {
+      int n1,n2;
+      struct notation *n=NULL;
+
+      if (len < 8)
+	{
+	  log_info (_("WARNING: invalid notation data found\n"));
+	  continue;
+	}
+
+      /* name length.  */
+      n1=(p[4]<<8)|p[5];
+      /* value length.  */
+      n2=(p[6]<<8)|p[7];
+
+      if (8 + n1 + n2 != len)
+	{
+	  log_info (_("WARNING: invalid notation data found\n"));
+	  continue;
+	}
+
+      if (!name)
+        ; /* Return everything.  */
+      else if (n1 != strlen (name) || memcmp (p+8, name, n1))
+        continue; /* Not the requested name.  */
+
+
+      n = xmalloc_clear (sizeof *n);
+      n->name = xmalloc (n1+1);
+
+      memcpy (n->name,p + 8, n1);
+      n->name[n1]='\0';
+
+      /* In any case append a Nul. */
+      n->bdat = xmalloc (n2+1);
+      memcpy (n->bdat, p + 8 + n1, n2);
+      n->bdat[n2] = '\0';
+      n->blen = n2;
+      n->flags.human = !!(p[0] & 0x80);
+
+      n->flags.critical = crit;
+
+      n->next = list;
+      list = n;
+    }
+
+  return list;
+}
+
 
 /* Release the resources associated with the *list* of notations.  To
    release a single notation, make sure that notation->next is

@@ -40,10 +40,43 @@
 static int initialized;
 static int module;
 
+
 /* This value is used by DSA and RSA checks in addition to the hard
  * coded length checks.  It allows one to increase the required key length
- * using a confue file.  */
+ * using a config file.  */
 static unsigned int min_compliant_rsa_length;
+
+
+/* Kludge to allow testing of the compliance options while not yet
+ * approved. */
+static int
+get_assumed_de_vs_compliance (void)
+{
+#if 0  /* Set to 1 if the software suite has been approved.  */
+  return 0;
+#else
+  static int value = -1;
+
+  if (value == -1)
+    {
+      const char *s = getenv ("GNUPG_ASSUME_COMPLIANCE");
+      value = (s && !strcmp (s, "de-vs"));
+#ifdef HAVE_W32_SYSTEM
+      if (!value)
+        {
+          char *tmp;
+          tmp = read_w32_registry_string (NULL,
+                                          gnupg_registry_dir (),
+                                          "GNUPG_ASSUME_COMPLIANCE");
+          if (tmp && !strcmp (tmp, "de-vs"))
+            value = 1;
+          xfree (tmp);
+        }
+#endif /* W32 */
+    }
+  return value > 0;
+#endif
+}
 
 /* Return the address of a compliance cache variable for COMPLIANCE.
  * If no such variable exists NULL is returned.  FOR_RNG returns the
@@ -69,6 +102,13 @@ get_compliance_cache (enum gnupg_compliance_mode compliance, int for_rng)
     case CO_PGP8:    ptr = for_rng? &r_pgp8    : &s_pgp8   ; break;
     case CO_DE_VS:   ptr = for_rng? &r_de_vs   : &s_de_vs  ; break;
     }
+
+  if (ptr && compliance == CO_DE_VS)
+    {
+      if (get_assumed_de_vs_compliance ())
+        *ptr = 1;
+    }
+
 
   return ptr;
 }
@@ -139,7 +179,7 @@ gnupg_pk_is_compliant (enum gnupg_compliance_mode compliance, int algo,
 		       gcry_mpi_t key[], unsigned int keylength,
                        const char *curvename)
 {
-  enum { is_rsa, is_dsa, is_elg, is_ecc } algotype;
+  enum { is_rsa, is_dsa, is_elg, is_ecc, is_kem } algotype;
   int result = 0;
 
   if (! initialized)
@@ -172,6 +212,10 @@ gnupg_pk_is_compliant (enum gnupg_compliance_mode compliance, int algo,
 
     case PUBKEY_ALGO_ELGAMAL:
       return 0; /* Signing with Elgamal is not at all supported.  */
+
+    case PUBKEY_ALGO_KYBER:
+      algotype = is_kem;
+      break;
 
     default: /* Unknown.  */
       return 0;
@@ -222,6 +266,23 @@ gnupg_pk_is_compliant (enum gnupg_compliance_mode compliance, int algo,
                         || algo == PUBKEY_ALGO_ECDSA
                         || algo == GCRY_PK_ECDH
                         || algo == GCRY_PK_ECDSA)
+                    && (!strcmp (curvename, "brainpoolP256r1")
+                        || !strcmp (curvename, "brainpoolP384r1")
+                        || !strcmp (curvename, "brainpoolP512r1")));
+          break;
+
+        case is_kem:
+          if (!curvename && key)
+            {
+              curve = openpgp_oid_to_str (key[0]);
+              curvename = openpgp_oid_to_curve (curve, 0);
+              if (!curvename)
+                curvename = curve;
+            }
+
+          result = (curvename
+                    && (keylength == 768 || keylength == 1024)
+                    && (algo == PUBKEY_ALGO_KYBER)
                     && (!strcmp (curvename, "brainpoolP256r1")
                         || !strcmp (curvename, "brainpoolP384r1")
                         || !strcmp (curvename, "brainpoolP512r1")));
@@ -365,6 +426,31 @@ gnupg_pk_is_allowed (enum gnupg_compliance_mode compliance,
             result = 0;
 	  break;
 
+	case PUBKEY_ALGO_KYBER:
+	  if (use == PK_USE_DECRYPTION)
+            result = 1;
+          else if (use == PK_USE_ENCRYPTION)
+            {
+              char *curve = NULL;
+
+              if (!curvename && key)
+                {
+                  curve = openpgp_oid_to_str (key[0]);
+                  curvename = openpgp_oid_to_curve (curve, 0);
+                  if (!curvename)
+                    curvename = curve;
+                }
+
+              result = (curvename
+                        && (keylength == 768 || keylength == 1024)
+                        && (!strcmp (curvename, "brainpoolP256r1")
+                            || !strcmp (curvename, "brainpoolP384r1")
+                            || !strcmp (curvename, "brainpoolP512r1")));
+
+              xfree (curve);
+            }
+          break;
+
 	default:
 	  break;
 	}
@@ -400,7 +486,8 @@ gnupg_cipher_is_compliant (enum gnupg_compliance_mode compliance,
 	  switch (module)
 	    {
 	    case GNUPG_MODULE_NAME_GPG:
-	      return mode == GCRY_CIPHER_MODE_CFB;
+	      return (mode == GCRY_CIPHER_MODE_CFB
+                      || mode == GCRY_CIPHER_MODE_OCB);
 	    case GNUPG_MODULE_NAME_GPGSM:
 	      return mode == GCRY_CIPHER_MODE_CBC;
 	    }
@@ -444,7 +531,8 @@ gnupg_cipher_is_allowed (enum gnupg_compliance_mode compliance, int producer,
 	    {
 	    case GNUPG_MODULE_NAME_GPG:
 	      return (mode == GCRY_CIPHER_MODE_NONE
-                      || mode == GCRY_CIPHER_MODE_CFB);
+                      || mode == GCRY_CIPHER_MODE_CFB
+                      || mode == GCRY_CIPHER_MODE_OCB);
 	    case GNUPG_MODULE_NAME_GPGSM:
 	      return (mode == GCRY_CIPHER_MODE_NONE
                       || mode == GCRY_CIPHER_MODE_CBC
@@ -461,7 +549,8 @@ gnupg_cipher_is_allowed (enum gnupg_compliance_mode compliance, int producer,
 	case CIPHER_ALGO_TWOFISH:
 	  return (module == GNUPG_MODULE_NAME_GPG
 		  && (mode == GCRY_CIPHER_MODE_NONE
-                      || mode == GCRY_CIPHER_MODE_CFB)
+                      || mode == GCRY_CIPHER_MODE_CFB
+                      || mode == GCRY_CIPHER_MODE_OCB)
 		  && ! producer);
 	default:
 	  return 0;
@@ -659,9 +748,80 @@ gnupg_status_compliance_flag (enum gnupg_compliance_mode compliance)
     case CO_PGP8:
       log_assert (!"no status code assigned for this compliance mode");
     case CO_DE_VS:
-      return "23";
+      return get_assumed_de_vs_compliance ()? "2023" : "23";
     }
   log_assert (!"invalid compliance mode");
+}
+
+
+
+/* This function returns the value for the "manu" LibrePGP/rfc4880bis
+ * notation.  See doc/DETAILS for a description.  This value is also
+ * used for the manuNotation in X.509/CMS.  */
+const char *
+gnupg_manu_notation_value (enum gnupg_compliance_mode compliance)
+{
+  static char buffer[48];  /* Empty string indicates not yet initialized */
+  static char buffer2[40];
+
+  if (!*buffer)
+    {
+      char *buf;
+      const char *s;
+      int n;
+      const char *fields[4];
+      const char *vers1, *vers2;
+      int vers1len, vers2len;
+      int arch_id, os_id;
+
+      arch_id = 0;
+      buf = gcry_get_config (0, "cpu-arch");
+      if (buf && (n=split_fields_colon (buf, fields, DIM (fields))) >= 2)
+        {
+          if (!strcmp (fields[1], "x86") && n > 2)
+            {
+              if (!strcmp (fields[2], "amd64"))
+                arch_id = 2;
+              else if (!strcmp (fields[2], "i386"))
+                arch_id = 1;
+            }
+          else if (!strcmp (fields[1], "arm"))
+            arch_id = 3;
+        }
+      gcry_free (buf);
+#ifdef HAVE_W32_SYSTEM
+      os_id = 1;
+#elif defined(__linux__)
+      os_id = 2;
+#elif defined (__unix__) || defined(__APPLE__)
+      os_id = 3;
+#else
+      os_id = 0;
+#endif
+      vers1 = PACKAGE_VERSION;
+      for (s=vers1, n=0; *s; s++)
+        if (*s=='.')
+          if (++n == 2)
+            break;
+      vers1len = s-vers1;
+
+      vers2 = gcry_check_version (NULL);
+      for (s=vers2, n=0; *s; s++)
+        if (*s=='.')
+          if (++n == 2)
+            break;
+      vers2len = s-vers2;
+
+      snprintf (buffer2, sizeof buffer2, "2,%.*s+%.*s,%d,%d",
+                vers1len, vers1, vers2len, vers2, arch_id, os_id);
+      snprintf (buffer, sizeof buffer, "%s,%d",
+                buffer2, get_assumed_de_vs_compliance ()? 2023 : 23);
+    }
+
+  if (compliance == CO_DE_VS)
+    return buffer;
+  else
+    return buffer2;
 }
 
 

@@ -44,6 +44,16 @@
 # endif
 #endif
 
+#if __GNUC__
+# define MY_GCC_VERSION (__GNUC__ * 10000 \
+                         + __GNUC_MINOR__ * 100 \
+                         + __GNUC_PATCHLEVEL__)
+#else
+# define MY_GCC_VERSION 0
+#endif
+
+
+
 /* Used for documentation purposes, to signal functions in 'interface' */
 #define INTERFACE
 
@@ -169,7 +179,11 @@ type_to_string (enum scheme_types typ)
      case T_SINK: return "sink";
      case T_FRAME: return "frame";
      }
+#if MY_GCC_VERSION >= 40500  /* gcc >= 4.5.0 */
+     __builtin_unreachable ();
+#else
      assert (! "not reached");
+#endif
 }
 
 /* ADJ is enough slack to align cells in a TYPE_BITS-bit boundary */
@@ -346,7 +360,7 @@ static INLINE int Cislower(int c) { return isascii(c) && islower(c); }
 #endif
 
 #if USE_ASCII_NAMES
-static const char charnames[32][3]={
+static const char *charnames[32]={
  "nul",
  "soh",
  "stx",
@@ -5355,26 +5369,26 @@ static const struct {
   {is_nonneg, "non-negative integer"}
 };
 
-#define TST_NONE 0
-#define TST_ANY "\001"
-#define TST_STRING "\002"
-#define TST_SYMBOL "\003"
-#define TST_PORT "\004"
-#define TST_INPORT "\005"
-#define TST_OUTPORT "\006"
-#define TST_ENVIRONMENT "\007"
-#define TST_PAIR "\010"
-#define TST_LIST "\011"
-#define TST_CHAR "\012"
-#define TST_VECTOR "\013"
-#define TST_NUMBER "\014"
-#define TST_INTEGER "\015"
-#define TST_NATURAL "\016"
+#define TST_NONE        0
+#define TST_ANY         1
+#define TST_STRING      2
+#define TST_SYMBOL      3
+#define TST_PORT        4
+#define TST_INPORT      5
+#define TST_OUTPORT     6
+#define TST_ENVIRONMENT 7
+#define TST_PAIR        8
+#define TST_LIST        9
+#define TST_CHAR       10
+#define TST_VECTOR     11
+#define TST_NUMBER     12
+#define TST_INTEGER    13
+#define TST_NATURAL    14
 
 #define INF_ARG 0xff
 
 static const struct op_code_info dispatch_table[]= {
-#define _OP_DEF(A,B,C,D,OP) {{A},B,C,{D}},
+#define _OP_DEF(OP,A,B,C,...) {{A},B,C,{__VA_ARGS__}},
 #include "opdefines.h"
 #undef _OP_DEF
   {{0},0,0,{0}},
@@ -5420,7 +5434,7 @@ check_arguments (scheme *sc, const struct op_code_info *pcd, char *msg, size_t m
       do {
 	pointer arg = car(arglist);
 	j = (int)t[0];
-	if (j == TST_LIST[0]) {
+	if (j == TST_LIST) {
 	  if (arg != sc->NIL && !is_pair(arg)) break;
 	} else {
 	  if (!tests[j].fct(arg)) break;
@@ -5830,7 +5844,7 @@ void scheme_load_memory(scheme *sc, const char *buf, size_t len, const char *fil
 
 void scheme_define(scheme *sc, pointer envir, pointer symbol, pointer value) {
      pointer x;
-     pointer *sslot;
+     pointer *sslot = NULL;
      x = find_slot_spec_in_env(sc, envir, symbol, 0, &sslot);
      if (x != sc->NIL) {
           set_slot_in_env(sc, x, value);

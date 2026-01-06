@@ -33,7 +33,6 @@
 #include "../common/sysutils.h"
 #include "../common/init.h"
 #include "../common/status.h"
-#include "../common/exechelp.h"
 #include "../common/dotlock.h"
 
 #ifdef HAVE_W32_SYSTEM
@@ -343,7 +342,7 @@ list_dirs (estream_t fp, char **names, int show_config_mode)
 
 #ifdef HAVE_W32_SYSTEM
   tmp = read_w32_registry_string (NULL,
-                                  GNUPG_REGISTRY_DIR,
+                                  gnupg_registry_dir (),
                                   "HomeDir");
   if (tmp)
     {
@@ -352,14 +351,14 @@ list_dirs (estream_t fp, char **names, int show_config_mode)
 
       xfree (tmp);
       if ((tmp = read_w32_registry_string ("HKEY_CURRENT_USER",
-                                           GNUPG_REGISTRY_DIR,
+                                           gnupg_registry_dir (),
                                            "HomeDir")))
         {
           xfree (tmp);
           hkcu = 1;
         }
       if ((tmp = read_w32_registry_string ("HKEY_LOCAL_MACHINE",
-                                           GNUPG_REGISTRY_DIR,
+                                           gnupg_registry_dir (),
                                            "HomeDir")))
         {
           xfree (tmp);
@@ -372,15 +371,15 @@ list_dirs (estream_t fp, char **names, int show_config_mode)
                     "Note: homedir taken from registry key %s%s\\%s:%s\n"
                     "\n",
                     hkcu?"HKCU":"", hklm?"HKLM":"",
-                    GNUPG_REGISTRY_DIR, "HomeDir");
+                    gnupg_registry_dir (), "HomeDir");
       else
         log_info ("Warning: homedir taken from registry key (%s:%s) in%s%s\n",
-                  GNUPG_REGISTRY_DIR, "HomeDir",
+                  gnupg_registry_dir (), "HomeDir",
                   hkcu?" HKCU":"",
                   hklm?" HKLM":"");
     }
   else if ((tmp = read_w32_registry_string (NULL,
-                                            GNUPG_REGISTRY_DIR,
+                                            gnupg_registry_dir (),
                                             NULL)))
     {
       xfree (tmp);
@@ -391,7 +390,7 @@ list_dirs (estream_t fp, char **names, int show_config_mode)
                     "\n", GNUPG_REGISTRY_DIR);
       else
         log_info ("Warning: registry key (%s) without value in HKCU or HKLM\n",
-                  GNUPG_REGISTRY_DIR);
+                  gnupg_registry_dir ());
     }
 
 #else /*!HAVE_W32_SYSTEM*/
@@ -775,7 +774,7 @@ main (int argc, char **argv)
   if (changeuser && (err = gnupg_chuid (changeuser, 0)))
     gpgconf_failure (err);
 
-  /* Set the configuraton directories for use by gpgrt_argparser.  We
+  /* Set the configuration directories for use by gpgrt_argparser.  We
    * don't have a configuration file for this program but we have code
    * which reads the component's config files.  */
   gpgrt_set_confdir (GPGRT_CONFDIR_SYS, gnupg_sysconfdir ());
@@ -1194,7 +1193,7 @@ show_version_gnupg (estream_t fp, const char *prefix)
   ssize_t length;
 
   es_fprintf (fp, "%s%sGnuPG %s (%s)\n%s%s\n", prefix, *prefix?"":"* ",
-              gpgrt_strusage (13), BUILD_REVISION, prefix, gpgrt_strusage (17));
+              gpgrt_strusage (13), BUILD_COMMITID, prefix, gpgrt_strusage (17));
 
   /* Show the GnuPG VS-Desktop version in --show-configs mode  */
   if (prefix && *prefix)
@@ -1308,17 +1307,16 @@ show_versions_via_dirmngr (estream_t fp)
   const char *pgmname;
   const char *argv[2];
   estream_t outfp;
-  pid_t pid;
+  gpgrt_process_t proc;
   char *line = NULL;
   size_t line_len = 0;
   ssize_t length;
-  int exitcode;
 
   pgmname = gnupg_module_name (GNUPG_MODULE_NAME_DIRMNGR);
   argv[0] = "--gpgconf-versions";
   argv[1] = NULL;
-  err = gnupg_spawn_process (pgmname, argv, NULL, 0,
-                             NULL, &outfp, NULL, &pid);
+  err = gpgrt_process_spawn (pgmname, argv, GPGRT_PROCESS_STDOUT_PIPE,
+                             NULL, &proc);
   if (err)
     {
       log_error ("error spawning %s: %s", pgmname, gpg_strerror (err));
@@ -1326,6 +1324,7 @@ show_versions_via_dirmngr (estream_t fp)
       return;
     }
 
+  gpgrt_process_get_streams (proc, 0, NULL, &outfp, NULL);
   while ((length = es_read_line (outfp, &line, &line_len, NULL)) > 0)
     {
       /* Strip newline and carriage return, if present.  */
@@ -1346,14 +1345,20 @@ show_versions_via_dirmngr (estream_t fp)
                  pgmname, gpg_strerror (err));
     }
 
-  err = gnupg_wait_process (pgmname, pid, 1, &exitcode);
-  if (err)
+  err = gpgrt_process_wait (proc, 1);
+  if (!err)
     {
-      log_error ("running %s failed (exitcode=%d): %s\n",
-                 pgmname, exitcode, gpg_strerror (err));
-      es_fprintf (fp, "[error: can't get further info]\n");
+      int exitcode;
+
+      gpgrt_process_ctl (proc, GPGRT_PROCESS_GET_EXIT_ID, &exitcode);
+      if (exitcode)
+        {
+          log_error ("running %s failed (exitcode=%d): %s\n",
+                     pgmname, exitcode, gpg_strerror (err));
+          es_fprintf (fp, "[error: can't get further info]\n");
+        }
     }
-  gnupg_release_process (pid);
+  gpgrt_process_release (proc);
   xfree (line);
 }
 
@@ -1481,6 +1486,82 @@ show_configs_one_file (const char *fname, int global, estream_t outfp,
 }
 
 
+/* Read registry string wrapper which also support the GnuPG Registry
+ * emulation.  */
+static char *
+my_read_reg_string (const char *name, int *r_hklm_fallback)
+{
+#ifdef HAVE_W32_SYSTEM
+  return read_w32_reg_string (name, r_hklm_fallback);
+#else
+  static gpgrt_nvc_t registry;
+  static int no_registry;
+  const char *s;
+  gpgrt_nve_t e;
+  char *namebuffer = NULL;
+  char *p;
+
+  if (r_hklm_fallback)
+    *r_hklm_fallback = 0; /* We only support HKLM */
+
+  if (no_registry)
+    return NULL;
+
+  /* Read and parse the registry if not yet done.  */
+  if (!registry)
+    {
+      gpg_error_t err;
+      int lnr;
+      char *fname;
+      estream_t fp;
+
+      fname = make_filename (gnupg_sysconfdir (), "Registry", NULL);
+      fp = es_fopen (fname, "r");
+      if (!fp)
+        {
+          no_registry = 1;
+          return NULL;
+        }
+      if (opt.verbose)
+        log_info ("Note: Using Registry emulation file '%s'\n", fname);
+
+      err = gpgrt_nvc_parse (&registry, &lnr, fp, GPGRT_NVC_SECTION);
+      es_fclose (fp);
+      if (err)
+        {
+          log_info ("%s:%d: error parsing Registry emulation file: %s\n",
+                    fname, lnr, gpg_strerror (err));
+          no_registry = 1;
+          xfree (fname);
+          return NULL;
+        }
+      xfree (fname);
+    }
+
+  if (name)
+    {
+      namebuffer = xstrdup (name);
+      for (p=namebuffer; *p; p++)
+        if (*p == '\\')
+          *p = '/';
+      name = namebuffer;
+    }
+
+  e = gpgrt_nvc_lookup (registry, name);
+  if (!e && *name != '/')
+    {
+      /* Strip any HKLM or HKCU prefix and try again.  */
+      name = strchr (name, '/');
+      if (name)
+        e = gpgrt_nvc_lookup (registry, name);
+    }
+  xfree (namebuffer);
+  s = e? gpgrt_nve_value (e) : NULL;
+  return s? xtrystrdup (s) : NULL;
+#endif
+}
+
+
 #ifdef HAVE_W32_SYSTEM
 /* Print registry entries relevant to the GnuPG system and related
  * software.  */
@@ -1490,13 +1571,14 @@ show_other_registry_entries (estream_t outfp)
   static struct {
     int group;
     const char *name;
+    unsigned int prependregkey:1;
   } names[] =
   {
     { 1, "HKLM\\Software\\Gpg4win:Install Directory" },
     { 1, "HKLM\\Software\\Gpg4win:Desktop-Version" },
     { 1, "HKLM\\Software\\Gpg4win:VS-Desktop-Version" },
-    { 1, "\\" GNUPG_REGISTRY_DIR ":HomeDir" },
-    { 1, "\\" GNUPG_REGISTRY_DIR ":DefaultLogFile" },
+    { 1, ":HomeDir", 1 },
+    { 1, ":DefaultLogFile", 1 },
     { 2, "\\Software\\Microsoft\\Office\\Outlook\\Addins\\GNU.GpgOL"
       ":LoadBehavior" },
     { 2, "HKCU\\Software\\Microsoft\\Office\\16.0\\Outlook\\Options\\Mail:"
@@ -1552,8 +1634,15 @@ show_other_registry_entries (estream_t outfp)
                                 names[idx].name, NULL);
           name = namebuf;
         }
+      else if (names[idx].prependregkey)
+        {
+          xfree (namebuf);
+          namebuf = xstrconcat ("\\", gnupg_registry_dir (),
+                                names[idx].name, NULL);
+          name = namebuf;
+        }
 
-      value = read_w32_reg_string (name, &from_hklm);
+      value = my_read_reg_string (name, &from_hklm);
       if (!value)
         continue;
 
@@ -1579,6 +1668,7 @@ show_other_registry_entries (estream_t outfp)
 
   xfree (namebuf);
 }
+#endif /*HAVE_W32_SYSTEM*/
 
 
 /* Print registry entries take from a configuration file.  */
@@ -1620,7 +1710,7 @@ show_registry_entries_from_file (estream_t outfp)
         continue;
 
       xfree (value);
-      value = read_w32_reg_string (line, &from_hklm);
+      value = my_read_reg_string (line, &from_hklm);
       if (!value)
         continue;
 
@@ -1646,7 +1736,6 @@ show_registry_entries_from_file (estream_t outfp)
   es_fclose (fp);
   xfree (fname);
 }
-#endif /*HAVE_W32_SYSTEM*/
 
 
 /* Show all config files.  */
@@ -1746,7 +1835,6 @@ show_configs (estream_t outfp)
         es_fprintf (outfp, "#+end_example\n");
     }
 
-#ifdef HAVE_W32_SYSTEM
   es_fprintf (outfp, "** Registry entries\n");
   es_fprintf (outfp, "#+begin_example\n");
   any = 0;
@@ -1763,7 +1851,7 @@ show_configs (estream_t outfp)
                 any = 1;
                 es_fprintf (outfp, "Encountered in config files:\n");
               }
-            if ((p = read_w32_reg_string (sl->d, &from_hklm)))
+            if ((p = my_read_reg_string (sl->d, &from_hklm)))
               es_fprintf (outfp, "  %s ->%s<-%s\n", sl->d, p,
                           from_hklm? " [hklm]":"");
             else
@@ -1771,10 +1859,11 @@ show_configs (estream_t outfp)
             xfree (p);
           }
     }
+#ifdef HAVE_W32_SYSTEM
   show_other_registry_entries (outfp);
+#endif /*HAVE_W32_SYSTEM*/
   show_registry_entries_from_file (outfp);
   es_fprintf (outfp, "#+end_example\n");
-#endif /*HAVE_W32_SYSTEM*/
 
   free_strlist (list);
 

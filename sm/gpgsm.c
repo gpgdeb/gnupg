@@ -117,6 +117,7 @@ enum cmd_and_opt_values {
   oLogTime,
 
   oEnableSpecialFilenames,
+  oDisableFdTranslation,
 
   oAgentProgram,
   oDisplay,
@@ -134,6 +135,7 @@ enum cmd_and_opt_values {
 
   oPassphraseFD,
   oPinentryMode,
+  oNoProtection,
   oRequestOrigin,
 
   oAssumeArmor,
@@ -218,6 +220,7 @@ enum cmd_and_opt_values {
   oAlwaysTrust,
   oNoAutostart,
   oAssertSigner,
+  oNoQESNote,
 
   oNoop
  };
@@ -322,7 +325,7 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_s_s (oKeyboxdProgram, "keyboxd-program", "@"),
   ARGPARSE_s_s (oDirmngrProgram, "dirmngr-program", "@"),
   ARGPARSE_s_s (oProtectToolProgram, "protect-tool-program", "@"),
-
+  ARGPARSE_s_n (oNoQESNote, "no-qes-note", "@"),
 
   ARGPARSE_header ("Input", N_("Options controlling the input")),
 
@@ -432,8 +435,10 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_s_n (oAnswerNo,  "no",  N_("assume no on most questions")),
   ARGPARSE_s_i (oStatusFD, "status-fd", N_("|FD|write status info to this FD")),
   ARGPARSE_s_n (oEnableSpecialFilenames, "enable-special-filenames", "@"),
+  ARGPARSE_s_n (oDisableFdTranslation, "disable-fd-translation", "@"),
   ARGPARSE_s_i (oPassphraseFD,    "passphrase-fd", "@"),
   ARGPARSE_s_s (oPinentryMode,    "pinentry-mode", "@"),
+  ARGPARSE_s_n (oNoProtection,    "no-protection", "@"),
 
 
   ARGPARSE_header (NULL, N_("Other options")),
@@ -498,6 +503,8 @@ static struct debug_flags_s debug_flags [] =
 static struct compatibility_flags_s compatibility_flags [] =
   {
     { COMPAT_ALLOW_KA_TO_ENCR, "allow-ka-to-encr" },
+    { COMPAT_NO_CHAIN_CACHE, "no-chain-cache"     },
+    { COMPAT_NO_KEYINFO_CACHE, "no-keyinfo-cache" },
     { 0, NULL }
   };
 
@@ -534,6 +541,9 @@ static int default_include_certs = DEFAULT_INCLUDE_CERTS;
 /* Whether the chain mode shall be used for validation.  */
 static int default_validation_model;
 
+/* Counter used to convey data from deinit_ctrl to gpgsm_exit.  */
+static unsigned int parent_cache_stats;
+
 /* The default cipher algo.  */
 #define DEFAULT_CIPHER_ALGO "AES256"
 
@@ -544,7 +554,6 @@ static void set_cmd (enum cmd_and_opt_values *ret_cmd,
                      enum cmd_and_opt_values new_cmd );
 
 static void emergency_cleanup (void);
-static int open_read (const char *filename);
 static estream_t open_es_fread (const char *filename, const char *mode);
 static estream_t open_es_fwrite (const char *filename);
 static void run_protect_tool (int argc, char **argv);
@@ -604,10 +613,6 @@ our_md_test_algo (int algo)
       return 1;
     }
 }
-
-
-/* nPth wrapper function definitions. */
-ASSUAN_SYSTEM_NPTH_IMPL;
 
 
 static char *
@@ -773,11 +778,11 @@ set_debug (void)
   else if (!strcmp (debug_level, "none") || (numok && numlvl < 1))
     opt.debug = 0;
   else if (!strcmp (debug_level, "basic") || (numok && numlvl <= 2))
-    opt.debug = DBG_IPC_VALUE;
+    opt.debug = DBG_MEMSTAT_VALUE;
   else if (!strcmp (debug_level, "advanced") || (numok && numlvl <= 5))
-    opt.debug = DBG_IPC_VALUE|DBG_X509_VALUE;
+    opt.debug = DBG_MEMSTAT_VALUE|DBG_X509_VALUE;
   else if (!strcmp (debug_level, "expert")  || (numok && numlvl <= 8))
-    opt.debug = (DBG_IPC_VALUE|DBG_X509_VALUE
+    opt.debug = (DBG_MEMSTAT_VALUE|DBG_X509_VALUE
                  |DBG_CACHE_VALUE|DBG_CRYPTO_VALUE);
   else if (!strcmp (debug_level, "guru") || numok)
     {
@@ -1036,12 +1041,12 @@ main ( int argc, char **argv)
   /* Set the default policy file */
   opt.policy_file = make_filename (gnupg_homedir (), "policies.txt", NULL);
 
-  /* The configuraton directories for use by gpgrt_argparser.  */
+  /* The configuration directories for use by gpgrt_argparser.  */
   gpgrt_set_confdir (GPGRT_CONFDIR_SYS, gnupg_sysconfdir ());
   gpgrt_set_confdir (GPGRT_CONFDIR_USER, gnupg_homedir ());
 
   /* We are re-using the struct, thus the reset flag.  We OR the
-   * flags so that the internal intialized flag won't be cleared. */
+   * flags so that the internal initialized flag won't be cleared. */
   argc        = orig_argc;
   argv        = orig_argv;
   pargs.argc  = &argc;
@@ -1175,6 +1180,10 @@ main ( int argc, char **argv)
 	  if (opt.pinentry_mode == -1)
             log_error (_("invalid pinentry mode '%s'\n"), pargs.r.ret_str);
 	  break;
+
+        case oNoProtection:
+          ctrl.no_protection = 1;
+          break;
 
         case oRequestOrigin:
           opt.request_origin = parse_request_origin (pargs.r.ret_str);
@@ -1473,6 +1482,10 @@ main ( int argc, char **argv)
           enable_special_filenames ();
           break;
 
+        case oDisableFdTranslation:
+          disable_translate_sys2libc_fd ();
+          break;
+
         case oValidationModel: parse_validation_model (pargs.r.ret_str); break;
 
 	case oKeyServer:
@@ -1527,6 +1540,8 @@ main ( int argc, char **argv)
         case oAssertSigner:
           add_to_strlist (&opt.assert_signer_list, pargs.r.ret_str);
           break;
+
+        case oNoQESNote: opt.no_qes_note = 1; break;
 
         case oNoop: break;
 
@@ -1624,11 +1639,11 @@ main ( int argc, char **argv)
 
 
   npth_init ();
-  assuan_set_system_hooks (ASSUAN_SYSTEM_NPTH);
   gpgrt_set_syscall_clamp (npth_unprotect, npth_protect);
+  assuan_control (ASSUAN_CONTROL_REINIT_SYSCALL_CLAMP, NULL);
 
 
-/*   if (opt.qualsig_approval && !opt.quiet) */
+/*   if (opt.qualsig_approval && !opt.quiet && !opt.no_qes_note) */
 /*     log_info (_("This software has officially been approved to " */
 /*                 "create and verify\n" */
 /*                 "qualified signatures according to German law.\n")); */
@@ -1797,6 +1812,10 @@ main ( int argc, char **argv)
       gnupg_inhibit_set_foregound_window (1);
     }
 
+  /* Better make sure that we have a statusfp so that a failure status
+   * in gpgsm_exit can work even w/o any preeding status messages. */
+  gpgsm_init_statusfp (&ctrl);
+
   /* Add default keybox. */
   if (!nrings && default_keyring && !opt.use_keyboxd)
     {
@@ -1814,7 +1833,7 @@ main ( int argc, char **argv)
             {
               log_info (_("importing common certificates '%s'\n"),
                         filelist[0]);
-              gpgsm_import_files (&ctrl, 1, filelist, open_read);
+              gpgsm_import_files (&ctrl, 1, filelist, open_es_fread);
             }
           xfree (filelist[0]);
         }
@@ -1885,7 +1904,7 @@ main ( int argc, char **argv)
       /* We do not require a recipient for decryption but because
        * recipients and signers are always checked and log_error is
        * sometimes used (for failed signing keys or due to a failed
-       * CRL checking) that would have bumbed up the error counter.
+       * CRL checking) that would have bumped up the error counter.
        * We clear the counter in the decryption case because there is
        * no reason to force decryption to fail. */
       if (cmd == aDecrypt && !errcount)
@@ -1952,9 +1971,20 @@ main ( int argc, char **argv)
         set_binary (stdin);
 
         if (!argc) /* Source is stdin. */
-          err = gpgsm_encrypt (&ctrl, recplist, 0, fp);
+          err = gpgsm_encrypt (&ctrl, recplist, es_stdin, fp);
         else if (argc == 1)  /* Source is the given file. */
-          err = gpgsm_encrypt (&ctrl, recplist, open_read (*argv), fp);
+          {
+            estream_t data_fp = es_fopen (*argv, "rb");
+
+            if (!data_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), *argv,
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+            err = gpgsm_encrypt (&ctrl, recplist, data_fp, fp);
+            es_fclose (data_fp);
+          }
         else
           wrong_args ("--encrypt [datafile]");
 
@@ -1973,22 +2003,27 @@ main ( int argc, char **argv)
            signing because that is what gpg does.*/
         set_binary (stdin);
         if (!argc) /* Create from stdin. */
-          err = gpgsm_sign (&ctrl, signerlist, 0, detached_sig, fp);
+          err = gpgsm_sign (&ctrl, signerlist, es_stdin, detached_sig, fp);
         else if (argc == 1) /* From file. */
-          err = gpgsm_sign (&ctrl, signerlist,
-                      open_read (*argv), detached_sig, fp);
+          {
+            estream_t data_fp = es_fopen (*argv, "rb");
+
+            if (!data_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), *argv,
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+            err = gpgsm_sign (&ctrl, signerlist, data_fp, detached_sig, fp);
+            es_fclose (data_fp);
+          }
         else
           wrong_args ("--sign [datafile]");
 
-#if GPGRT_VERSION_NUMBER >= 0x012700 /* >= 1.39 */
         if (err)
           gpgrt_fcancel (fp);
         else
           es_fclose (fp);
-#else
-        (void)err;
-        es_fclose (fp);
-#endif
       }
       break;
 
@@ -2017,11 +2052,43 @@ main ( int argc, char **argv)
           fp = open_es_fwrite (opt.outfile);
 
         if (!argc)
-          gpgsm_verify (&ctrl, 0, -1, fp); /* normal signature from stdin */
+          /* normal signature from stdin */
+          gpgsm_verify (&ctrl, es_stdin, NULL, fp);
         else if (argc == 1)
-          gpgsm_verify (&ctrl, open_read (*argv), -1, fp); /* std signature */
+          {
+            estream_t in_fp = es_fopen (*argv, "rb");
+
+            if (!in_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), *argv,
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+            gpgsm_verify (&ctrl, in_fp, NULL, fp); /* std signature */
+            es_fclose (in_fp);
+          }
         else if (argc == 2) /* detached signature (sig, detached) */
-          gpgsm_verify (&ctrl, open_read (*argv), open_read (argv[1]), NULL);
+          {
+            estream_t in_fp = es_fopen (*argv, "rb");
+            estream_t data_fp = es_fopen (argv[1], "rb");
+
+            if (!in_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), *argv,
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+            if (!data_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), argv[1],
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+
+            gpgsm_verify (&ctrl, in_fp, data_fp, NULL);
+            es_fclose (in_fp);
+            es_fclose (data_fp);
+          }
         else
           wrong_args ("--verify [signature [detached_data]]");
 
@@ -2035,9 +2102,19 @@ main ( int argc, char **argv)
 
         set_binary (stdin);
         if (!argc)
-          err = gpgsm_decrypt (&ctrl, 0, fp); /* from stdin */
+          err = gpgsm_decrypt (&ctrl, es_stdin, fp); /* from stdin */
         else if (argc == 1)
-          err = gpgsm_decrypt (&ctrl, open_read (*argv), fp); /* from file */
+          {
+            estream_t data_fp = es_fopen (*argv, "rb");
+            if (!data_fp)
+              {
+                log_error (_("can't open '%s': %s\n"), *argv,
+                           strerror (errno));
+                gpgsm_exit (2);
+              }
+            err = gpgsm_decrypt (&ctrl, data_fp, fp); /* from file */
+            es_fclose (data_fp);
+          }
         else
           wrong_args ("--decrypt [filename]");
 
@@ -2128,7 +2205,7 @@ main ( int argc, char **argv)
 
 
     case aImport:
-      gpgsm_import_files (&ctrl, argc, argv, open_read);
+      gpgsm_import_files (&ctrl, argc, argv, open_es_fread);
       break;
 
     case aExport:
@@ -2190,11 +2267,11 @@ main ( int argc, char **argv)
 
 
     case aLearnCard:
-      if (argc)
+      if (argc > 1)
         wrong_args ("--learn-card");
       else
         {
-          int rc = gpgsm_agent_learn (&ctrl);
+          int rc = gpgsm_agent_learn (&ctrl, argc? *argv : NULL);
           if (rc)
             log_error ("error learning card: %s\n", gpg_strerror (rc));
         }
@@ -2287,9 +2364,16 @@ gpgsm_exit (int rc)
   else if (opt.assert_signer_list && !assert_signer_true)
     rc = 1;
 
+  /* If we had an error but not printed an error message, do it now.
+   * Note that the function will never print a second failure status
+   * line. */
+  if (rc)
+    gpgsm_exit_failure_status ();
+
   gcry_control (GCRYCTL_UPDATE_RANDOM_SEED_FILE);
   if (opt.debug & DBG_MEMSTAT_VALUE)
     {
+      log_info ("cert_chain_cache: cached=%u\n", parent_cache_stats);
       gcry_control( GCRYCTL_DUMP_MEMORY_STATS );
       gcry_control( GCRYCTL_DUMP_RANDOM_STATS );
     }
@@ -2317,9 +2401,23 @@ gpgsm_init_default_ctrl (struct server_control_s *ctrl)
 void
 gpgsm_deinit_default_ctrl (ctrl_t ctrl)
 {
+  unsigned int n;
+
   gpgsm_keydb_deinit_session_data (ctrl);
+  gpgsm_flush_keyinfo_cache (ctrl);
   xfree (ctrl->revocation_reason);
   ctrl->revocation_reason = NULL;
+  n = 0;
+  while (ctrl->parent_cert_cache)
+    {
+      cert_cache_item_t next = ctrl->parent_cert_cache->next;
+      ksba_cert_release (ctrl->parent_cert_cache->result);
+      xfree (ctrl->parent_cert_cache);
+      ctrl->parent_cert_cache = next;
+      n++;
+    }
+  if (n > parent_cache_stats)
+    parent_cache_stats = n;
 }
 
 
@@ -2337,49 +2435,24 @@ gpgsm_parse_validation_model (const char *model)
 }
 
 
-
-/* Open the FILENAME for read and return the file descriptor.  Stop
-   with an error message in case of problems.  "-" denotes stdin and
-   if special filenames are allowed the given fd is opened instead.  */
-static int
-open_read (const char *filename)
-{
-  int fd;
-
-  if (filename[0] == '-' && !filename[1])
-    {
-      set_binary (stdin);
-      return 0; /* stdin */
-    }
-  fd = check_special_filename (filename, 0, 0);
-  if (fd != -1)
-    return fd;
-  fd = gnupg_open (filename, O_RDONLY | O_BINARY, 0);
-  if (fd == -1)
-    {
-      log_error (_("can't open '%s': %s\n"), filename, strerror (errno));
-      gpgsm_exit (2);
-    }
-  return fd;
-}
-
 /* Same as open_read but return an estream_t.  */
 static estream_t
 open_es_fread (const char *filename, const char *mode)
 {
-  int fd;
+  gnupg_fd_t fd;
   estream_t fp;
 
   if (filename[0] == '-' && !filename[1])
-    fd = fileno (stdin);
+    return es_fpopen_nc (stdin, mode);
   else
-    fd = check_special_filename (filename, 0, 0);
-  if (fd != -1)
+    fd = gnupg_check_special_filename (filename);
+  if (fd != GNUPG_INVALID_FD)
     {
-      fp = es_fdopen_nc (fd, mode);
+      fp = open_stream_nc (fd, mode);
       if (!fp)
         {
-          log_error ("es_fdopen(%d) failed: %s\n", fd, strerror (errno));
+          log_error ("es_fdopen(%d) failed: %s\n", FD_DBG (fd),
+                     strerror (errno));
           gpgsm_exit (2);
         }
       return fp;
@@ -2401,23 +2474,24 @@ open_es_fread (const char *filename, const char *mode)
 static estream_t
 open_es_fwrite (const char *filename)
 {
-  int fd;
+  gnupg_fd_t fd;
   estream_t fp;
 
   if (filename[0] == '-' && !filename[1])
     {
       fflush (stdout);
-      fp = es_fdopen_nc (fileno(stdout), "wb");
+      fp = es_fpopen_nc (stdout, "wb");
       return fp;
     }
 
-  fd = check_special_filename (filename, 1, 0);
-  if (fd != -1)
+  fd = gnupg_check_special_filename (filename);
+  if (fd != GNUPG_INVALID_FD)
     {
-      fp = es_fdopen_nc (fd, "wb");
+      fp = open_stream_nc (fd, "wb");
       if (!fp)
         {
-          log_error ("es_fdopen(%d) failed: %s\n", fd, strerror (errno));
+          log_error ("es_fdopen(%d) failed: %s\n",
+                     FD_DBG (fd), strerror (errno));
           gpgsm_exit (2);
         }
       return fp;

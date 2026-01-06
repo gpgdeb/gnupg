@@ -28,9 +28,7 @@
 # include <readline/readline.h>
 #endif /*HAVE_LIBREADLINE*/
 
-#if GNUPG_MAJOR_VERSION != 1
 # include "gpg.h"
-#endif /*GNUPG_MAJOR_VERSION != 1*/
 #include "../common/util.h"
 #include "../common/i18n.h"
 #include "../common/ttyio.h"
@@ -39,13 +37,14 @@
 #include "main.h"
 #include "keyserver-internal.h"
 
-#if GNUPG_MAJOR_VERSION == 1
-# include "cardglue.h"
-#else /*GNUPG_MAJOR_VERSION!=1*/
-# include "call-agent.h"
-#endif /*GNUPG_MAJOR_VERSION!=1*/
+#include "call-agent.h"
 
 #define CONTROL_D ('D' - 'A' + 1)
+#define USER_PIN_DEFAULT "123456"
+#define ADMIN_PIN_DEFAULT "12345678"
+
+#define KDF_DATA_LENGTH_MIN  90
+#define KDF_DATA_LENGTH_MAX 110
 
 
 static void
@@ -637,13 +636,7 @@ current_card_status (ctrl_t ctrl, estream_t fp,
                 const char *curve_for_print = "?";
 
                 if (info.key_attr[i].curve)
-                  {
-                    const char *oid;
-                    oid = openpgp_curve_to_oid (info.key_attr[i].curve,
-                                                NULL, NULL);
-                    if (oid)
-                      curve_for_print = openpgp_oid_to_curve (oid, 0);
-                  }
+                  curve_for_print = openpgp_oid_or_name_to_curve (info.key_attr[i].curve, 0);
                 tty_fprintf (fp, " %s", curve_for_print);
               }
           tty_fprintf (fp, "\n");
@@ -705,7 +698,7 @@ current_card_status (ctrl_t ctrl, estream_t fp,
       /* If the fingerprint is all 0xff, the key has no associated
          OpenPGP certificate.  */
       if ( thefpr && !fpr_is_ff (thefpr, thefprlen)
-           && !get_pubkey_byfprint (ctrl, pk, &keyblock, thefpr, thefprlen))
+           && !get_pubkey_byfpr (ctrl, pk, &keyblock, thefpr, thefprlen))
         {
           print_key_info (ctrl, fp, 0, pk, 0);
           print_card_key_info (fp, keyblock);
@@ -725,6 +718,26 @@ current_card_status (ctrl_t ctrl, estream_t fp,
   release_kbnode (keyblock);
   free_public_key (pk);
   agent_release_card_info (&info);
+}
+
+
+static void
+show_pin_hint (void)
+{
+  static int shown;
+
+  if (shown)
+    return;
+  shown = 1;
+
+  /* If no displayed name has been set, we assume that this is a fresh
+     card and print a hint about the default PINs.  */
+  tty_printf ("\n");
+  tty_printf (_("Please note that the factory settings of the PINs are\n"
+                "   PIN = '%s'     Admin PIN = '%s'\n"
+                "You should change them using the command --change-pin\n"),
+              USER_PIN_DEFAULT, ADMIN_PIN_DEFAULT);
+  tty_printf ("\n");
 }
 
 
@@ -862,6 +875,8 @@ change_name (void)
       goto leave;
     }
 
+  show_pin_hint ();
+
   rc = agent_scd_setattr ("DISP-NAME", isoname, strlen (isoname));
   if (rc)
     log_error ("error setting Name: %s\n", gpg_strerror (rc));
@@ -923,8 +938,8 @@ fetch_url (ctrl_t ctrl)
         }
       else if (info.fpr1len)
 	{
-          rc = keyserver_import_fprint (ctrl, info.fpr1, info.fpr1len,
-                                        opt.keyserver, 0);
+          rc = keyserver_import_fpr (ctrl, info.fpr1, info.fpr1len,
+                                     opt.keyserver, 0);
 	}
     }
 
@@ -949,14 +964,6 @@ get_data_from_file (const char *fname, char **r_buffer)
   *r_buffer = NULL;
 
   fp = es_fopen (fname, "rb");
-#if GNUPG_MAJOR_VERSION == 1
-  if (fp && is_secured_file (fileno (fp)))
-    {
-      fclose (fp);
-      fp = NULL;
-      errno = EPERM;
-    }
-#endif
   if (!fp)
     {
       tty_printf (_("can't open '%s': %s\n"), fname, strerror (errno));
@@ -992,14 +999,6 @@ put_data_to_file (const char *fname, const void *buffer, size_t length)
   estream_t fp;
 
   fp = es_fopen (fname, "wb");
-#if GNUPG_MAJOR_VERSION == 1
-  if (fp && is_secured_file (fileno (fp)))
-    {
-      fclose (fp);
-      fp = NULL;
-      errno = EPERM;
-    }
-#endif
   if (!fp)
     {
       tty_printf (_("can't create '%s': %s\n"), fname, strerror (errno));
@@ -1433,6 +1432,7 @@ show_keysize_warning (void)
 }
 
 
+
 /* Ask for the size of a card key.  NBITS is the current size
    configured for the card.  Returns 0 to use the default size
    (i.e. NBITS) or the selected size.  */
@@ -1546,7 +1546,6 @@ ask_card_keyattr (int keyno, const struct key_attr *current)
   else
     {
       const char *curve;
-      const char *oid_str;
 
       if (current->algo == PUBKEY_ALGO_RSA)
         {
@@ -1567,8 +1566,7 @@ ask_card_keyattr (int keyno, const struct key_attr *current)
       if (curve)
         {
           key_attr->algo = algo;
-          oid_str = openpgp_curve_to_oid (curve, NULL, NULL);
-          key_attr->curve = openpgp_oid_to_curve (oid_str, 0);
+          key_attr->curve = openpgp_oid_or_name_to_curve (curve, 0);
         }
       else
         {
@@ -1616,9 +1614,11 @@ do_change_keyattr (int keyno, const struct key_attr *key_attr)
   else
     {
       log_error (_("public key algorithm %d (%s) is not supported\n"),
-                 key_attr->algo, gcry_pk_algo_name (key_attr->algo));
+                 key_attr->algo, openpgp_pk_algo_name (key_attr->algo));
       return gpg_error (GPG_ERR_PUBKEY_ALGO);
     }
+
+  show_pin_hint ();
 
   err = agent_scd_setattr ("KEY-ATTR", args, strlen (args));
   if (err)
@@ -1651,6 +1651,7 @@ key_attr (void)
   for (keyno = 0; keyno < DIM (info.key_attr); keyno++)
     {
       struct key_attr *key_attr;
+
 
       if ((key_attr = ask_card_keyattr (keyno, &info.key_attr[keyno])))
         {
@@ -1717,15 +1718,7 @@ generate_card_keys (ctrl_t ctrl)
   /* If no displayed name has been set, we assume that this is a fresh
      card and print a hint about the default PINs.  */
   if (!info.disp_name || !*info.disp_name)
-    {
-      tty_printf ("\n");
-      tty_printf (_("Please note that the factory settings of the PINs are\n"
-                    "   PIN = '%s'     Admin PIN = '%s'\n"
-                    "You should change them using the command --change-pin\n"),
-                  "123456", "12345678");
-      tty_printf ("\n");
-    }
-
+    show_pin_hint ();
 
   if (check_pin_for_key_operation (&info, &forced_chv1))
     goto leave;
@@ -1800,7 +1793,7 @@ card_generate_subkey (ctrl_t ctrl, kbnode_t pub_keyblock)
 /* Store the key at NODE into the smartcard and modify NODE to carry
    the serialno stuff instead of the actual secret key parameters.
    USE is the usage for that key; 0 means any usage.  If
-   PROCESSED_KEYS is not NULL it is a poiter to an strlist which will
+   PROCESSED_KEYS is not NULL it is a pointer to an strlist which will
    be filled with the keygrips of successfully stored keys.  */
 int
 card_store_subkey (KBNODE node, int use, strlist_t *processed_keys)
@@ -2089,11 +2082,6 @@ factory_reset (void)
   agent_release_card_info (&info);
 }
 
-
-#define USER_PIN_DEFAULT "123456"
-#define ADMIN_PIN_DEFAULT "12345678"
-#define KDF_DATA_LENGTH_MIN  90
-#define KDF_DATA_LENGTH_MAX 110
 
 /* Generate KDF data.  */
 static gpg_error_t

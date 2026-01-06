@@ -1150,7 +1150,7 @@ convert_from_openpgp_native (ctrl_t ctrl,
             agent_write_private_key (ctrl, grip,
                                      protectedkey,
                                      protectedkeylen,
-                                     1, NULL, NULL, NULL, 0);
+                                     1, NULL, NULL, NULL, 0, NULL);
           xfree (protectedkey);
         }
       else
@@ -1159,7 +1159,7 @@ convert_from_openpgp_native (ctrl_t ctrl,
           agent_write_private_key (ctrl, grip,
                                    *r_key,
                                    gcry_sexp_canon_len (*r_key, 0, NULL,NULL),
-                                   1, NULL, NULL, NULL, 0);
+                                   1, NULL, NULL, NULL, 0, NULL);
         }
     }
 
@@ -1381,6 +1381,17 @@ extract_private_key (gcry_sexp_t s_key, int req_private_key_data,
       nskey = 2;
       curve = gcry_sexp_find_token (list, "curve", 0);
       flags = gcry_sexp_find_token (list, "flags", 0);
+      err = gcry_sexp_extract_param (list, NULL, format,
+                                     array+0, array+1, NULL);
+    }
+  else if (   !strcmp (name, (algoname = "kyber512"))
+           || !strcmp (name, (algoname = "kyber768"))
+           || !strcmp (name, (algoname = "kyber1024")))
+    {
+      format = "/ps?";
+      elems = "ps?";
+      npkey = 1;
+      nskey = 2;
       err = gcry_sexp_extract_param (list, NULL, format,
                                      array+0, array+1, NULL);
     }

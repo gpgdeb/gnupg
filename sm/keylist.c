@@ -56,7 +56,7 @@ struct list_external_parm_s
 #define OID_FLAG_UTF8 2
 /* The extension can be printed as a hex string.  */
 #define OID_FLAG_HEX  4
-/* Define if this specififies a key purpose.  */
+/* Define if this specifies a key purpose.  */
 #define OID_FLAG_KP   8
 
 /* A table mapping OIDs to a descriptive string. */
@@ -179,6 +179,7 @@ static struct
 
   /* GnuPG extensions */
   { "1.3.6.1.4.1.11591.2.1.1", "pkaAddress" },
+  { "1.3.6.1.4.1.11591.2.1.2", "manuNotation" },
   { "1.3.6.1.4.1.11591.2.2.1", "standaloneCertificate" },
   { "1.3.6.1.4.1.11591.2.2.2", "wellKnownPrivateKey" },
   { "1.3.6.1.4.1.11591.2.6.1", "gpgUsageCert", OID_FLAG_KP },
@@ -194,6 +195,18 @@ static struct
   { "1.3.6.1.4.1.41482.3.7", "yubikey-serial-number", OID_FLAG_HEX },
   { "1.3.6.1.4.1.41482.3.8", "yubikey-pin-touch-policy", OID_FLAG_HEX },
   { "1.3.6.1.4.1.41482.3.9", "yubikey-formfactor", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.1", "yk-opgp-cardholder-name", OID_FLAG_UTF8 },
+  { "1.3.6.1.4.1.41482.5.2", "yk-opgp-attst-source", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.3", "yk-opgp-opgp-version-number", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.4", "yk-opgp-attst-fpr", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.5", "yk-opgp-attst-date", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.6", "yk-opgp-attst-sigcount", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.7", "yk-opgp-serial-number", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.8", "yk-opgp-uif", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.9", "yk-opgp-form-factor", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.10","yk-opgp-fips-certified", OID_FLAG_HEX },
+  { "1.3.6.1.4.1.41482.5.11","yk-opgp-cspn-certified", OID_FLAG_HEX },
+
 
   /* Microsoft extensions.  */
   { "1.3.6.1.4.1.311.3.10.3.12","ms-old-documentSigning", OID_FLAG_KP },
@@ -1663,6 +1676,7 @@ list_internal_keys (ctrl_t ctrl, strlist_t names, estream_t fp,
 
       resname = keydb_get_resource_name (hd);
 
+      es_clearerr (fp);
       if (lastresname != resname )
         {
           int i;
@@ -1716,6 +1730,20 @@ list_internal_keys (ctrl_t ctrl, strlist_t names, estream_t fp,
       ksba_cert_release (lastcert);
       lastcert = cert;
       cert = NULL;
+
+      if (es_ferror (fp))
+        rc = gpg_error_from_syserror ();
+
+      /* For faster key listings we flush the output after each cert
+       * only if we list secret keys.  */
+      if ((mode & 2) && es_fflush (fp) && !rc)
+        rc = gpg_error_from_syserror ();
+
+      if (rc)
+        {
+          log_error (_("error writing to output: %s\n"), gpg_strerror (rc));
+          goto leave;
+        }
     }
   if (gpg_err_code (rc) == GPG_ERR_NOT_FOUND)
     rc = 0;

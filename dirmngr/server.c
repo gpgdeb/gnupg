@@ -324,6 +324,46 @@ strcpy_escaped_plus (char *d, const unsigned char *s)
 }
 
 
+/* Break the LINE into space delimited tokens, put them into a new
+ * strlist and return it at R_LIST.  On error an erro code is
+ * returned.  If no tokens are found the list is set to NULL.
+ * Percent-plus encoding is removed from each token.  Note that the
+ * function will modify LINE.  */
+static gpg_error_t
+percentplus_line_to_strlist (char *line, strlist_t *r_list)
+{
+  strlist_t list = NULL;
+  strlist_t sl;
+  char *p;
+
+  for (p=line; *p; line = p)
+    {
+      while (*p && *p != ' ')
+        p++;
+      if (*p)
+        *p++ = 0;
+      if (*line)
+        {
+          sl = xtrymalloc (sizeof *sl + strlen (line));
+          if (!sl)
+            {
+              gpg_error_t err = gpg_error_from_syserror ();
+              free_strlist (list);
+              *r_list = NULL;
+              return err;
+            }
+          sl->flags = 0;
+          strcpy_escaped_plus (sl->d, line);
+          sl->next = list;
+          list = sl;
+        }
+    }
+
+  *r_list = list;
+  return 0;
+}
+
+
 /* This function returns true if a Tor server is running.  The status
  * is cached for the current connection.  */
 static int
@@ -932,7 +972,7 @@ proc_wkd_get (ctrl_t ctrl, assuan_context_t ctx, char *line)
       err = get_dns_srv (ctrl, domain, "openpgpkey", NULL, &srvs, &srvscount);
       if (err)
         {
-          /* Ignore server failed becuase there are too many resolvers
+          /* Ignore server failed because there are too many resolvers
            * which do not work as expected.  */
           if (gpg_err_code (err) == GPG_ERR_SERVER_FAILED)
             err = 0; /*(srvcount is guaranteed to be 0)*/
@@ -2209,8 +2249,10 @@ ensure_keyserver (ctrl_t ctrl)
   if (!opt.keyserver)
     {
       /* No global option set.  Fall back to default:  */
-      return make_keyserver_item (DIRMNGR_DEFAULT_KEYSERVER,
-                                  &ctrl->server_local->keyservers);
+      /* return make_keyserver_item (DIRMNGR_DEFAULT_KEYSERVER, */
+      /*                             &ctrl->server_local->keyservers); */
+      err = gpg_error (GPG_ERR_NO_KEYSERVER);  /* No more default.  */
+      goto leave;
     }
 
   for (sl = opt.keyserver; sl; sl = sl->next)
@@ -2432,37 +2474,16 @@ cmd_ks_search (assuan_context_t ctx, char *line)
 {
   ctrl_t ctrl = assuan_get_pointer (ctx);
   gpg_error_t err;
-  strlist_t list, sl;
-  char *p;
+  strlist_t list;
   estream_t outfp;
 
   if (has_option (line, "--quick"))
     ctrl->timeout = opt.connect_quick_timeout;
   line = skip_options (line);
 
-  /* Break the line down into an strlist.  Each pattern is
-     percent-plus escaped. */
-  list = NULL;
-  for (p=line; *p; line = p)
-    {
-      while (*p && *p != ' ')
-        p++;
-      if (*p)
-        *p++ = 0;
-      if (*line)
-        {
-          sl = xtrymalloc (sizeof *sl + strlen (line));
-          if (!sl)
-            {
-              err = gpg_error_from_syserror ();
-              goto leave;
-            }
-          sl->flags = 0;
-          strcpy_escaped_plus (sl->d, line);
-          sl->next = list;
-          list = sl;
-        }
-    }
+  err = percentplus_line_to_strlist (line, &list);
+  if (err)
+    goto leave;
 
   err = ensure_keyserver (ctrl);
   if (err)
@@ -2501,9 +2522,7 @@ cmd_ks_get (assuan_context_t ctx, char *line)
   ctrl_t ctrl = assuan_get_pointer (ctx);
   gpg_error_t err;
   strlist_t list = NULL;
-  strlist_t sl;
   const char *s;
-  char *p;
   estream_t outfp;
   unsigned int flags = 0;
   gnupg_isotime_t opt_newer;
@@ -2526,30 +2545,13 @@ cmd_ks_get (assuan_context_t ctx, char *line)
     }
   line = skip_options (line);
 
-  /* Break the line into a strlist.  Each pattern is by
-     definition percent-plus escaped.  However we only support keyids
-     and fingerprints and thus the client has no need to apply the
-     escaping.  */
-  for (p=line; *p; line = p)
-    {
-      while (*p && *p != ' ')
-        p++;
-      if (*p)
-        *p++ = 0;
-      if (*line)
-        {
-          sl = xtrymalloc (sizeof *sl + strlen (line));
-          if (!sl)
-            {
-              err = gpg_error_from_syserror ();
-              goto leave;
-            }
-          sl->flags = 0;
-          strcpy_escaped_plus (sl->d, line);
-          sl->next = list;
-          list = sl;
-        }
-    }
+  /* Break the line into a strlist.  Each pattern is by definition
+     percent-plus escaped.  However we only support keyids and
+     fingerprints and thus the caler of this function has no need to
+     apply the escaping.  */
+  err = percentplus_line_to_strlist (line, &list);
+  if (err)
+    goto leave;
 
   if ((flags & KS_GET_FLAG_FIRST) && !(flags & KS_GET_FLAG_ONLY_LDAP))
     {
@@ -2632,10 +2634,6 @@ cmd_ks_fetch (assuan_context_t ctx, char *line)
     ctrl->timeout = opt.connect_quick_timeout;
   line = skip_options (line);
 
-  err = ensure_keyserver (ctrl);  /* FIXME: Why do we needs this here?  */
-  if (err)
-    goto leave;
-
   /* Setup an output stream and perform the get.  */
   outfp = es_fopencookie (ctx, "w", data_line_cookie_functions);
   if (!outfp)
@@ -2650,7 +2648,6 @@ cmd_ks_fetch (assuan_context_t ctx, char *line)
       ctrl->server_local->inhibit_data_logging = 0;
     }
 
- leave:
   return leave_cmd (ctx, err);
 }
 
@@ -2721,6 +2718,51 @@ cmd_ks_put (assuan_context_t ctx, char *line)
  leave:
   xfree (info);
   xfree (value);
+  return leave_cmd (ctx, err);
+}
+
+
+static const char hlp_ks_del[] =
+  "KS_DEL --ldap {<fingerprints>}\n"
+  "\n"
+  "Delete the keys specified by primary keys FINGERPRINTS from the\n"
+  "configured OpenPGP LDAP server.  The option --ldap is mandatory.";
+static gpg_error_t
+cmd_ks_del (assuan_context_t ctx, char *line)
+{
+  ctrl_t ctrl = assuan_get_pointer (ctx);
+  gpg_error_t err;
+  strlist_t list = NULL;
+  unsigned int flags = 0;
+
+  if (has_option (line, "--ldap"))
+    flags |= KS_GET_FLAG_ONLY_LDAP;
+  line = skip_options (line);
+
+  err = percentplus_line_to_strlist (line, &list);
+  if (err)
+    goto leave;
+
+  if (!(flags & KS_GET_FLAG_ONLY_LDAP))
+    {
+      err = set_error (GPG_ERR_SYNTAX, "option --ldap is mandatory");
+      goto leave;
+    }
+
+  if (!list)
+    {
+      err = set_error (GPG_ERR_SYNTAX, "no fingerprints given");
+      goto leave;
+    }
+
+  err = ensure_keyserver (ctrl);
+  if (err)
+    goto leave;
+
+  err = ks_action_del (ctrl, ctrl->server_local->keyservers, list);
+
+ leave:
+  free_strlist (list);
   return leave_cmd (ctx, err);
 }
 
@@ -3065,6 +3107,7 @@ register_commands (assuan_context_t ctx)
     { "KS_GET",     cmd_ks_get,     hlp_ks_get },
     { "KS_FETCH",   cmd_ks_fetch,   hlp_ks_fetch },
     { "KS_PUT",     cmd_ks_put,     hlp_ks_put },
+    { "KS_DEL",     cmd_ks_del,     hlp_ks_del },
     { "AD_QUERY",   cmd_ad_query,   hlp_ad_query },
     { "GETINFO",    cmd_getinfo,    hlp_getinfo },
     { "LOADSWDB",   cmd_loadswdb,   hlp_loadswdb },

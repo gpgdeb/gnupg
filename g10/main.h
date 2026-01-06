@@ -108,7 +108,7 @@ char *make_radix64_string( const byte *data, size_t len );
 void trap_unaligned(void);
 void register_secured_file (const char *fname);
 void unregister_secured_file (const char *fname);
-int  is_secured_file (int fd);
+int  is_secured_file (gnupg_fd_t fd);
 int  is_secured_filename (const char *fname);
 u16 checksum_u16( unsigned n );
 u16 checksum( const byte *p, unsigned n );
@@ -202,6 +202,7 @@ unsigned int ecdsa_qbits_from_Q (unsigned int qbits);
 void set_status_fd ( int fd );
 int  is_status_enabled ( void );
 void write_status ( int no );
+void write_status_warning (const char *where, gpg_error_t err);
 void write_status_error (const char *where, gpg_error_t err);
 void write_status_errcode (const char *where, int errcode);
 void write_status_failure (const char *where, gpg_error_t err);
@@ -243,11 +244,16 @@ aead_algo_t use_aead (pk_list_t pk_list, int algo);
 int use_mdc (pk_list_t pk_list,int algo);
 int encrypt_symmetric (const char *filename );
 int encrypt_store (const char *filename );
-int encrypt_crypt (ctrl_t ctrl, int filefd, const char *filename,
+int encrypt_crypt (ctrl_t ctrl, gnupg_fd_t filefd, const char *filename,
                    strlist_t remusr, int use_symkey, pk_list_t provided_keys,
-                   int outputfd);
+                   gnupg_fd_t outputfd);
 void encrypt_crypt_files (ctrl_t ctrl,
                           int nfiles, char **files, strlist_t remusr);
+gpg_error_t reencrypt_to_new_recipients (ctrl_t ctrl, int armor,
+                                         const char *filename, iobuf_t infp,
+                                         strlist_t recipients,
+                                         DEK *dek,
+                                         struct seskey_enc_list *sesenc_list);
 int encrypt_filter (void *opaque, int control,
 		    iobuf_t a, byte *buf, size_t *ret_len);
 
@@ -343,7 +349,7 @@ gpg_error_t generate_card_subkeypair (ctrl_t ctrl, kbnode_t pub_keyblock,
 int overwrite_filep( const char *fname );
 char *make_outfile_name( const char *iname );
 char *ask_outfile_name( const char *name, size_t namelen );
-int open_outfile (int out_fd, const char *iname, int mode,
+int open_outfile (gnupg_fd_t out_fd, const char *iname, int mode,
                   int restrictedperm, iobuf_t *a);
 char *get_matching_datafile (const char *sigfilename);
 iobuf_t open_sigfile (const char *sigfilename, progress_filter_context_t *pfx);
@@ -402,6 +408,7 @@ gpg_error_t transfer_secret_keys (ctrl_t ctrl, struct import_stats_s *stats,
 int collapse_uids (kbnode_t *keyblock);
 int collapse_subkeys (kbnode_t *keyblock);
 
+const char *revocation_reason_code_to_str (int code, char **r_freeme);
 int get_revocation_reason (PKT_signature *sig, char **r_reason,
                            char **r_comment, size_t *r_commentlen);
 
@@ -413,6 +420,7 @@ typedef struct export_stats_s *export_stats_t;
 export_stats_t export_new_stats (void);
 void export_release_stats (export_stats_t stats);
 void export_print_stats (export_stats_t stats);
+void print_status_exported (PKT_public_key *pk);
 
 int parse_export_options(char *str,unsigned int *options,int noisy);
 gpg_error_t parse_and_set_export_filter (const char *string);
@@ -436,7 +444,8 @@ gpg_error_t export_pubkey_buffer (ctrl_t ctrl, const char *keyspec,
                                   void **r_data, size_t *r_datalen);
 
 gpg_error_t receive_seckey_from_agent (ctrl_t ctrl, gcry_cipher_hd_t cipherhd,
-                                       int cleartext, int mode1003,
+                                       int cleartext,
+                                       int mode1003, int is_part2,
                                        char **cache_nonce_addr,
                                        const char *hexgrip,
                                        PKT_public_key *pk, gcry_sexp_t *r_key);
@@ -472,8 +481,8 @@ void secret_key_list (ctrl_t ctrl, strlist_t list );
 gpg_error_t parse_and_set_list_filter (const char *string);
 void print_subpackets_colon(PKT_signature *sig);
 void reorder_keyblock (KBNODE keyblock);
-void list_keyblock_direct (ctrl_t ctrl, kbnode_t keyblock, int secret,
-                           int has_secret, int fpr, int no_validity);
+gpg_error_t list_keyblock_direct (ctrl_t ctrl, kbnode_t keyblock, int secret,
+                                  int has_secret, int fpr, int no_validity);
 int  cmp_signodes (const void *av, const void *bv);
 void print_fingerprint (ctrl_t ctrl, estream_t fp,
                         PKT_public_key *pk, int mode);
@@ -482,6 +491,7 @@ void show_preferences (PKT_user_id *uid, int indent, int mode, int verbose);
 void show_policy_url(PKT_signature *sig,int indent,int mode);
 void show_keyserver_url(PKT_signature *sig,int indent,int mode);
 void show_notation(PKT_signature *sig,int indent,int mode,int which);
+void print_matching_notations (PKT_signature *sig);
 void dump_attribs (const PKT_user_id *uid, PKT_public_key *pk);
 void set_attrib_fd(int fd);
 void print_key_info (ctrl_t ctrl, estream_t fp, int indent,
@@ -490,25 +500,29 @@ void print_key_info_log (ctrl_t ctrl, int loglevel, int indent,
                      PKT_public_key *pk, int secret);
 void print_card_key_info (estream_t fp, KBNODE keyblock);
 void print_key_line (ctrl_t ctrl, estream_t fp, PKT_public_key *pk, int secret);
+void print_revocation_reason_comment (const char *comment, size_t comment_len);
 
 /*-- verify.c --*/
 void print_file_status( int status, const char *name, int what );
 int verify_signatures (ctrl_t ctrl, int nfiles, char **files );
 int verify_files (ctrl_t ctrl, int nfiles, char **files );
-int gpg_verify (ctrl_t ctrl, int sig_fd, int data_fd, estream_t out_fp);
+int gpg_verify (ctrl_t ctrl, gnupg_fd_t sig_fd, gnupg_fd_t data_fd,
+                estream_t out_fp);
 void check_assert_signer_list (const char *mainpkhex, const char *pkhex);
 void check_assert_pubkey_algo (const char *algostr, const char *pkhex);
 
 /*-- decrypt.c --*/
-int decrypt_message (ctrl_t ctrl, const char *filename );
-gpg_error_t decrypt_message_fd (ctrl_t ctrl, int input_fd, int output_fd);
+gpg_error_t decrypt_message (ctrl_t ctrl, const char *filename,
+                             strlist_t remusr);
+gpg_error_t decrypt_message_fd (ctrl_t ctrl, gnupg_fd_t input_fd,
+                                gnupg_fd_t output_fd);
 void decrypt_messages (ctrl_t ctrl, int nfiles, char *files[]);
 
 /*-- plaintext.c --*/
 int hash_datafiles( gcry_md_hd_t md, gcry_md_hd_t md2,
 		    strlist_t files, const char *sigfilename, int textmode);
-int hash_datafile_by_fd ( gcry_md_hd_t md, gcry_md_hd_t md2, int data_fd,
-                          int textmode );
+int hash_datafile_by_fd (gcry_md_hd_t md, gcry_md_hd_t md2,
+                         gnupg_fd_t data_fd, int textmode);
 PKT_plaintext *setup_plaintext_name(const char *filename,IOBUF iobuf);
 
 /*-- server.c --*/
