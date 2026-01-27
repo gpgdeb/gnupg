@@ -41,7 +41,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg2 2.4.2\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-12-30 09:00+0100\n"
+"POT-Creation-Date: 2026-01-27 11:08+0100\n"
 "PO-Revision-Date: 2023-06-03 15:45+02:00\n"
 "Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <gnupg-i18n@gnupg.org>\n"
@@ -261,7 +261,7 @@ msgid "ssh keys greater than %d bits are not supported\n"
 msgstr "SSH klíče delší než %d bitů nejsou podporovány\n"
 
 #: agent/command-ssh.c:895 common/dotlock.c:973 common/dotlock.c:976
-#: g10/card-util.c:1004 g10/export.c:1609 g10/gpg.c:1504 g10/keygen.c:6418
+#: g10/card-util.c:1004 g10/export.c:1610 g10/gpg.c:1504 g10/keygen.c:6418
 #: g10/keyring.c:1336 g10/keyring.c:1650 g10/openfile.c:299 g10/photoid.c:638
 #: g10/photoid.c:656 g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739
 #: tools/gpg-card.c:499
@@ -966,7 +966,7 @@ msgstr "Ne"
 #. "%%25".  The second "%s" gets replaced by a hexadecimal
 #. fingerprint string whereas the first one receives the name
 #. as stored in the certificate.
-#: agent/trustlist.c:798
+#: agent/trustlist.c:799
 #, c-format
 msgid ""
 "Please verify that the certificate identified as:%%0A  \"%s\"%%0Ahas the "
@@ -976,12 +976,13 @@ msgstr ""
 
 #. TRANSLATORS: "Correct" is the label of a button and intended
 #. to be hit if the fingerprint matches the one of the CA.  The
-#. other button is "the default "Cancel" of the Pinentry.
-#: agent/trustlist.c:812
+#. other button is "the default "Cancel" of the Pinentry.  We
+#. fix the English strings with hacks to avoid a string changes.
+#: agent/trustlist.c:814
 msgid "Correct"
 msgstr "V pořádku"
 
-#: agent/trustlist.c:812
+#: agent/trustlist.c:817
 msgid "Wrong"
 msgstr "Špatně"
 
@@ -1339,7 +1340,7 @@ msgid "algorithm: %s"
 msgstr "algoritmus: %s"
 
 #: common/audit.c:774 common/audit.c:776 common/audit.c:921 common/audit.c:923
-#: scd/app-openpgp.c:4401
+#: scd/app-openpgp.c:4402
 #, c-format
 msgid "unsupported algorithm: %s"
 msgstr "nepodporovaný algoritmus: %s"
@@ -1540,7 +1541,7 @@ msgstr "čekám na zámek %s…\n"
 msgid "%s is too old (need %s, have %s)\n"
 msgstr "%s je příliš stará (potřeba %s, přítomna %s)\n"
 
-#: common/homedir.c:276 g10/export.c:3058 g10/export.c:3286 g10/plaintext.c:154
+#: common/homedir.c:276 g10/export.c:3060 g10/export.c:3288 g10/plaintext.c:154
 #: g10/plaintext.c:160
 #, c-format
 msgid "error creating '%s': %s\n"
@@ -1783,7 +1784,7 @@ msgstr "nelze provést v dávkovém režimu\n"
 msgid "This command is only available for version 2 cards\n"
 msgstr "Tento příkaz je dostupný pouze pro karty verze 2\n"
 
-#: g10/card-util.c:113 scd/app-openpgp.c:3555 tools/gpg-card.c:3151
+#: g10/card-util.c:113 scd/app-openpgp.c:3556 tools/gpg-card.c:3151
 #, c-format
 msgid "Reset Code not or not anymore available\n"
 msgstr "Resetační kód není nebo už není dostupný\n"
@@ -1874,7 +1875,7 @@ msgstr "chyba při čtení „%s“: %s\n"
 
 #: g10/card-util.c:1010 g10/dearmor.c:74 g10/dearmor.c:128 g10/encrypt.c:688
 #: g10/encrypt.c:1063 g10/encrypt.c:1184 g10/decrypt-data.c:525
-#: g10/export.c:3076 g10/export.c:3310 dirmngr/crlcache.c:932
+#: g10/export.c:3078 g10/export.c:3312 dirmngr/crlcache.c:932
 #: tools/gpg-card.c:506 tools/gpg-card.c:513
 #, c-format
 msgid "error writing '%s': %s\n"
@@ -2219,8 +2220,8 @@ msgstr "--output pro tento příkaz není platný\n"
 msgid "can't open '%s'\n"
 msgstr "„%s“ nelze otevřít\n"
 
-#: g10/delkey.c:89 g10/export.c:2434 g10/export.c:2922 g10/export.c:3043
-#: g10/export.c:3121 g10/getkey.c:2139 g10/gpg.c:5553 g10/keyedit.c:1597
+#: g10/delkey.c:89 g10/export.c:2435 g10/export.c:2924 g10/export.c:3045
+#: g10/export.c:3123 g10/getkey.c:2139 g10/gpg.c:5553 g10/keyedit.c:1597
 #: g10/keyedit.c:2636 g10/keyedit.c:3061 g10/keyedit.c:5021 g10/keyedit.c:5278
 #: g10/keyedit.c:5305 g10/keylist.c:1014 g10/keyserver.c:1104 g10/revoke.c:230
 #: g10/tofu.c:2172
@@ -2228,7 +2229,7 @@ msgstr "„%s“ nelze otevřít\n"
 msgid "key \"%s\" not found: %s\n"
 msgstr "klíč „%s“ nenalezen: %s\n"
 
-#: g10/delkey.c:98 g10/export.c:2469 g10/getkey.c:2147 g10/getkey.c:4717
+#: g10/delkey.c:98 g10/export.c:2470 g10/getkey.c:2147 g10/getkey.c:4717
 #: g10/gpg.c:5562 g10/keyedit.c:2608 g10/keyserver.c:1122 g10/revoke.c:236
 #: g10/revoke.c:666 g10/tofu.c:2180
 #, c-format
@@ -2456,45 +2457,45 @@ msgstr "odstranit nepoužitelné části z klíče při exportu"
 msgid "remove as much as possible from key during export"
 msgstr "odstranit při exportu z klíče vše, co lze"
 
-#: g10/export.c:140
+#: g10/export.c:141
 msgid "export only revocation certificates"
 msgstr "exportovat pouze revokační certifikáty"
 
-#: g10/export.c:143
+#: g10/export.c:144
 msgid "use the GnuPG key backup format"
 msgstr "použít záložní formát klíče GnuPG"
 
-#: g10/export.c:147
+#: g10/export.c:148
 msgid "export secret keys using the GnuPG format"
 msgstr "exportovat tajné klíče do formátu GnuPG"
 
-#: g10/export.c:1580
+#: g10/export.c:1581
 msgid " - skipped"
 msgstr " – přeskočeno"
 
 # g10/import.c:766 g10/openfile.c:261#, c-format
-#: g10/export.c:1613 g10/import.c:2260 g10/openfile.c:208 g10/openfile.c:302
+#: g10/export.c:1614 g10/import.c:2260 g10/openfile.c:208 g10/openfile.c:302
 #: g10/sign.c:1149 g10/sign.c:1514
 #, c-format
 msgid "writing to '%s'\n"
 msgstr "zapisuje se do „%s“\n"
 
-#: g10/export.c:2124
+#: g10/export.c:2125
 #, c-format
 msgid "key %s: key material on-card - skipped\n"
 msgstr "klíč %s: tělo klíče je na kartě – přeskočeno\n"
 
-#: g10/export.c:2340
+#: g10/export.c:2341
 #, c-format
 msgid "exporting secret keys not allowed\n"
 msgstr "exportování tajného klíče není povoleno\n"
 
-#: g10/export.c:2495
+#: g10/export.c:2496
 #, c-format
 msgid "key %s: PGP 2.x style key - skipped\n"
 msgstr "klíč %s: PGP 2.x klíč – přeskočeno\n"
 
-#: g10/export.c:2616
+#: g10/export.c:2618
 #, c-format
 msgid "WARNING: nothing exported\n"
 msgstr "POZOR: nebylo nic vyexportováno\n"
@@ -8298,7 +8299,7 @@ msgstr ""
 #. * used by pinentry to nicely align the names and values.  Keep
 #. * the %s at the start and end of the string.
 #: scd/app-piv.c:1776 scd/app-p15.c:5270 scd/app-nks.c:1543
-#: scd/app-openpgp.c:2516
+#: scd/app-openpgp.c:2517
 #, c-format
 msgid "%sNumber: %s%%0AHolder: %s%s"
 msgstr "%sČíslo: %s%%0ADržitel: %s%s"
@@ -8306,7 +8307,7 @@ msgstr "%sČíslo: %s%%0ADržitel: %s%s"
 #. TRANSLATORS: This is the number of remaining attempts to
 #. * enter a PIN.  Use %%0A (double-percent,0A) for a linefeed.
 #: scd/app-piv.c:1793 scd/app-p15.c:5289 scd/app-nks.c:1562
-#: scd/app-openpgp.c:2532
+#: scd/app-openpgp.c:2533
 #, c-format
 msgid "Remaining attempts: %d"
 msgstr "Zbývá pokusů: %d"
@@ -8335,10 +8336,10 @@ msgstr "|N|Prosím, zadejte nový kód pro odblokování (PUK)"
 msgid "||Please enter the Unblocking Key of your PIV card"
 msgstr "||Prosím, zadejte kód pro odblokování (PUK) vaší karty PIV"
 
-#: scd/app-piv.c:1894 scd/app-nks.c:1673 scd/app-openpgp.c:2799
-#: scd/app-openpgp.c:2823 scd/app-openpgp.c:3001 scd/app-openpgp.c:3023
-#: scd/app-openpgp.c:3205 scd/app-openpgp.c:3518 scd/app-openpgp.c:3565
-#: scd/app-openpgp.c:3731 scd/app-dinsig.c:305
+#: scd/app-piv.c:1894 scd/app-nks.c:1673 scd/app-openpgp.c:2800
+#: scd/app-openpgp.c:2824 scd/app-openpgp.c:3002 scd/app-openpgp.c:3024
+#: scd/app-openpgp.c:3206 scd/app-openpgp.c:3519 scd/app-openpgp.c:3566
+#: scd/app-openpgp.c:3732 scd/app-dinsig.c:305
 #, c-format
 msgid "PIN callback returned error: %s\n"
 msgstr "funkce PIN callback skončila chybou: %s\n"
@@ -8358,57 +8359,57 @@ msgstr "PIN je příliš dlouhý; maximální délka je %d\n"
 msgid "PIN has invalid characters; only digits are allowed\n"
 msgstr "PIN obsahuje neplatné znaky; povoleny jsou pouze číslice\n"
 
-#: scd/app-piv.c:2687 scd/app-openpgp.c:3805
+#: scd/app-piv.c:2687 scd/app-openpgp.c:3806
 #, c-format
 msgid "key already exists\n"
 msgstr "klíč již existuje\n"
 
-#: scd/app-piv.c:2692 scd/app-openpgp.c:3809
+#: scd/app-piv.c:2692 scd/app-openpgp.c:3810
 #, c-format
 msgid "existing key will be replaced\n"
 msgstr "existující klíč bude přepsán\n"
 
-#: scd/app-piv.c:2694 scd/app-openpgp.c:3811
+#: scd/app-piv.c:2694 scd/app-openpgp.c:3812
 #, c-format
 msgid "generating new key\n"
 msgstr "generování nového klíče\n"
 
-#: scd/app-piv.c:2696 scd/app-openpgp.c:3813
+#: scd/app-piv.c:2696 scd/app-openpgp.c:3814
 #, c-format
 msgid "writing new key\n"
 msgstr "nový klíč se zapisuje\n"
 
-#: scd/app-piv.c:3117 scd/app-openpgp.c:4673 scd/app-openpgp.c:4971
+#: scd/app-piv.c:3117 scd/app-openpgp.c:4674 scd/app-openpgp.c:4972
 #, c-format
 msgid "failed to store the key: %s\n"
 msgstr "nelze uložit klíč: %s\n"
 
-#: scd/app-piv.c:3143 scd/app-openpgp.c:1698
+#: scd/app-piv.c:3143 scd/app-openpgp.c:1699
 #, c-format
 msgid "response does not contain the RSA modulus\n"
 msgstr "odpověď neobsahuje modulus RSA\n"
 
-#: scd/app-piv.c:3151 scd/app-openpgp.c:1705
+#: scd/app-piv.c:3151 scd/app-openpgp.c:1706
 #, c-format
 msgid "response does not contain the RSA public exponent\n"
 msgstr "odpověď neobsahuje veřejný exponent RSA\n"
 
-#: scd/app-piv.c:3221 scd/app-openpgp.c:1820
+#: scd/app-piv.c:3221 scd/app-openpgp.c:1821
 #, c-format
 msgid "response does not contain the EC public key\n"
 msgstr "odpověď neobsahuje veřejný klíč EC\n"
 
-#: scd/app-piv.c:3316 scd/app-openpgp.c:5172
+#: scd/app-piv.c:3316 scd/app-openpgp.c:5173
 #, c-format
 msgid "please wait while key is being generated ...\n"
 msgstr "prosím počkejte než bude klíč vygenerován…\n"
 
-#: scd/app-piv.c:3331 scd/app-openpgp.c:5180
+#: scd/app-piv.c:3331 scd/app-openpgp.c:5181
 #, c-format
 msgid "generating key failed\n"
 msgstr "generování klíče se nezdařilo\n"
 
-#: scd/app-piv.c:3337 scd/app-openpgp.c:5186
+#: scd/app-piv.c:3337 scd/app-openpgp.c:5187
 #, c-format
 msgid "key generation completed (%d second)\n"
 msgid_plural "key generation completed (%d seconds)\n"
@@ -8416,7 +8417,7 @@ msgstr[0] "generování klíče dokončeno (%d sekunda)\n"
 msgstr[1] "generování klíče dokončeno (%d sekundy)\n"
 msgstr[2] "generování klíče dokončeno (%d sekund)\n"
 
-#: scd/app-piv.c:3348 scd/app-openpgp.c:1937 scd/app-openpgp.c:5195
+#: scd/app-piv.c:3348 scd/app-openpgp.c:1938 scd/app-openpgp.c:5196
 #, c-format
 msgid "response does not contain the public key data\n"
 msgstr "odpověď neobsahuje veřejný klíč\n"
@@ -8428,7 +8429,7 @@ msgstr ""
 
 #. TRANSLATORS: Do not translate the "|A|" prefix but keep it at
 #. the start of the string.  Use %0A (single percent) for a linefeed.
-#: scd/app-p15.c:5373 scd/app-openpgp.c:2948
+#: scd/app-p15.c:5373 scd/app-openpgp.c:2949
 msgid "|A|Please enter the Admin PIN"
 msgstr "|A|Prosím, zadejte PIN správce"
 
@@ -8440,12 +8441,12 @@ msgstr "|P|Prosím, zadejte kód pro odblokování (PUK) standardních klíčů.
 msgid "||Please enter the PIN for the standard keys."
 msgstr "||Prosím, zadejte PIN pro standardní klíče."
 
-#: scd/app-nks.c:1481 scd/app-openpgp.c:4510
+#: scd/app-nks.c:1481 scd/app-openpgp.c:4511
 #, c-format
 msgid "RSA modulus missing or not of size %d bits\n"
 msgstr "schází RSA modulus nebo nemá velikost %d bitů\n"
 
-#: scd/app-nks.c:1489 scd/app-openpgp.c:4522
+#: scd/app-nks.c:1489 scd/app-openpgp.c:4523
 #, c-format
 msgid "RSA public exponent missing or larger than %d bits\n"
 msgstr "schází veřejný RSA exponent nebo je delší než %d bitů\n"
@@ -8490,27 +8491,27 @@ msgstr ""
 "|NP|Prosím, zadejte kód pro odblokování (PUK) klíče určeného na tvorbu "
 "kvalifikovaných podpisů."
 
-#: scd/app-nks.c:2297 scd/app-openpgp.c:3600 scd/app-dinsig.c:537
+#: scd/app-nks.c:2297 scd/app-openpgp.c:3601 scd/app-dinsig.c:537
 #, c-format
 msgid "error getting new PIN: %s\n"
 msgstr "chyba při získání nového PINu: %s\n"
 
-#: scd/app-openpgp.c:1025
+#: scd/app-openpgp.c:1026
 #, c-format
 msgid "failed to store the fingerprint: %s\n"
 msgstr "uložení otisku se nezdařilo: %s\n"
 
-#: scd/app-openpgp.c:1038
+#: scd/app-openpgp.c:1039
 #, c-format
 msgid "failed to store the creation date: %s\n"
 msgstr "uložení data vytvoření se nezdařilo: %s\n"
 
-#: scd/app-openpgp.c:1509 scd/app-openpgp.c:3546 scd/app-openpgp.c:6125
+#: scd/app-openpgp.c:1510 scd/app-openpgp.c:3547 scd/app-openpgp.c:6126
 #, c-format
 msgid "error retrieving CHV status from card\n"
 msgstr "chyba při získání CHV z karty\n"
 
-#: scd/app-openpgp.c:2045
+#: scd/app-openpgp.c:2046
 #, c-format
 msgid "reading public key failed: %s\n"
 msgstr "čtení veřejného klíče se nezdařilo: %s\n"
@@ -8518,44 +8519,44 @@ msgstr "čtení veřejného klíče se nezdařilo: %s\n"
 #. TRANSLATORS: Put a \x1f right before a colon.  This can be
 #. * used by pinentry to nicely align the names and values.  Keep
 #. * the %s at the start and end of the string.
-#: scd/app-openpgp.c:2503
+#: scd/app-openpgp.c:2504
 #, c-format
 msgid "%sNumber: %s%%0AHolder: %s%%0ACounter: %lu%s"
 msgstr "%sČíslo: %s%%0ADržitel: %s%%0APočítadlo: %lu%s"
 
-#: scd/app-openpgp.c:2751
+#: scd/app-openpgp.c:2752
 #, c-format
 msgid "using default PIN as %s\n"
 msgstr "použije se výchozí PIN jako %s\n"
 
-#: scd/app-openpgp.c:2758
+#: scd/app-openpgp.c:2759
 #, c-format
 msgid "failed to use default PIN as %s: %s - disabling further default use\n"
 msgstr ""
 "použití výchozího PINu jako %s selhalo: %s – vypínám jeho budoucí použití\n"
 
-#: scd/app-openpgp.c:2771
+#: scd/app-openpgp.c:2772
 msgid "||Please unlock the card"
 msgstr "||Prosím, odemkněte kartu"
 
-#: scd/app-openpgp.c:2830 scd/app-openpgp.c:3030 scd/app-openpgp.c:3525
-#: scd/app-openpgp.c:3620 scd/app-openpgp.c:3633
+#: scd/app-openpgp.c:2831 scd/app-openpgp.c:3031 scd/app-openpgp.c:3526
+#: scd/app-openpgp.c:3621 scd/app-openpgp.c:3634
 #, c-format
 msgid "PIN for CHV%d is too short; minimum length is %d\n"
 msgstr "PIN pro CHV%d je příliš krátký; minimální délka je %d\n"
 
-#: scd/app-openpgp.c:2847 scd/app-openpgp.c:2890 scd/app-openpgp.c:3047
-#: scd/app-openpgp.c:5555
+#: scd/app-openpgp.c:2848 scd/app-openpgp.c:2891 scd/app-openpgp.c:3048
+#: scd/app-openpgp.c:5556
 #, c-format
 msgid "verify CHV%d failed: %s\n"
 msgstr "ověření CHV%d se nezdařilo: %s\n"
 
-#: scd/app-openpgp.c:2934 scd/app-openpgp.c:6134
+#: scd/app-openpgp.c:2935 scd/app-openpgp.c:6135
 #, c-format
 msgid "card is permanently locked!\n"
 msgstr "karta je trvale uzamčena!\n"
 
-#: scd/app-openpgp.c:2938
+#: scd/app-openpgp.c:2939
 #, c-format
 msgid "%d Admin PIN attempt remaining before card is permanently locked\n"
 msgid_plural ""
@@ -8567,22 +8568,22 @@ msgstr[1] ""
 msgstr[2] ""
 "Do trvalého uzamčení karty zůstává %d pokusů na zadání PINu správce\n"
 
-#: scd/app-openpgp.c:2971
+#: scd/app-openpgp.c:2972
 #, c-format
 msgid "access to admin commands is not configured\n"
 msgstr "přístup k příkazům správce není nakonfigurován\n"
 
-#: scd/app-openpgp.c:3512
+#: scd/app-openpgp.c:3513
 msgid "||Please enter the PIN"
 msgstr "||Prosím, zadejte PIN"
 
-#: scd/app-openpgp.c:3561
+#: scd/app-openpgp.c:3562
 #, fuzzy
 #| msgid "||Please enter the Reset Code for the card"
 msgid "|R|Please enter the Reset Code for the card"
 msgstr "||Prosím, zadejte resetační kód karty"
 
-#: scd/app-openpgp.c:3571 scd/app-openpgp.c:3610
+#: scd/app-openpgp.c:3572 scd/app-openpgp.c:3611
 #, c-format
 msgid "Reset Code is too short; minimum length is %d\n"
 msgstr "Resetační kód je příliš krátký; minimální délka je %d\n"
@@ -8590,78 +8591,78 @@ msgstr "Resetační kód je příliš krátký; minimální délka je %d\n"
 #. TRANSLATORS: Do not translate the "|*|" prefixes but
 #. keep it at the start of the string.  We need this elsewhere
 #. to get some infos on the string.
-#: scd/app-openpgp.c:3595
+#: scd/app-openpgp.c:3596
 msgid "|RN|New Reset Code"
 msgstr "|RN|Nový resetační kód"
 
-#: scd/app-openpgp.c:3596
+#: scd/app-openpgp.c:3597
 msgid "|AN|New Admin PIN"
 msgstr "|AN|Nový PIN správce"
 
-#: scd/app-openpgp.c:3596
+#: scd/app-openpgp.c:3597
 msgid "|N|New PIN"
 msgstr "|N|Nový PIN"
 
-#: scd/app-openpgp.c:3727
+#: scd/app-openpgp.c:3728
 msgid "||Please enter the Admin PIN and New Admin PIN"
 msgstr "||Prosím, zadejte PIN správce a nový PIN správce"
 
-#: scd/app-openpgp.c:3728
+#: scd/app-openpgp.c:3729
 msgid "||Please enter the PIN and New PIN"
 msgstr "||Prosím, zadejte PIN a nový PIN"
 
-#: scd/app-openpgp.c:3789 scd/app-openpgp.c:5255
+#: scd/app-openpgp.c:3790 scd/app-openpgp.c:5256
 #, c-format
 msgid "error reading application data\n"
 msgstr "chyba při čtení aplikačních dat\n"
 
-#: scd/app-openpgp.c:3795 scd/app-openpgp.c:5262
+#: scd/app-openpgp.c:3796 scd/app-openpgp.c:5263
 #, c-format
 msgid "error reading fingerprint DO\n"
 msgstr "chyba při čtení otisku DO\n"
 
-#: scd/app-openpgp.c:4491 scd/app-openpgp.c:4854
+#: scd/app-openpgp.c:4492 scd/app-openpgp.c:4855
 #, c-format
 msgid "creation timestamp missing\n"
 msgstr "chybí časové razítko vytvoření\n"
 
-#: scd/app-openpgp.c:4532 scd/app-openpgp.c:4540
+#: scd/app-openpgp.c:4533 scd/app-openpgp.c:4541
 #, c-format
 msgid "RSA prime %s missing or not of size %d bits\n"
 msgstr "schází RSA prime %s nebo nemá velikost %d bitů\n"
 
-#: scd/app-openpgp.c:4848
+#: scd/app-openpgp.c:4849
 #, c-format
 msgid "unsupported curve\n"
 msgstr "nepodporovaná křivka\n"
 
-#: scd/app-openpgp.c:5220
+#: scd/app-openpgp.c:5221
 #, c-format
 msgid "invalid structure of OpenPGP card (DO 0x93)\n"
 msgstr "neplatná struktura OpenPGP karty (DO 0x93)\n"
 
-#: scd/app-openpgp.c:5270
+#: scd/app-openpgp.c:5271
 #, c-format
 msgid "fingerprint on card does not match requested one\n"
 msgstr "otisk na kartě se neshoduje s požadovaným\n"
 
-#: scd/app-openpgp.c:5470
+#: scd/app-openpgp.c:5471
 #, c-format
 msgid "card does not support digest algorithm %s\n"
 msgstr "karta nepodporuje hashovací algoritmus %s\n"
 
-#: scd/app-openpgp.c:5528
+#: scd/app-openpgp.c:5529
 #, c-format
 msgid "signatures created so far: %lu\n"
 msgstr "dosud vytvořené podpisy: %lu\n"
 
-#: scd/app-openpgp.c:6139
+#: scd/app-openpgp.c:6140
 #, c-format
 msgid ""
 "verification of Admin PIN is currently prohibited through this command\n"
 msgstr "ověření PIN správce je nyní prostřednictvím tohoto příkazu zakázáno\n"
 
-#: scd/app-openpgp.c:6686 scd/app-openpgp.c:6698
+#: scd/app-openpgp.c:6687 scd/app-openpgp.c:6699
 #, c-format
 msgid "can't access %s - invalid OpenPGP card?\n"
 msgstr "přístup na %s se nezdařil – vadná OpenPGP karta?\n"
@@ -8805,7 +8806,7 @@ msgstr "Poznámka: nekritické certifikační politiky nejsou dovoleny"
 msgid "certificate policy not allowed"
 msgstr "certifikační politika není dovolena"
 
-#: sm/certchain.c:613 sm/keydb.c:1962 sm/keydb.c:2051
+#: sm/certchain.c:613 sm/keydb.c:1996 sm/keydb.c:2085
 #, c-format
 msgid "failed to get the fingerprint\n"
 msgstr "otisk se nepodařilo získat\n"
@@ -8841,7 +8842,7 @@ msgid "dirmngr cache-only key lookup failed: %s\n"
 msgstr "hledání klíče pouze ve vyrovnávací paměti dirmngr neuspělo: %s\n"
 
 #: sm/certchain.c:1112 sm/certchain.c:1668 sm/certchain.c:2384 sm/decrypt.c:996
-#: sm/encrypt.c:650 sm/import.c:407 sm/keydb.c:1969 sm/keydb.c:2058
+#: sm/encrypt.c:650 sm/import.c:407 sm/keydb.c:2003 sm/keydb.c:2092
 #: sm/sign.c:632 sm/verify.c:117
 #, c-format
 msgid "failed to allocate keyDB handle\n"
@@ -9367,7 +9368,7 @@ msgstr "zašifrováno pro %s klíč %s\n"
 msgid "certificate '%s' not found: %s\n"
 msgstr "certifikát „%s“ nebyl nenalezen: %s\n"
 
-#: sm/delete.c:67 sm/keydb.c:2070 sm/keydb.c:2169
+#: sm/delete.c:67 sm/keydb.c:2104 sm/keydb.c:2203
 #, c-format
 msgid "error locking keybox: %s\n"
 msgstr "chyba při zamykání schránky na klíče: %s\n"
@@ -9558,7 +9559,7 @@ msgstr "chyba při ukládání certifikátu\n"
 msgid "basic certificate checks failed - not imported\n"
 msgstr "základní kontrola certifikátu selhala – neimportováno\n"
 
-#: sm/import.c:457 sm/keydb.c:2089 sm/keydb.c:2182
+#: sm/import.c:457 sm/keydb.c:2123 sm/keydb.c:2216
 #, c-format
 msgid "error getting stored flags: %s\n"
 msgstr "chyba při získání uložených příznaků: %s\n"
@@ -9583,27 +9584,27 @@ msgstr "v této relaci neběží žádný keyboxd\n"
 msgid "error opening key DB: %s\n"
 msgstr "chyba při otevírání databáze klíčů: %s\n"
 
-#: sm/keydb.c:2007
+#: sm/keydb.c:2041
 #, c-format
 msgid "problem looking for existing certificate: %s\n"
 msgstr "problém při hledání existujícího certifikátu: %s\n"
 
-#: sm/keydb.c:2019
+#: sm/keydb.c:2053
 #, c-format
 msgid "error finding writable keyDB: %s\n"
 msgstr "chyba při hledání zapisovatelné keyDB: %s\n"
 
-#: sm/keydb.c:2027
+#: sm/keydb.c:2061
 #, c-format
 msgid "error storing certificate: %s\n"
 msgstr "chyba při ukládání certifikátu: %s\n"
 
-#: sm/keydb.c:2080
+#: sm/keydb.c:2114
 #, c-format
 msgid "problem re-searching certificate: %s\n"
 msgstr "problém při opakovaném hledání certifikátu: %s\n"
 
-#: sm/keydb.c:2101 sm/keydb.c:2193
+#: sm/keydb.c:2135 sm/keydb.c:2227
 #, c-format
 msgid "error storing flags: %s\n"
 msgstr "chyba při ukládání příznaků: %s\n"
@@ -10675,12 +10676,12 @@ msgstr "dvojtečky v názvu socketu jsou nepřípustné\n"
 msgid "error forking process: %s\n"
 msgstr "chyba při rozdvojování procesu: %s\n"
 
-#: dirmngr/dirmngr.c:1681 dirmngr/server.c:1955
+#: dirmngr/dirmngr.c:1681 dirmngr/server.c:1970
 #, c-format
 msgid "fetching CRL from '%s' failed: %s\n"
 msgstr "stahování CRL z „%s“ selhalo: %s\n"
 
-#: dirmngr/dirmngr.c:1687 dirmngr/server.c:1961
+#: dirmngr/dirmngr.c:1687 dirmngr/server.c:1976
 #, c-format
 msgid "processing CRL from '%s' failed: %s\n"
 msgstr "zpracování CRL z „%s“ selhalo: %s\n"
@@ -11015,72 +11016,72 @@ msgstr "OCSP odpovídač vrátil ne současný stav\n"
 msgid "OCSP responder returned an too old status\n"
 msgstr "OCSP odpovídač vrátil příliš starý stav\n"
 
-#: dirmngr/server.c:441 dirmngr/server.c:550 dirmngr/server.c:596
+#: dirmngr/server.c:456 dirmngr/server.c:565 dirmngr/server.c:611
 #, c-format
 msgid "assuan_inquire(%s) failed: %s\n"
 msgstr "volání assuan_inquire(%s) selhalo: %s\n"
 
-#: dirmngr/server.c:1331
+#: dirmngr/server.c:1346
 msgid "serialno missing in cert ID"
 msgstr "v ID certifikátu chybí serialno (sériové číslo)"
 
-#: dirmngr/server.c:1509 dirmngr/server.c:1597 dirmngr/server.c:2040
-#: dirmngr/server.c:2111 dirmngr/server.c:2695 dirmngr/server.c:2710
+#: dirmngr/server.c:1524 dirmngr/server.c:1612 dirmngr/server.c:2055
+#: dirmngr/server.c:2126 dirmngr/server.c:2722 dirmngr/server.c:2737
 #, c-format
 msgid "assuan_inquire failed: %s\n"
 msgstr "volání assuan_inquire selhalo: %s\n"
 
-#: dirmngr/server.c:1646
+#: dirmngr/server.c:1661
 #, c-format
 msgid "fetch_cert_by_url failed: %s\n"
 msgstr "volání fetch_cert_by_url selhalo: %s\n"
 
-#: dirmngr/server.c:1658 dirmngr/server.c:1689 dirmngr/server.c:1849
+#: dirmngr/server.c:1673 dirmngr/server.c:1704 dirmngr/server.c:1864
 #, c-format
 msgid "error sending data: %s\n"
 msgstr "chyba při odesílání dat: %s\n"
 
-#: dirmngr/server.c:1797
+#: dirmngr/server.c:1812
 #, c-format
 msgid "start_cert_fetch failed: %s\n"
 msgstr "volání start_cert_fetch selhalo: %s\n"
 
-#: dirmngr/server.c:1830
+#: dirmngr/server.c:1845
 #, c-format
 msgid "fetch_next_cert failed: %s\n"
 msgstr "volání fetch_next_cert selhalo: %s\n"
 
-#: dirmngr/server.c:1857
+#: dirmngr/server.c:1872
 #, c-format
 msgid "max_replies %d exceeded\n"
 msgstr "max_replies (max. odpovědí) %d překročeno\n"
 
-#: dirmngr/server.c:3188
+#: dirmngr/server.c:3215
 #, c-format
 msgid "can't allocate control structure: %s\n"
 msgstr "řídící strukturu nelze alokovat: %s\n"
 
-#: dirmngr/server.c:3199
+#: dirmngr/server.c:3226
 #, c-format
 msgid "failed to allocate assuan context: %s\n"
 msgstr "alokace kontextu assuan selhala: %s\n"
 
-#: dirmngr/server.c:3220
+#: dirmngr/server.c:3247
 #, c-format
 msgid "failed to initialize the server: %s\n"
 msgstr "inicializace serveru selhala: %s\n"
 
-#: dirmngr/server.c:3228
+#: dirmngr/server.c:3255
 #, c-format
 msgid "failed to the register commands with Assuan: %s\n"
 msgstr "registrace příkazu u Assuanu selhala: %s\n"
 
-#: dirmngr/server.c:3261
+#: dirmngr/server.c:3288
 #, c-format
 msgid "Assuan accept problem: %s\n"
 msgstr "problém příjmu Assuanu: %s\n"
 
-#: dirmngr/server.c:3280
+#: dirmngr/server.c:3307
 #, c-format
 msgid "Assuan processing failed: %s\n"
 msgstr "zpracování Assuanu se nezdařilo: %s\n"
