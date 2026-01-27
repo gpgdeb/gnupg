@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNU gnupg 2.3.0\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2025-12-30 09:00+0100\n"
+"POT-Creation-Date: 2026-01-27 11:08+0100\n"
 "PO-Revision-Date: 2021-04-15 10:09+0900\n"
 "Last-Translator: Denis <student@alice.it>\n"
 "Language-Team: \n"
@@ -230,7 +230,7 @@ msgid "ssh keys greater than %d bits are not supported\n"
 msgstr "le chiavi ssh maggiori di %d bit non sono supportate\n"
 
 #: agent/command-ssh.c:895 common/dotlock.c:973 common/dotlock.c:976
-#: g10/card-util.c:1004 g10/export.c:1609 g10/gpg.c:1504 g10/keygen.c:6418
+#: g10/card-util.c:1004 g10/export.c:1610 g10/gpg.c:1504 g10/keygen.c:6418
 #: g10/keyring.c:1336 g10/keyring.c:1650 g10/openfile.c:299 g10/photoid.c:638
 #: g10/photoid.c:656 g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739
 #: tools/gpg-card.c:499
@@ -941,7 +941,7 @@ msgstr "No"
 #. "%%25".  The second "%s" gets replaced by a hexadecimal
 #. fingerprint string whereas the first one receives the name
 #. as stored in the certificate.
-#: agent/trustlist.c:798
+#: agent/trustlist.c:799
 #, c-format
 msgid ""
 "Please verify that the certificate identified as:%%0A  \"%s\"%%0Ahas the "
@@ -952,12 +952,13 @@ msgstr ""
 
 #. TRANSLATORS: "Correct" is the label of a button and intended
 #. to be hit if the fingerprint matches the one of the CA.  The
-#. other button is "the default "Cancel" of the Pinentry.
-#: agent/trustlist.c:812
+#. other button is "the default "Cancel" of the Pinentry.  We
+#. fix the English strings with hacks to avoid a string changes.
+#: agent/trustlist.c:814
 msgid "Correct"
 msgstr "Corretto"
 
-#: agent/trustlist.c:812
+#: agent/trustlist.c:817
 msgid "Wrong"
 msgstr "Sbagliato"
 
@@ -1325,7 +1326,7 @@ msgid "algorithm: %s"
 msgstr "algoritmo: %s"
 
 #: common/audit.c:774 common/audit.c:776 common/audit.c:921 common/audit.c:923
-#: scd/app-openpgp.c:4401
+#: scd/app-openpgp.c:4402
 #, c-format
 msgid "unsupported algorithm: %s"
 msgstr "algoritmo non supportato: %s"
@@ -1527,7 +1528,7 @@ msgstr "attesa del blocco %s...\n"
 msgid "%s is too old (need %s, have %s)\n"
 msgstr "%s è troppo vecchio (è necessario %s, con %s)\n"
 
-#: common/homedir.c:276 g10/export.c:3058 g10/export.c:3286 g10/plaintext.c:154
+#: common/homedir.c:276 g10/export.c:3060 g10/export.c:3288 g10/plaintext.c:154
 #: g10/plaintext.c:160
 #, c-format
 msgid "error creating '%s': %s\n"
@@ -1771,7 +1772,7 @@ msgstr "impossibile eseguire questa operazione in modalità batch\n"
 msgid "This command is only available for version 2 cards\n"
 msgstr "Questo comando è disponibile solo per le schede della versione 2\n"
 
-#: g10/card-util.c:113 scd/app-openpgp.c:3555 tools/gpg-card.c:3151
+#: g10/card-util.c:113 scd/app-openpgp.c:3556 tools/gpg-card.c:3151
 #, c-format
 msgid "Reset Code not or not anymore available\n"
 msgstr "Reimposta codice non più disponibile o meno\n"
@@ -1862,7 +1863,7 @@ msgstr "errore durante la lettura di '%s': %s\n"
 
 #: g10/card-util.c:1010 g10/dearmor.c:74 g10/dearmor.c:128 g10/encrypt.c:688
 #: g10/encrypt.c:1063 g10/encrypt.c:1184 g10/decrypt-data.c:525
-#: g10/export.c:3076 g10/export.c:3310 dirmngr/crlcache.c:932
+#: g10/export.c:3078 g10/export.c:3312 dirmngr/crlcache.c:932
 #: tools/gpg-card.c:506 tools/gpg-card.c:513
 #, c-format
 msgid "error writing '%s': %s\n"
@@ -2212,8 +2213,8 @@ msgstr "--output non funziona con questo comando\n"
 msgid "can't open '%s'\n"
 msgstr "impossibile aprire '%s'\n"
 
-#: g10/delkey.c:89 g10/export.c:2434 g10/export.c:2922 g10/export.c:3043
-#: g10/export.c:3121 g10/getkey.c:2139 g10/gpg.c:5553 g10/keyedit.c:1597
+#: g10/delkey.c:89 g10/export.c:2435 g10/export.c:2924 g10/export.c:3045
+#: g10/export.c:3123 g10/getkey.c:2139 g10/gpg.c:5553 g10/keyedit.c:1597
 #: g10/keyedit.c:2636 g10/keyedit.c:3061 g10/keyedit.c:5021 g10/keyedit.c:5278
 #: g10/keyedit.c:5305 g10/keylist.c:1014 g10/keyserver.c:1104 g10/revoke.c:230
 #: g10/tofu.c:2172
@@ -2221,7 +2222,7 @@ msgstr "impossibile aprire '%s'\n"
 msgid "key \"%s\" not found: %s\n"
 msgstr "chiave \"%s\" non trovata: %s\n"
 
-#: g10/delkey.c:98 g10/export.c:2469 g10/getkey.c:2147 g10/getkey.c:4717
+#: g10/delkey.c:98 g10/export.c:2470 g10/getkey.c:2147 g10/getkey.c:4717
 #: g10/gpg.c:5562 g10/keyedit.c:2608 g10/keyserver.c:1122 g10/revoke.c:236
 #: g10/revoke.c:666 g10/tofu.c:2180
 #, c-format
@@ -2456,48 +2457,48 @@ msgstr "rimuovere parti inutilizzabili dalla chiave durante l'esportazione"
 msgid "remove as much as possible from key during export"
 msgstr "rimuovere il più possibile dalla chiave durante l'esportazione"
 
-#: g10/export.c:140
+#: g10/export.c:141
 #, fuzzy
 #| msgid "generate a revocation certificate"
 msgid "export only revocation certificates"
 msgstr "genera un certificato di revoca"
 
-#: g10/export.c:143
+#: g10/export.c:144
 msgid "use the GnuPG key backup format"
 msgstr "utilizzare il formato di backup della chiave GnuPG"
 
-#: g10/export.c:147
+#: g10/export.c:148
 #, fuzzy
 #| msgid "exporting secret keys not allowed\n"
 msgid "export secret keys using the GnuPG format"
 msgstr "esportazione di chiavi segrete non consentita\n"
 
-#: g10/export.c:1580
+#: g10/export.c:1581
 msgid " - skipped"
 msgstr " - saltato"
 
-#: g10/export.c:1613 g10/import.c:2260 g10/openfile.c:208 g10/openfile.c:302
+#: g10/export.c:1614 g10/import.c:2260 g10/openfile.c:208 g10/openfile.c:302
 #: g10/sign.c:1149 g10/sign.c:1514
 #, c-format
 msgid "writing to '%s'\n"
 msgstr "scrittura in '%s'\n"
 
-#: g10/export.c:2124
+#: g10/export.c:2125
 #, c-format
 msgid "key %s: key material on-card - skipped\n"
 msgstr "chiave %s: materiale della chiave su scheda - ignorato\n"
 
-#: g10/export.c:2340
+#: g10/export.c:2341
 #, c-format
 msgid "exporting secret keys not allowed\n"
 msgstr "esportazione di chiavi segrete non consentita\n"
 
-#: g10/export.c:2495
+#: g10/export.c:2496
 #, c-format
 msgid "key %s: PGP 2.x style key - skipped\n"
 msgstr "chiave %s: chiave di stile PGP 2.x - ignorata\n"
 
-#: g10/export.c:2616
+#: g10/export.c:2618
 #, c-format
 msgid "WARNING: nothing exported\n"
 msgstr "ATTENZIONE: non è stato esportato nulla\n"
@@ -8353,7 +8354,7 @@ msgstr ""
 #. * used by pinentry to nicely align the names and values.  Keep
 #. * the %s at the start and end of the string.
 #: scd/app-piv.c:1776 scd/app-p15.c:5270 scd/app-nks.c:1543
-#: scd/app-openpgp.c:2516
+#: scd/app-openpgp.c:2517
 #, c-format
 msgid "%sNumber: %s%%0AHolder: %s%s"
 msgstr "%sNumero: %s%%0ATitolare: %s%s"
@@ -8361,7 +8362,7 @@ msgstr "%sNumero: %s%%0ATitolare: %s%s"
 #. TRANSLATORS: This is the number of remaining attempts to
 #. * enter a PIN.  Use %%0A (double-percent,0A) for a linefeed.
 #: scd/app-piv.c:1793 scd/app-p15.c:5289 scd/app-nks.c:1562
-#: scd/app-openpgp.c:2532
+#: scd/app-openpgp.c:2533
 #, c-format
 msgid "Remaining attempts: %d"
 msgstr "Tentativi rimanenti: %d"
@@ -8390,10 +8391,10 @@ msgstr "|N| Immettere la nuova chiave di sblocco"
 msgid "||Please enter the Unblocking Key of your PIV card"
 msgstr "||Immettere la chiave di sblocco della scheda PIV"
 
-#: scd/app-piv.c:1894 scd/app-nks.c:1673 scd/app-openpgp.c:2799
-#: scd/app-openpgp.c:2823 scd/app-openpgp.c:3001 scd/app-openpgp.c:3023
-#: scd/app-openpgp.c:3205 scd/app-openpgp.c:3518 scd/app-openpgp.c:3565
-#: scd/app-openpgp.c:3731 scd/app-dinsig.c:305
+#: scd/app-piv.c:1894 scd/app-nks.c:1673 scd/app-openpgp.c:2800
+#: scd/app-openpgp.c:2824 scd/app-openpgp.c:3002 scd/app-openpgp.c:3024
+#: scd/app-openpgp.c:3206 scd/app-openpgp.c:3519 scd/app-openpgp.c:3566
+#: scd/app-openpgp.c:3732 scd/app-dinsig.c:305
 #, c-format
 msgid "PIN callback returned error: %s\n"
 msgstr "Errore di richiamata PIN: %s\n"
@@ -8413,57 +8414,57 @@ msgstr "Il PIN è troppo lungo; la lunghezza massima è %d\n"
 msgid "PIN has invalid characters; only digits are allowed\n"
 msgstr "Il PIN ha caratteri non validi; sono consentite solo cifre\n"
 
-#: scd/app-piv.c:2687 scd/app-openpgp.c:3805
+#: scd/app-piv.c:2687 scd/app-openpgp.c:3806
 #, c-format
 msgid "key already exists\n"
 msgstr "chiave già esistente\n"
 
-#: scd/app-piv.c:2692 scd/app-openpgp.c:3809
+#: scd/app-piv.c:2692 scd/app-openpgp.c:3810
 #, c-format
 msgid "existing key will be replaced\n"
 msgstr "chiave esistente verrà sostituita\n"
 
-#: scd/app-piv.c:2694 scd/app-openpgp.c:3811
+#: scd/app-piv.c:2694 scd/app-openpgp.c:3812
 #, c-format
 msgid "generating new key\n"
 msgstr "generazione di una nuova chiave\n"
 
-#: scd/app-piv.c:2696 scd/app-openpgp.c:3813
+#: scd/app-piv.c:2696 scd/app-openpgp.c:3814
 #, c-format
 msgid "writing new key\n"
 msgstr "genera una nuova coppia di chiavi\n"
 
-#: scd/app-piv.c:3117 scd/app-openpgp.c:4673 scd/app-openpgp.c:4971
+#: scd/app-piv.c:3117 scd/app-openpgp.c:4674 scd/app-openpgp.c:4972
 #, c-format
 msgid "failed to store the key: %s\n"
 msgstr "impossibile archiviare la chiave: %s\n"
 
-#: scd/app-piv.c:3143 scd/app-openpgp.c:1698
+#: scd/app-piv.c:3143 scd/app-openpgp.c:1699
 #, c-format
 msgid "response does not contain the RSA modulus\n"
 msgstr "risposta non contiene il modulo RSA\n"
 
-#: scd/app-piv.c:3151 scd/app-openpgp.c:1705
+#: scd/app-piv.c:3151 scd/app-openpgp.c:1706
 #, c-format
 msgid "response does not contain the RSA public exponent\n"
 msgstr "risposta non contiene l'esponente pubblico RSA\n"
 
-#: scd/app-piv.c:3221 scd/app-openpgp.c:1820
+#: scd/app-piv.c:3221 scd/app-openpgp.c:1821
 #, c-format
 msgid "response does not contain the EC public key\n"
 msgstr "risposta non contiene la chiave pubblica CE\n"
 
-#: scd/app-piv.c:3316 scd/app-openpgp.c:5172
+#: scd/app-piv.c:3316 scd/app-openpgp.c:5173
 #, c-format
 msgid "please wait while key is being generated ...\n"
 msgstr "si prega di attendere mentre la chiave viene generata …\n"
 
-#: scd/app-piv.c:3331 scd/app-openpgp.c:5180
+#: scd/app-piv.c:3331 scd/app-openpgp.c:5181
 #, c-format
 msgid "generating key failed\n"
 msgstr "generazione della chiave non riuscita\n"
 
-#: scd/app-piv.c:3337 scd/app-openpgp.c:5186
+#: scd/app-piv.c:3337 scd/app-openpgp.c:5187
 #, c-format
 msgid "key generation completed (%d second)\n"
 msgid_plural "key generation completed (%d seconds)\n"
@@ -8473,7 +8474,7 @@ msgstr[1] ""
 "\n"
 "\n"
 
-#: scd/app-piv.c:3348 scd/app-openpgp.c:1937 scd/app-openpgp.c:5195
+#: scd/app-piv.c:3348 scd/app-openpgp.c:1938 scd/app-openpgp.c:5196
 #, c-format
 msgid "response does not contain the public key data\n"
 msgstr "risposta non contiene i dati della chiave pubblica\n"
@@ -8484,7 +8485,7 @@ msgstr "||Immettere il PIN per la chiave per creare firme qualificate."
 
 #. TRANSLATORS: Do not translate the "|A|" prefix but keep it at
 #. the start of the string.  Use %0A (single percent) for a linefeed.
-#: scd/app-p15.c:5373 scd/app-openpgp.c:2948
+#: scd/app-p15.c:5373 scd/app-openpgp.c:2949
 msgid "|A|Please enter the Admin PIN"
 msgstr "|A|Inserisci il PIN di amministratore"
 
@@ -8496,12 +8497,12 @@ msgstr "|P|Inserisci il codice di sblocco del PIN (PUK) per i tasti standard."
 msgid "||Please enter the PIN for the standard keys."
 msgstr "||Si prega di inserire il PIN per le chiavi standard."
 
-#: scd/app-nks.c:1481 scd/app-openpgp.c:4510
+#: scd/app-nks.c:1481 scd/app-openpgp.c:4511
 #, c-format
 msgid "RSA modulus missing or not of size %d bits\n"
 msgstr "Modulo RSA mancante o non di dimensione %d bit\n"
 
-#: scd/app-nks.c:1489 scd/app-openpgp.c:4522
+#: scd/app-nks.c:1489 scd/app-openpgp.c:4523
 #, c-format
 msgid "RSA public exponent missing or larger than %d bits\n"
 msgstr "Esponente pubblico RSA mancante o superiore a %d bit\n"
@@ -8544,27 +8545,27 @@ msgstr ""
 "|P|Inserisci il codice di sblocco del PIN (PUK) per la chiave per creare "
 "firme qualificate."
 
-#: scd/app-nks.c:2297 scd/app-openpgp.c:3600 scd/app-dinsig.c:537
+#: scd/app-nks.c:2297 scd/app-openpgp.c:3601 scd/app-dinsig.c:537
 #, c-format
 msgid "error getting new PIN: %s\n"
 msgstr "errore durante il recupero del nuovo PIN: %s\n"
 
-#: scd/app-openpgp.c:1025
+#: scd/app-openpgp.c:1026
 #, c-format
 msgid "failed to store the fingerprint: %s\n"
 msgstr "impossibile memorizzare l'impronta digitale: %s\n"
 
-#: scd/app-openpgp.c:1038
+#: scd/app-openpgp.c:1039
 #, c-format
 msgid "failed to store the creation date: %s\n"
 msgstr "impossibile memorizzare la data di creazione: %s\n"
 
-#: scd/app-openpgp.c:1509 scd/app-openpgp.c:3546 scd/app-openpgp.c:6125
+#: scd/app-openpgp.c:1510 scd/app-openpgp.c:3547 scd/app-openpgp.c:6126
 #, c-format
 msgid "error retrieving CHV status from card\n"
 msgstr "errore durante il recupero dello stato CHV dalla scheda\n"
 
-#: scd/app-openpgp.c:2045
+#: scd/app-openpgp.c:2046
 #, c-format
 msgid "reading public key failed: %s\n"
 msgstr "lettura della chiave pubblica non riuscita: %s\n"
@@ -8572,45 +8573,45 @@ msgstr "lettura della chiave pubblica non riuscita: %s\n"
 #. TRANSLATORS: Put a \x1f right before a colon.  This can be
 #. * used by pinentry to nicely align the names and values.  Keep
 #. * the %s at the start and end of the string.
-#: scd/app-openpgp.c:2503
+#: scd/app-openpgp.c:2504
 #, c-format
 msgid "%sNumber: %s%%0AHolder: %s%%0ACounter: %lu%s"
 msgstr "%sNumero: %s%%0AHolder: %s%%0ACounter: %lu%s"
 
-#: scd/app-openpgp.c:2751
+#: scd/app-openpgp.c:2752
 #, c-format
 msgid "using default PIN as %s\n"
 msgstr "utilizzando il PIN predefinito come %s\n"
 
-#: scd/app-openpgp.c:2758
+#: scd/app-openpgp.c:2759
 #, c-format
 msgid "failed to use default PIN as %s: %s - disabling further default use\n"
 msgstr ""
 "impossibile utilizzare il PIN predefinito come %s: %s - disabilitazione "
 "dell'ulteriore utilizzo predefinito\n"
 
-#: scd/app-openpgp.c:2771
+#: scd/app-openpgp.c:2772
 msgid "||Please unlock the card"
 msgstr "||Si prega di sbloccare la carta"
 
-#: scd/app-openpgp.c:2830 scd/app-openpgp.c:3030 scd/app-openpgp.c:3525
-#: scd/app-openpgp.c:3620 scd/app-openpgp.c:3633
+#: scd/app-openpgp.c:2831 scd/app-openpgp.c:3031 scd/app-openpgp.c:3526
+#: scd/app-openpgp.c:3621 scd/app-openpgp.c:3634
 #, c-format
 msgid "PIN for CHV%d is too short; minimum length is %d\n"
 msgstr "Il PIN per CHV%d è troppo breve; la lunghezza minima è %d\n"
 
-#: scd/app-openpgp.c:2847 scd/app-openpgp.c:2890 scd/app-openpgp.c:3047
-#: scd/app-openpgp.c:5555
+#: scd/app-openpgp.c:2848 scd/app-openpgp.c:2891 scd/app-openpgp.c:3048
+#: scd/app-openpgp.c:5556
 #, c-format
 msgid "verify CHV%d failed: %s\n"
 msgstr "verifica CHV%d non riuscita: %s\n"
 
-#: scd/app-openpgp.c:2934 scd/app-openpgp.c:6134
+#: scd/app-openpgp.c:2935 scd/app-openpgp.c:6135
 #, c-format
 msgid "card is permanently locked!\n"
 msgstr "carta è bloccata in modo permanente!\n"
 
-#: scd/app-openpgp.c:2938
+#: scd/app-openpgp.c:2939
 #, c-format
 msgid "%d Admin PIN attempt remaining before card is permanently locked\n"
 msgid_plural ""
@@ -8622,22 +8623,22 @@ msgstr[1] ""
 "%d tentativi di PIN di amministrazione rimanenti prima che la schede vengano "
 "bloccate in modo permanente\n"
 
-#: scd/app-openpgp.c:2971
+#: scd/app-openpgp.c:2972
 #, c-format
 msgid "access to admin commands is not configured\n"
 msgstr "l'accesso ai comandi di amministrazione non è configurato\n"
 
-#: scd/app-openpgp.c:3512
+#: scd/app-openpgp.c:3513
 msgid "||Please enter the PIN"
 msgstr "||Inserisci il PIN"
 
-#: scd/app-openpgp.c:3561
+#: scd/app-openpgp.c:3562
 #, fuzzy
 #| msgid "||Please enter the Reset Code for the card"
 msgid "|R|Please enter the Reset Code for the card"
 msgstr "||Inserisci il Codice reset per la carta"
 
-#: scd/app-openpgp.c:3571 scd/app-openpgp.c:3610
+#: scd/app-openpgp.c:3572 scd/app-openpgp.c:3611
 #, c-format
 msgid "Reset Code is too short; minimum length is %d\n"
 msgstr "Il codice di reimpostazione è troppo breve; la lunghezza minima è %d\n"
@@ -8645,72 +8646,72 @@ msgstr "Il codice di reimpostazione è troppo breve; la lunghezza minima è %d\n
 #. TRANSLATORS: Do not translate the "|*|" prefixes but
 #. keep it at the start of the string.  We need this elsewhere
 #. to get some infos on the string.
-#: scd/app-openpgp.c:3595
+#: scd/app-openpgp.c:3596
 msgid "|RN|New Reset Code"
 msgstr "|RN|Nuovo codice di ripristino"
 
-#: scd/app-openpgp.c:3596
+#: scd/app-openpgp.c:3597
 msgid "|AN|New Admin PIN"
 msgstr "|AN|Nuovo PIN di amministrazione"
 
-#: scd/app-openpgp.c:3596
+#: scd/app-openpgp.c:3597
 msgid "|N|New PIN"
 msgstr "|N|Nuovo PIN"
 
-#: scd/app-openpgp.c:3727
+#: scd/app-openpgp.c:3728
 msgid "||Please enter the Admin PIN and New Admin PIN"
 msgstr "||Inserisci il PIN di amministratore e il nuovo PIN di amministrazione"
 
-#: scd/app-openpgp.c:3728
+#: scd/app-openpgp.c:3729
 msgid "||Please enter the PIN and New PIN"
 msgstr "||Inserisci il PIN e il nuovo PIN"
 
-#: scd/app-openpgp.c:3789 scd/app-openpgp.c:5255
+#: scd/app-openpgp.c:3790 scd/app-openpgp.c:5256
 #, c-format
 msgid "error reading application data\n"
 msgstr "errore durante la lettura dei dati dell'applicazione\n"
 
-#: scd/app-openpgp.c:3795 scd/app-openpgp.c:5262
+#: scd/app-openpgp.c:3796 scd/app-openpgp.c:5263
 #, c-format
 msgid "error reading fingerprint DO\n"
 msgstr "errore durante la lettura dell'impronta digitale DO\n"
 
-#: scd/app-openpgp.c:4491 scd/app-openpgp.c:4854
+#: scd/app-openpgp.c:4492 scd/app-openpgp.c:4855
 #, c-format
 msgid "creation timestamp missing\n"
 msgstr "timestamp di creazione mancante\n"
 
-#: scd/app-openpgp.c:4532 scd/app-openpgp.c:4540
+#: scd/app-openpgp.c:4533 scd/app-openpgp.c:4541
 #, c-format
 msgid "RSA prime %s missing or not of size %d bits\n"
 msgstr "RSA primo %s mancante o non di dimensione %d bit\n"
 
-#: scd/app-openpgp.c:4848
+#: scd/app-openpgp.c:4849
 #, c-format
 msgid "unsupported curve\n"
 msgstr "curva non supportata\n"
 
-#: scd/app-openpgp.c:5220
+#: scd/app-openpgp.c:5221
 #, c-format
 msgid "invalid structure of OpenPGP card (DO 0x93)\n"
 msgstr "struttura non valida della scheda OpenPGP (DO 0x93)\n"
 
-#: scd/app-openpgp.c:5270
+#: scd/app-openpgp.c:5271
 #, c-format
 msgid "fingerprint on card does not match requested one\n"
 msgstr "impronta digitale sulla carta non corrisponde a quello richiesto\n"
 
-#: scd/app-openpgp.c:5470
+#: scd/app-openpgp.c:5471
 #, c-format
 msgid "card does not support digest algorithm %s\n"
 msgstr "scheda non supporta l'algoritmo digest %s\n"
 
-#: scd/app-openpgp.c:5528
+#: scd/app-openpgp.c:5529
 #, c-format
 msgid "signatures created so far: %lu\n"
 msgstr "firme create finora: %lu\n"
 
-#: scd/app-openpgp.c:6139
+#: scd/app-openpgp.c:6140
 #, c-format
 msgid ""
 "verification of Admin PIN is currently prohibited through this command\n"
@@ -8718,7 +8719,7 @@ msgstr ""
 "la verifica del PIN di amministrazione è attualmente vietata tramite questo "
 "comando\n"
 
-#: scd/app-openpgp.c:6686 scd/app-openpgp.c:6698
+#: scd/app-openpgp.c:6687 scd/app-openpgp.c:6699
 #, c-format
 msgid "can't access %s - invalid OpenPGP card?\n"
 msgstr "impossibile accedere a %s - scheda OpenPGP non valida?\n"
@@ -8865,7 +8866,7 @@ msgstr "Nota: i criteri di certificato non critici non sono consentiti"
 msgid "certificate policy not allowed"
 msgstr "criteri certificato non consentiti"
 
-#: sm/certchain.c:613 sm/keydb.c:1962 sm/keydb.c:2051
+#: sm/certchain.c:613 sm/keydb.c:1996 sm/keydb.c:2085
 #, c-format
 msgid "failed to get the fingerprint\n"
 msgstr "non è riuscito a ottenere l'impronta digitale\n"
@@ -8901,7 +8902,7 @@ msgid "dirmngr cache-only key lookup failed: %s\n"
 msgstr "ricerca chiave solo cache dirmngr non riuscita: %s\n"
 
 #: sm/certchain.c:1112 sm/certchain.c:1668 sm/certchain.c:2384 sm/decrypt.c:996
-#: sm/encrypt.c:650 sm/import.c:407 sm/keydb.c:1969 sm/keydb.c:2058
+#: sm/encrypt.c:650 sm/import.c:407 sm/keydb.c:2003 sm/keydb.c:2092
 #: sm/sign.c:632 sm/verify.c:117
 #, c-format
 msgid "failed to allocate keyDB handle\n"
@@ -9433,7 +9434,7 @@ msgstr "crittografato per %s chiave %s\n"
 msgid "certificate '%s' not found: %s\n"
 msgstr "certificato '%s' non trovato: %s\n"
 
-#: sm/delete.c:67 sm/keydb.c:2070 sm/keydb.c:2169
+#: sm/delete.c:67 sm/keydb.c:2104 sm/keydb.c:2203
 #, c-format
 msgid "error locking keybox: %s\n"
 msgstr "errore durante il blocco della keybox: %s\n"
@@ -9625,7 +9626,7 @@ msgstr "errore durante l'archiviazione del certificato\n"
 msgid "basic certificate checks failed - not imported\n"
 msgstr "controlli certificati di base non riusciti - non importati\n"
 
-#: sm/import.c:457 sm/keydb.c:2089 sm/keydb.c:2182
+#: sm/import.c:457 sm/keydb.c:2123 sm/keydb.c:2216
 #, c-format
 msgid "error getting stored flags: %s\n"
 msgstr "errore durante il recupero dei flag memorizzati: %s\n"
@@ -9650,27 +9651,27 @@ msgstr "nessuna cassetta delle chiavi in esecuzione in questa sessione\n"
 msgid "error opening key DB: %s\n"
 msgstr "errore durante l'apertura della chiave DB: %s\n"
 
-#: sm/keydb.c:2007
+#: sm/keydb.c:2041
 #, c-format
 msgid "problem looking for existing certificate: %s\n"
 msgstr "problema durante la ricerca del certificato esistente: %s\n"
 
-#: sm/keydb.c:2019
+#: sm/keydb.c:2053
 #, c-format
 msgid "error finding writable keyDB: %s\n"
 msgstr "errore durante la ricerca della chiave scrivibile keyDB: %s\n"
 
-#: sm/keydb.c:2027
+#: sm/keydb.c:2061
 #, c-format
 msgid "error storing certificate: %s\n"
 msgstr "errore durante l'archiviazione del certificato: %s\n"
 
-#: sm/keydb.c:2080
+#: sm/keydb.c:2114
 #, c-format
 msgid "problem re-searching certificate: %s\n"
 msgstr "problema durante la ri-ricerca del certificato: %s\n"
 
-#: sm/keydb.c:2101 sm/keydb.c:2193
+#: sm/keydb.c:2135 sm/keydb.c:2227
 #, c-format
 msgid "error storing flags: %s\n"
 msgstr "errore durante l'archiviazione dei flag: %s\n"
@@ -10763,12 +10764,12 @@ msgstr "due punti non sono consentiti nel nome del socket\n"
 msgid "error forking process: %s\n"
 msgstr "errore durante il processo di forking: %s\n"
 
-#: dirmngr/dirmngr.c:1681 dirmngr/server.c:1955
+#: dirmngr/dirmngr.c:1681 dirmngr/server.c:1970
 #, c-format
 msgid "fetching CRL from '%s' failed: %s\n"
 msgstr "recupero CRL da '%s' non riuscito: %s\n"
 
-#: dirmngr/dirmngr.c:1687 dirmngr/server.c:1961
+#: dirmngr/dirmngr.c:1687 dirmngr/server.c:1976
 #, c-format
 msgid "processing CRL from '%s' failed: %s\n"
 msgstr "elaborazione CRL da '%s' non riuscita: %s\n"
@@ -11108,72 +11109,72 @@ msgstr "Il risponditore OCSP ha restituito uno stato non corrente\n"
 msgid "OCSP responder returned an too old status\n"
 msgstr "Il risponditore OCSP ha restituito uno stato troppo vecchio\n"
 
-#: dirmngr/server.c:441 dirmngr/server.c:550 dirmngr/server.c:596
+#: dirmngr/server.c:456 dirmngr/server.c:565 dirmngr/server.c:611
 #, c-format
 msgid "assuan_inquire(%s) failed: %s\n"
 msgstr "assuan_inquire(%s) non riuscito: %s\n"
 
-#: dirmngr/server.c:1331
+#: dirmngr/server.c:1346
 msgid "serialno missing in cert ID"
 msgstr "serialno mancante nell'ID certificato"
 
-#: dirmngr/server.c:1509 dirmngr/server.c:1597 dirmngr/server.c:2040
-#: dirmngr/server.c:2111 dirmngr/server.c:2695 dirmngr/server.c:2710
+#: dirmngr/server.c:1524 dirmngr/server.c:1612 dirmngr/server.c:2055
+#: dirmngr/server.c:2126 dirmngr/server.c:2722 dirmngr/server.c:2737
 #, c-format
 msgid "assuan_inquire failed: %s\n"
 msgstr "assuan_inquire non riuscito: %s\n"
 
-#: dirmngr/server.c:1646
+#: dirmngr/server.c:1661
 #, c-format
 msgid "fetch_cert_by_url failed: %s\n"
 msgstr "fetch_cert_by_url non riuscito: %s\n"
 
-#: dirmngr/server.c:1658 dirmngr/server.c:1689 dirmngr/server.c:1849
+#: dirmngr/server.c:1673 dirmngr/server.c:1704 dirmngr/server.c:1864
 #, c-format
 msgid "error sending data: %s\n"
 msgstr "errore durante l'invio dei dati: %s\n"
 
-#: dirmngr/server.c:1797
+#: dirmngr/server.c:1812
 #, c-format
 msgid "start_cert_fetch failed: %s\n"
 msgstr "start_cert_fetch non riuscito: %s\n"
 
-#: dirmngr/server.c:1830
+#: dirmngr/server.c:1845
 #, c-format
 msgid "fetch_next_cert failed: %s\n"
 msgstr "fetch_next_cert non riuscito: %s\n"
 
-#: dirmngr/server.c:1857
+#: dirmngr/server.c:1872
 #, c-format
 msgid "max_replies %d exceeded\n"
 msgstr "max_replies %d superato\n"
 
-#: dirmngr/server.c:3188
+#: dirmngr/server.c:3215
 #, c-format
 msgid "can't allocate control structure: %s\n"
 msgstr "impossibile allocare la struttura di controllo: %s\n"
 
-#: dirmngr/server.c:3199
+#: dirmngr/server.c:3226
 #, c-format
 msgid "failed to allocate assuan context: %s\n"
 msgstr "impossibile allocare il contesto assuan: %s\n"
 
-#: dirmngr/server.c:3220
+#: dirmngr/server.c:3247
 #, c-format
 msgid "failed to initialize the server: %s\n"
 msgstr "impossibile inizializzare il server: %s\n"
 
-#: dirmngr/server.c:3228
+#: dirmngr/server.c:3255
 #, c-format
 msgid "failed to the register commands with Assuan: %s\n"
 msgstr "impossibile eseguire i comandi di registro con Assuan: %s\n"
 
-#: dirmngr/server.c:3261
+#: dirmngr/server.c:3288
 #, c-format
 msgid "Assuan accept problem: %s\n"
 msgstr "Problema di accettazione assuan: %s\n"
 
-#: dirmngr/server.c:3280
+#: dirmngr/server.c:3307
 #, c-format
 msgid "Assuan processing failed: %s\n"
 msgstr "Elaborazione Assuan non riuscita: %s\n"
