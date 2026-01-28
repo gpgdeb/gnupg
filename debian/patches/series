@@ -4,3 +4,4 @@ dirmngr-idling/dirmngr-hkp-Avoid-potential-race-condition-when-some.patch
 dirmngr-idling/dirmngr-Avoid-automatically-checking-upstream-swdb.patch
 debian-packaging/Build-regexp-against-debian-s-unicode-data-package.patch
 debian-packaging/Always-build-common-status-codes.h-and-common-audit-event.patch
+2.5.17/0001-Fix-stub-functions-to-avoid-LTO-linking-bugs.patch
