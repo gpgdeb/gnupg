@@ -1,3 +1,9 @@
+gnupg2 (2.5.17-2) unstable; urgency=medium
+
+  * patched: fix stub functions to avoid LTO linking bugs
+
+ -- meik michalke <meik.michalke@gnupg.com>  Wed, 28 Jan 2026 13:46:24 +0100
+
 gnupg2 (2.5.17-1) unstable; urgency=medium
 
   * new upstream stable release
