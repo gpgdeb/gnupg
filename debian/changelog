@@ -1,3 +1,9 @@
+gnupg2 (2.5.18-1) unstable; urgency=medium
+
+  * new upstream stable release
+
+ -- meik michalke <meik.michalke@gnupg.com>  Tue, 24 Feb 2026 16:51:03 +0100
+
 gnupg2 (2.5.17-1) unstable; urgency=medium
 
   * new upstream stable release
