@@ -439,6 +439,23 @@ email_kludge (const char *name)
 }
 
 
+/* Check whether the certificate has the de_vs flag set.  */
+static int
+cert_has_de_vs_flag (ksba_cert_t cert)
+{
+  gpg_error_t err;
+  size_t buflen;
+  char buffer[1];
+
+  err = ksba_cert_get_user_data (cert, "is_de_vs",
+                                 &buffer, sizeof (buffer), &buflen);
+  if (!err && buflen && *buffer)
+    return 1;
+
+  return 0;
+}
+
+
 /* Print the compliance flags to field 18.  ALGO is the gcrypt algo
  * number.  NBITS is the length of the key in bits.  */
 static void
@@ -447,13 +464,19 @@ print_compliance_flags (ksba_cert_t cert, int algo, unsigned int nbits,
 {
   int indent = 0;
   int hashalgo;
+  const char *algoid;
 
-  /* Note that we do not need to test for PK_ALGO_FLAG_RSAPSS because
-   * that is not a property of the key but one of the created
-   * signature.  */
-  if (gnupg_pk_is_compliant (CO_DE_VS, algo, 0, NULL, nbits, curvename))
+  if (cert_has_de_vs_flag (cert)
+      && gnupg_pk_is_compliant (CO_DE_VS, algo, 0, NULL, nbits, curvename))
     {
-      hashalgo = gcry_md_map_name (ksba_cert_get_digest_algo (cert));
+      algoid = ksba_cert_get_digest_algo (cert);
+      hashalgo = gcry_md_map_name (algoid);
+      if (!hashalgo && algoid && !strcmp (algoid, "1.2.840.113549.1.1.10"))
+        {
+          /* This is rsaPSS.  We extract the PSS parameters from the
+           * signature value to check the hash algorithm. */
+          hashalgo = gpgsm_pss_hash_algo_from_cert (cert);
+        }
       if (gnupg_digest_is_compliant (CO_DE_VS, hashalgo))
         {
           es_fputs (gnupg_status_compliance_flag (CO_DE_VS), fp);

@@ -115,7 +115,8 @@ struct
   int def_cipher_algo;
   int force_mdc;
   int disable_mdc;
-  int force_aead;
+  int force_ocb;
+  int use_ocb_sym;
   int def_digest_algo;
   int cert_digest_algo;
   int compress_algo;
@@ -235,8 +236,9 @@ struct
   int ignore_expiration;
   int command_fd;
   const char *override_session_key;
+  unsigned int show_session_hash:1;
   unsigned int show_session_key:1;
-  unsigned int show_only_session_key:1;
+  unsigned int show_only_session_key:1;  /* Also set with show_session_hash. */
 
   const char *gpg_agent_info;
   int try_all_secrets;
