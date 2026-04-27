@@ -1278,6 +1278,9 @@ is_cert_still_valid (ctrl_t ctrl, int chain_model, int lm, estream_t fp,
           audit_log_ok (ctrl->audit, AUDIT_CRL_CHECK, gpg_error (GPG_ERR_TRUE));
           return 0;
         }
+      else if (err)
+          log_error ("ksba_cert_get_crl_dist_point failed: %s\n",
+                     gpg_strerror(err));
     }
 
   err = gpgsm_dirmngr_isvalid (ctrl,
@@ -1631,6 +1634,9 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
   int is_qualified = -1; /* Indicates whether the certificate stems
                             from a qualified root certificate.
                             -1 = unknown, 0 = no, 1 = yes, 2 = yes,noconsent */
+  int is_de_vs = -1;     /* Indicates whether the certificate stems
+                            from a de_vs compliant root certificate.
+                            -1 = unknown, 0 = no, 1 = yes. */
   chain_item_t chain = NULL; /* A list of all certificates in the chain.  */
 
 
@@ -1856,6 +1862,39 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
                 }
             }
 
+          /* Set a flag for de_vs compliant certificates.  This flag
+           * is deduced from trustlist.txt flags de_vs. */
+          if (is_de_vs == -1 && !(flags & VALIDATE_FLAG_STEED))
+            {
+              gpg_error_t err;
+              size_t buflen;
+              char buf[1];
+
+              if (!ksba_cert_get_user_data (cert, "is_de_vs",
+                                            &buf, sizeof (buf),
+                                            &buflen) && buflen)
+                {
+                  /* We already checked this for this certificate,
+                   * thus we simply take it from the user data. */
+                  is_de_vs = !!*buf;
+                }
+              else
+                {
+                  /* We check by looking at the root ca flag.  */
+                  is_de_vs = !!rootca_flags->de_vs;
+                  if (is_de_vs != -1 )
+                    {
+                      /* Cache the result but don't care too much
+                       * about an error. */
+                      buf[0] = !!is_de_vs;
+                      err = ksba_cert_set_user_data (subject_cert,
+                                                     "is_de_vs", buf, 1);
+                      if (err)
+                        log_error ("set_user_data(is_de_vs) failed: %s\n",
+                                   gpg_strerror (err));
+                    }
+                }
+            }
 
           /* Act on the check for a trusted root certificates. */
           rc = istrusted_rc;
@@ -2013,7 +2052,7 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
               rc = find_up (ctrl, kh, subject_cert, issuer, 1);
               if (!rc)
                 {
-                  ksba_cert_t tmp_cert;
+                  ksba_cert_t tmp_cert = NULL;
 
                   rc = keydb_get_cert (kh, &tmp_cert);
                   if (rc || !compare_certs (issuer_cert, tmp_cert))
@@ -2240,6 +2279,28 @@ do_validate_chain (ctrl_t ctrl, ksba_cert_t cert, ksba_isotime_t checktime_arg,
           if (err)
             {
               log_error ("set_user_data(is_qualified) failed: %s\n",
+                         gpg_strerror (err));
+              if (!rc)
+                rc = err;
+            }
+        }
+    }
+
+  /* The same as above for the de-vs flag.  */
+  if (is_de_vs != -1 && !(flags & VALIDATE_FLAG_STEED))
+    {
+      gpg_error_t err;
+      chain_item_t ci;
+      char buf[1];
+
+      buf[0] = !!is_de_vs;
+
+      for (ci = chain; ci; ci = ci->next)
+        {
+          err = ksba_cert_set_user_data (ci->cert, "is_de_vs", buf, 1);
+          if (err)
+            {
+              log_error ("set_user_data(is_de_vs) failed: %s\n",
                          gpg_strerror (err));
               if (!rc)
                 rc = err;

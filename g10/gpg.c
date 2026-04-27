@@ -319,7 +319,8 @@ enum cmd_and_opt_values
     oShowPhotos,
     oNoShowPhotos,
     oPhotoViewer,
-    oForceAEAD,
+    oForceOCB,
+    oUseOCBSym,
     oS2KMode,
     oS2KDigest,
     oS2KCipher,
@@ -370,6 +371,8 @@ enum cmd_and_opt_values
     oIgnoreValidFrom,
     oIgnoreCrcError,
     oIgnoreMDCError,
+    oShowSessionHash,
+    oShowOnlySessionHash,
     oShowSessionKey,
     oShowOnlySessionKey,
     oOverrideSessionKey,
@@ -782,6 +785,8 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_s_n (oNoForYourEyesOnly, "no-for-your-eyes-only", "@"),
   ARGPARSE_s_n (oShowNotation,      "show-notation", "@"),
   ARGPARSE_s_n (oNoShowNotation, "no-show-notation", "@"),
+  ARGPARSE_s_n (oShowSessionHash, "show-session-hash", "@"),
+  ARGPARSE_s_n (oShowOnlySessionHash, "show-only-session-hash", "@"),
   ARGPARSE_s_n (oShowSessionKey, "show-session-key", "@"),
   ARGPARSE_s_n (oShowOnlySessionKey, "show-only-session-key", "@"),
   ARGPARSE_s_n (oUseEmbeddedFilename,      "use-embedded-filename", "@"),
@@ -892,8 +897,9 @@ static gpgrt_opt_t opts[] = {
   ARGPARSE_s_s (oS2KDigest, "s2k-digest-algo", "@"),
   ARGPARSE_s_s (oS2KCipher, "s2k-cipher-algo", "@"),
   ARGPARSE_s_i (oS2KCount, "s2k-count", "@"),
-  ARGPARSE_s_n (oForceAEAD, "force-ocb", "@"),
-  ARGPARSE_s_n (oForceAEAD, "force-aead", "@"),  /*(old name)*/
+  ARGPARSE_s_n (oForceOCB, "force-ocb", "@"),
+  ARGPARSE_s_n (oForceOCB, "force-aead", "@"),  /*(old name)*/
+  ARGPARSE_s_n (oUseOCBSym, "use-ocb-sym", "@"),
   ARGPARSE_s_n (oRequireCrossCert, "require-backsigs", "@"),
   ARGPARSE_s_n (oRequireCrossCert, "require-cross-certification", "@"),
   ARGPARSE_s_n (oNoRequireCrossCert, "no-require-backsigs", "@"),
@@ -3197,7 +3203,8 @@ main (int argc, char **argv)
 	    break;
 	  case oPhotoViewer: opt.photo_viewer = pargs.r.ret_str; break;
 
-	  case oForceAEAD: opt.force_aead = 1; break;
+	  case oForceOCB: opt.force_ocb = 1; break;
+          case oUseOCBSym: opt.use_ocb_sym = 1; break;
 
           case oDisableSignerUID: opt.flags.disable_signer_uid = 1; break;
           case oIncludeKeyBlock:  opt.flags.include_key_block = 1; break;
@@ -3614,6 +3621,13 @@ main (int argc, char **argv)
 
           case oAutoKeyUpload: opt.flags.auto_key_upload = 1; break;
           case oNoAutoKeyUpload: opt.flags.auto_key_upload = 0; break;
+
+	  case oShowOnlySessionHash:
+            opt.show_only_session_key = 1; /*  Right, this is ..._key */
+            /* fallthru */
+	  case oShowSessionHash:
+            opt.show_session_hash = 1;
+            break;
 
 	  case oShowOnlySessionKey:
             opt.show_only_session_key = 1;
