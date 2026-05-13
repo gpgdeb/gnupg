@@ -1363,6 +1363,20 @@ be_sqlite_search (ctrl_t ctrl,
       int is_ephemeral, is_revoked;
       int pk_no, uid_no;
 
+      n = sqlite3_column_int (ctx->select_stmt, 2);
+      if (!n && sqlite3_errcode (database_hd) == SQLITE_NOMEM)
+        {
+          err = gpg_error (gpg_err_code_from_sqlite (SQLITE_NOMEM));
+          show_sqlstmt (ctx->select_stmt);
+          log_error ("error in returned SQL column EPHEMERAL: %s)\n",
+                     gpg_strerror (err));
+          goto leave;
+        }
+      is_ephemeral = !!n;
+
+      if (!ctrl->ephemeral && is_ephemeral)
+        goto again;
+
       ubid = sqlite3_column_blob (ctx->select_stmt, 0);
       n = sqlite3_column_bytes (ctx->select_stmt, 0);
       if (!ubid || n < 0)
@@ -1409,17 +1423,6 @@ be_sqlite_search (ctrl_t ctrl,
           goto leave;
         }
       pubkey_type = n;
-
-      n = sqlite3_column_int (ctx->select_stmt, 2);
-      if (!n && sqlite3_errcode (database_hd) == SQLITE_NOMEM)
-        {
-          err = gpg_error (gpg_err_code_from_sqlite (SQLITE_NOMEM));
-          show_sqlstmt (ctx->select_stmt);
-          log_error ("error in returned SQL column EPHEMERAL: %s)\n",
-                     gpg_strerror (err));
-          goto leave;
-        }
-      is_ephemeral = !!n;
 
       n = sqlite3_column_int (ctx->select_stmt, 3);
       if (!n && sqlite3_errcode (database_hd) == SQLITE_NOMEM)
@@ -1515,7 +1518,7 @@ be_sqlite_search (ctrl_t ctrl,
 /* Helper for be_sqlite_store to update or insert a row in the pubkey
  * table.  */
 static gpg_error_t
-store_into_pubkey (enum kbxd_store_modes mode,
+store_into_pubkey (enum kbxd_store_modes mode, int is_ephemeral,
                    enum pubkey_types pktype, const unsigned char *ubid,
                    const void *blob, size_t bloblen)
 {
@@ -1524,12 +1527,12 @@ store_into_pubkey (enum kbxd_store_modes mode,
   sqlite3_stmt *stmt = NULL;
 
   if (mode == KBXD_STORE_UPDATE)
-    sqlstr = ("UPDATE pubkey set keyblob = ?3, type = ?2 WHERE ubid = ?1");
+    sqlstr = ("UPDATE pubkey SET ephemeral = ?4, keyblob = ?3, type = ?2 WHERE ubid = ?1");
   else if (mode == KBXD_STORE_INSERT)
-    sqlstr = ("INSERT INTO pubkey(ubid,type,keyblob) VALUES(?1,?2,?3)");
+    sqlstr = ("INSERT INTO pubkey(ubid,type,keyblob,ephemeral) VALUES(?1,?2,?3,?4)");
   else /* Auto */
-    sqlstr = ("INSERT OR REPLACE INTO pubkey(ubid,type,keyblob)"
-              " VALUES(?1,?2,?3)");
+    sqlstr = ("INSERT OR REPLACE INTO pubkey(ubid,type,keyblob,ephemeral)"
+              " VALUES(?1,?2,?3,?4)");
   err = run_sql_prepare (sqlstr, NULL, NULL, &stmt);
   if (err)
     goto leave;
@@ -1540,6 +1543,9 @@ store_into_pubkey (enum kbxd_store_modes mode,
   if (err)
     goto leave;
   err = run_sql_bind_blob (stmt, 3, blob, bloblen);
+  if (err)
+    goto leave;
+  err = run_sql_bind_int (stmt, 4, is_ephemeral);
   if (err)
     goto leave;
 
@@ -1761,7 +1767,7 @@ be_sqlite_store (ctrl_t ctrl, backend_handle_t backend_hd,
     }
   in_transaction = 1;
 
-  err = store_into_pubkey (mode, pktype, ubid, blob, bloblen);
+  err = store_into_pubkey (mode, ctrl->ephemeral, pktype, ubid, blob, bloblen);
   if (err)
     goto leave;
 
@@ -1976,6 +1982,91 @@ be_sqlite_delete (ctrl_t ctrl, backend_handle_t backend_hd,
     err = run_sql_statement_bind_ubid
       ("DELETE from pubkey WHERE ubid = ?1", ubid);
 
+
+ leave:
+  if (stmt)
+    sqlite3_finalize (stmt);
+
+  if (in_transaction && !err)
+    {
+      if (opt.active_transaction)
+        ; /* We are in a global transaction.  */
+      else
+        err = run_sql_statement ("commit");
+    }
+  else if (in_transaction)
+    {
+      if (opt.active_transaction)
+        ; /* We are in a global transaction.  */
+      else if (run_sql_statement ("rollback"))
+        log_error ("Warning: database rollback failed - should not happen!\n");
+    }
+  release_mutex ();
+  return err;
+}
+
+
+/* Put ephemeral/revoked flag on a key identified by UBID from the
+ * database.  BACKEND_HD is the handle for this backend and REQUEST
+ * is the current database request object.
+ * FLAGS means: 1 for ephemeral, 2 for revoked.
+ * CLEAR = 1 when clearing the flag.
+ */
+gpg_error_t
+be_sqlite_putkeyflag (ctrl_t ctrl, backend_handle_t backend_hd,
+                      db_request_t request, const unsigned char *ubid,
+                      unsigned int flags, int clear)
+{
+  gpg_error_t err;
+  db_request_part_t part;
+  /* be_sqlite_local_t ctx; */
+  sqlite3_stmt *stmt = NULL;
+  int in_transaction = 0;
+
+  (void)ctrl;
+
+  log_assert (backend_hd && backend_hd->db_type == DB_TYPE_SQLITE);
+  log_assert (request);
+
+  acquire_mutex ();
+
+  /* Find the specific request part or allocate it.  */
+  err = be_find_request_part (backend_hd, request, &part);
+  if (err)
+    goto leave;
+  /* ctx = part->besqlite; */
+
+  if (!opt.active_transaction)
+    {
+      err = run_sql_statement ("begin transaction");
+      if (err)
+        goto leave;
+      if (opt.in_transaction)
+        opt.active_transaction = 1;
+    }
+  in_transaction = 1;
+
+  if (flags & (1 << 0))
+    {
+      if (clear)
+        err = run_sql_statement_bind_ubid
+          ("UPDATE pubkey SET ephemeral = 0 WHERE ubid = ?1", ubid);
+      else
+        err = run_sql_statement_bind_ubid
+          ("UPDATE pubkey SET ephemeral = 1 WHERE ubid = ?1", ubid);
+      if (err)
+        goto leave;
+    }
+
+  if (flags & (1 << 1))
+    {
+      if (clear)
+        err = run_sql_statement_bind_ubid
+          ("UPDATE pubkey SET revoked = 0 WHERE ubid = ?1", ubid);
+      else
+        err = run_sql_statement_bind_ubid
+          ("UPDATE pubkey SET revoked = 1 WHERE ubid = ?1", ubid);
+    }
 
  leave:
   if (stmt)

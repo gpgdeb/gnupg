@@ -1,3 +1,52 @@
+Noteworthy changes in version 2.5.20 (2026-05-13)
+-------------------------------------------------
+
+ * New and extended features:
+
+   - gpgsm: Implement GCM encryption.  Note that decryption works
+     since version 2.3.2.  [T3979]
+
+   - gpgsm: New option --attribute and server command SETATTR to
+     include arbitrary signed or unsigned attributes into a signature.
+     Enable only with libksba 1.7.0 or later.  [T4537]
+
+   - gpgsm: Introduce system attribute _signingCertificateV2.
+     [rG0335a9cb04]
+
+ * Bug fixes:
+
+   - gpg: Fix wrong assertion failure which could very rarely occur
+     during key signature checking.  [rG693f5642f6]
+
+   - gpg: Consider certify-only keys for revocation signature check.
+     [T8196]
+
+   - gpgsm: Fix possible double free in the CMS parser.  [T8240]
+
+   - gpgsm: Fix possible too early removal of ephemeral keys.  [T8236]
+
+   - gpgsm: Avoid emitting a final FAILURE status line if --status-fd
+     is not used.  [rG69c27fe377]
+
+   - gpgsm: Fix a regression in 2.5.19 for password encrypted GCM
+     data.  [rG60a823c97b]
+
+   - agent: Fix not using cache for pinentry loopback.  [rGd4b608a31f]
+
+   - agent: Fix command PUT_SECRET by saving input line.  [rG1875bc185e]
+
+   - keyboxd: Mark keys searched but not imported via LDAP correctly
+     as ephemeral.  [T8048]
+
+   - scdaemon: Avoid buffer overflow with SC-HSM cards providing RSA
+     keys > 2k.  [T8244]
+
+   - dirmngr: Fix uninitialized use of the dns_any union in
+     dns_rr_cmp.  [T8251]
+
+ Release-info: https://dev.gnupg.org/T7997
+
+
 Noteworthy changes in version 2.5.19 (2026-04-24)
 -------------------------------------------------
 
@@ -933,7 +982,10 @@ Noteworthy changes in version 2.5.0 (2024-07-05)
 Release dates of 2.4 versions
 -----------------------------
 
-Version 2.4.6 (unreleased) https://dev.gnupg.org/T7030
+Version 2.4.9 (2025-12-30) https://dev.gnupg.org/T8001
+Version 2.4.8 (2025-05-14) https://dev.gnupg.org/T7428
+Version 2.4.7 (2024-11-25) https://dev.gnupg.org/T7353
+Version 2.4.6 (2024-10-29) https://dev.gnupg.org/T7030
 Version 2.4.5 (2024-03-07) https://dev.gnupg.org/T6960
 Version 2.4.4 (2024-01-25) https://dev.gnupg.org/T6578
 Version 2.4.3 (2023-07-04) https://dev.gnupg.org/T6509
@@ -2535,6 +2587,18 @@ Noteworthy changes in version 2.3.0 (2021-04-07)
 Release dates of 2.2 versions
 -----------------------------
 
+Version 2.2.54 (2026-04-20) https://dev.gnupg.org/T8170
+Version 2.2.53 (2026-03-12) https://dev.gnupg.org/T7960
+Version 2.2.52 (2025-12-01) https://dev.gnupg.org/T7959
+Version 2.2.51 (2025-10-28) https://dev.gnupg.org/T7888
+Version 2.2.50 (2025-10-13) https://dev.gnupg.org/T7822
+Version 2.2.49 (2025-09-25) https://dev.gnupg.org/T7821
+Version 2.2.48 (2025-08-07) https://dev.gnupg.org/T7766
+Version 2.2.47 (2025-04-09) https://dev.gnupg.org/T7767
+Version 2.2.46 (2025-01-07) https://dev.gnupg.org/T7314
+Version 2.2.45 (2024-10-22) https://dev.gnupg.org/T7255
+Version 2.2.44 (2024-08-12) https://dev.gnupg.org/T7087
+Version 2.2.43 (2024-04-16) https://dev.gnupg.org/T6849
 Version 2.2.42 (2023-11-28) https://dev.gnupg.org/T6307
 Version 2.2.41 (2022-12-09) https://dev.gnupg.org/T6280
 Version 2.2.40 (2022-10-10) https://dev.gnupg.org/T6181

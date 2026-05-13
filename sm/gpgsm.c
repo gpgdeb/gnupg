@@ -525,6 +525,9 @@ int assert_validsig_true = 0;
 /* It is possible that we are currentlu running under setuid permissions */
 static int maybe_setuid = 1;
 
+/* If this flag is set the final exit status line will not be printed.  */
+static int no_final_failure_status;
+
 /* Helper to implement --debug-level and --debug*/
 static const char *debug_level;
 static unsigned int debug_value;
@@ -548,12 +551,18 @@ static int default_include_certs = DEFAULT_INCLUDE_CERTS;
 /* Whether the chain mode shall be used for validation.  */
 static int default_validation_model;
 
+/* The collected --attributes values from the command line.  */
+static strlist_t opt_attributes;
+
 /* Counter used to convey data from deinit_ctrl to gpgsm_exit.  */
 static unsigned int parent_cache_stats;
 
 /* The default cipher algo.  */
-#define DEFAULT_CIPHER_ALGO "AES256-CBC"
+#define DEFAULT_CIPHER_ALGO       "AES256-CBC"
+#define DEFAULT_CIPHER_ALGO_DE_VS "AES256-GCM"
 
+/* A flag to track whether --cipher-algo was used.  */
+static int cipher_algo_option_seen;
 
 static char *build_list (const char *text,
 			 const char *(*mapf)(int), int (*chkf)(int));
@@ -1458,6 +1467,7 @@ main ( int argc, char **argv)
 
         case oCipherAlgo:
           opt.def_cipher_algoid = pargs.r.ret_str;
+          cipher_algo_option_seen = 1;
           break;
 
         case oDisableCipherAlgo:
@@ -1514,7 +1524,7 @@ main ( int argc, char **argv)
         case oAuthenticode: opt.authenticode = 1; break;
 
         case oAttribute:
-          add_to_strlist (&opt.attributes, pargs.r.ret_str);
+          add_to_strlist (&opt_attributes, pargs.r.ret_str);
           break;
 
         case oNoAutostart: opt.autostart = 0; break;
@@ -1698,6 +1708,13 @@ main ( int argc, char **argv)
 
   gcry_control (GCRYCTL_RESUME_SECMEM_WARN);
 
+  /* If we are not running in server mode and --status-fd has not been
+   * used we should not emit a final status line.  This extra flag is
+   * required because gpgsm_status is not used for the final fallback
+   * failure status.  */
+  if (cmd != aServer && ctrl.status_fd == -1)
+    no_final_failure_status = 1;
+
   set_debug ();
   if (opt.verbose) /* Print the compatibility flags.  */
     parse_compatibility_flags (NULL, &opt.compat_flags, compatibility_flags);
@@ -1713,6 +1730,10 @@ main ( int argc, char **argv)
     }
 
 
+  /* In de-vs mode switch the default cipher.  */
+  if (!cipher_algo_option_seen && opt.compliance == CO_DE_VS)
+    opt.def_cipher_algoid = DEFAULT_CIPHER_ALGO_DE_VS;
+
   /* Must do this after dropping setuid, because the mapping functions
      may try to load an module and we may have disabled an algorithm.
      We remap the commonly used algorithms to the OIDs for
@@ -1725,10 +1746,11 @@ main ( int argc, char **argv)
     mappedoid = gpgsm_map_cipher_name_to_oid (opt.def_cipher_algoid);
     if (!mappedoid)
       {
+        const char *fallback = (opt.compliance == CO_DE_VS?
+                                DEFAULT_CIPHER_ALGO_DE_VS:DEFAULT_CIPHER_ALGO);
         log_info (_("given cipher algorithm '%s' is unknown - using '%s'\n"),
-                  opt.def_cipher_algoid, DEFAULT_CIPHER_ALGO);
-        opt.def_cipher_algoid
-          = gpgsm_map_cipher_name_to_oid (DEFAULT_CIPHER_ALGO);
+                  opt.def_cipher_algoid, fallback);
+        opt.def_cipher_algoid = gpgsm_map_cipher_name_to_oid (fallback);
         log_assert (opt.def_cipher_algoid);
       }
     else
@@ -1932,7 +1954,8 @@ main ( int argc, char **argv)
         es_printf ("include-certs:%lu:%d:\n", GC_OPT_FLAG_DEFAULT,
                    DEFAULT_INCLUDE_CERTS);
         es_printf ("cipher-algo:%lu:\"%s:\n", GC_OPT_FLAG_DEFAULT,
-                   DEFAULT_CIPHER_ALGO);
+                   opt.compliance == CO_DE_VS? DEFAULT_CIPHER_ALGO_DE_VS
+                   /* */                     : DEFAULT_CIPHER_ALGO);
         es_printf ("p12-charset:%lu:\n", GC_OPT_FLAG_DEFAULT);
         es_printf ("default-key:%lu:\n", GC_OPT_FLAG_DEFAULT);
         es_printf ("encrypt-to:%lu:\n", GC_OPT_FLAG_DEFAULT);
@@ -2377,7 +2400,7 @@ gpgsm_exit (int rc)
   /* If we had an error but not printed an error message, do it now.
    * Note that the function will never print a second failure status
    * line. */
-  if (rc)
+  if (rc && !no_final_failure_status)
     gpgsm_exit_failure_status ();
 
   gcry_control (GCRYCTL_UPDATE_RANDOM_SEED_FILE);
@@ -2397,6 +2420,7 @@ gpgsm_exit (int rc)
 void
 gpgsm_init_default_ctrl (struct server_control_s *ctrl)
 {
+  ctrl->attributes = strlist_copy (opt_attributes);
   ctrl->include_certs = default_include_certs;
   ctrl->use_ocsp = opt.enable_ocsp;
   ctrl->validation_model = default_validation_model;
@@ -2417,6 +2441,7 @@ gpgsm_deinit_default_ctrl (ctrl_t ctrl)
   gpgsm_flush_keyinfo_cache (ctrl);
   xfree (ctrl->revocation_reason);
   ctrl->revocation_reason = NULL;
+  FREE_STRLIST (ctrl->attributes);
   n = 0;
   while (ctrl->parent_cert_cache)
     {
