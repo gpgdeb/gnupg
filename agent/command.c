@@ -1706,7 +1706,7 @@ do_one_keyinfo (ctrl_t ctrl, const unsigned char *grip, assuan_context_t ctx,
         }
       else if (strcmp (shadow_info_type, "tpm2-v1") == 0)
         {
-          serialno = xstrdup("TPM-Protected");
+          serialno = xstrdup ("TPM-Protected");
           idstr = NULL;
         }
       else
@@ -2023,8 +2023,8 @@ cmd_get_passphrase (assuan_context_t ctx, char *line)
   char *pw;
   char *response = NULL;
   char *response2 = NULL;
-  char *cacheid = NULL;  /* May point into LINE.  */
-  char *desc = NULL;     /* Ditto  */
+  char *cacheid = NULL;
+  char *desc = NULL;     /* May point into LINE.  */
   char *prompt = NULL;   /* Ditto  */
   char *errtext = NULL;  /* Ditto  */
   const char *desc2 = _("Please re-enter this passphrase");
@@ -2088,6 +2088,15 @@ cmd_get_passphrase (assuan_context_t ctx, char *line)
    * the cache.  */
   if (ctrl->restricted || !strcmp (cacheid, "X"))
     cacheid = NULL;
+  else
+    {
+      cacheid = xtrystrdup (cacheid);
+      if (!cacheid)
+        {
+          rc = gpg_error_from_syserror ();
+          goto leave;
+        }
+    }
   if (!strcmp (errtext, "X"))
     errtext = NULL;
   if (!strcmp (prompt, "X"))
@@ -2282,6 +2291,7 @@ cmd_get_passphrase (assuan_context_t ctx, char *line)
   xfree (entry_errtext);
   xfree (pi2);
   xfree (pi);
+  xfree (cacheid);
   return leave_cmd (ctx, rc);
 }
 
@@ -3580,7 +3590,8 @@ cmd_put_secret (assuan_context_t ctx, char *line)
   unsigned char *value = NULL;
   size_t valuelen = 0;
   size_t n;
-  char *p, *key, *ttlstr;
+  char *p, *ttlstr;
+  char *key = NULL;
   unsigned char *valstr;
   int ttl;
   char *string = NULL;
@@ -3623,6 +3634,12 @@ cmd_put_secret (assuan_context_t ctx, char *line)
   if (!*key)
     {
       err = set_error (GPG_ERR_ASS_PARAMETER, "no key given");
+      goto leave;
+    }
+  key = xtrystrdup (key);
+  if (!key)
+    {
+      err = gpg_error_from_syserror ();
       goto leave;
     }
   if (!ttlstr || !*ttlstr || !(n = parse_ttl (ttlstr, &ttl)))
@@ -3670,6 +3687,7 @@ cmd_put_secret (assuan_context_t ctx, char *line)
 
 
  leave:
+  xfree (key);
   if (string)
     {
       wipememory (string, strlen (string));

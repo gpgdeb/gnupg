@@ -1120,9 +1120,9 @@ gpgsm_decrypt (ctrl_t ctrl, estream_t in_fp, estream_t out_fp)
 
           for (recp=0; !any_key; recp++)
             {
-              char *issuer;
-              ksba_sexp_t serial;
-              ksba_sexp_t enc_val;
+              char *issuer = NULL;
+              ksba_sexp_t serial = NULL;
+              ksba_sexp_t enc_val = NULL;
               char *hexkeygrip = NULL;
               char *pkalgostr = NULL;
               char *pkfpr = NULL;
@@ -1275,6 +1275,7 @@ gpgsm_decrypt (ctrl_t ctrl, estream_t in_fp, estream_t out_fp)
                   rc = prepare_decryption (ctrl, hexkeygrip, pk_algo,
                                            desc, enc_val, &dfparm);
                   xfree (enc_val);
+                  enc_val = NULL;
                   if (rc)
                     {
                       log_info ("decrypting session key failed: %s\n",
@@ -1292,52 +1293,52 @@ gpgsm_decrypt (ctrl_t ctrl, estream_t in_fp, estream_t out_fp)
                          &dfparm);
 
                       /* Check the cert chain for CO_DE_VS compliance. */
-                      {
-                        ksba_isotime_t sigtime, keyexptime;
-                        unsigned int verifyflags;
-                        size_t buflen;
-                        char buf[1];
+                      if (cert)
+                        {
+                          ksba_isotime_t sigtime, keyexptime;
+                          unsigned int verifyflags;
+                          size_t buflen;
+                          char buf[1];
 
-                        rc = gpgsm_validate_chain (ctrl, cert,
-                                                   *sigtime? sigtime :
+                          rc = gpgsm_validate_chain (ctrl, cert,
+                                                     *sigtime? sigtime :
                                                    "19700101T000000",
-                                                   keyexptime, 0,
-                                                   NULL, 0, &verifyflags);
-                        audit_log_ok (ctrl->audit, AUDIT_CHAIN_STATUS, rc);
-                        if (rc)
-                          {
-                            log_error ("invalid certification chain: %s\n",
-                                       gpg_strerror (rc));
-                            if (gpg_err_code (rc) == GPG_ERR_BAD_CERT_CHAIN
-                                || gpg_err_code (rc) == GPG_ERR_BAD_CERT
-                                || gpg_err_code (rc) == GPG_ERR_BAD_CA_CERT
-                                || gpg_err_code (rc) == GPG_ERR_CERT_REVOKED)
-                              gpgsm_status_with_err_code (ctrl,
-                                                          STATUS_TRUST_NEVER,
-                                                          NULL,
-                                                          gpg_err_code (rc));
-                            else
-                              gpgsm_status_with_err_code (ctrl,
-                                                          STATUS_TRUST_UNDEFINED,
-                                                          NULL,
-                                                          gpg_err_code (rc));
-                          }
-                        else if (!ksba_cert_get_user_data (cert, "is_de_vs",
-                                                           &buf, sizeof (buf),
-                                                           &buflen) && buflen)
-                          {
-                            if (buf[0])
-                              ;
-                            else
-                              dfparm.is_de_vs = 0;
-                          }
-                        else if (opt.require_compliance
-                                 && opt.compliance == CO_DE_VS)
-                          {
-                            log_error ("get_user_data(is_de_vs) failed.\n");
-                            gpgsm_errors_seen = 1;
-                          }
-                      }
+                                                     keyexptime, 0,
+                                                     NULL, 0, &verifyflags);
+                          audit_log_ok (ctrl->audit, AUDIT_CHAIN_STATUS, rc);
+                          if (rc)
+                            {
+                              log_error ("invalid certification chain: %s\n",
+                                         gpg_strerror (rc));
+                              if (gpg_err_code (rc) == GPG_ERR_BAD_CERT_CHAIN
+                                  || gpg_err_code (rc) == GPG_ERR_BAD_CERT
+                                  || gpg_err_code (rc) == GPG_ERR_BAD_CA_CERT
+                                  || gpg_err_code (rc) == GPG_ERR_CERT_REVOKED)
+                                gpgsm_status_with_err_code (ctrl,
+                                                            STATUS_TRUST_NEVER,
+                                                            NULL,
+                                                            gpg_err_code (rc));
+                              else
+                                gpgsm_status_with_err_code
+                                  (ctrl, STATUS_TRUST_UNDEFINED,
+                                   NULL, gpg_err_code (rc));
+                            }
+                          else if (!ksba_cert_get_user_data (cert, "is_de_vs",
+                                                             &buf, sizeof (buf),
+                                                             &buflen) && buflen)
+                            {
+                              if (buf[0])
+                                ;
+                              else
+                                dfparm.is_de_vs = 0;
+                            }
+                          else if (opt.require_compliance
+                                   && opt.compliance == CO_DE_VS)
+                            {
+                              log_error ("get_user_data(is_de_vs) failed.\n");
+                              gpgsm_errors_seen = 1;
+                            }
+                        }
 
                       if (dfparm.is_de_vs
                           && gnupg_gcrypt_is_compliant (CO_DE_VS))
@@ -1368,8 +1369,8 @@ gpgsm_decrypt (ctrl_t ctrl, estream_t in_fp, estream_t out_fp)
             {
               for (;; recp++)
                 {
-                  char *issuer;
-                  ksba_sexp_t serial;
+                  char *issuer = NULL;
+                  ksba_sexp_t serial = NULL;
                   int tmp_rc;
 
                   tmp_rc = ksba_cms_get_issuer_serial (cms, recp,
