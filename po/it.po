@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNU gnupg 2.3.0\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2026-04-24 13:12+0200\n"
+"POT-Creation-Date: 2026-05-13 14:35+0200\n"
 "PO-Revision-Date: 2021-04-15 10:09+0900\n"
 "Last-Translator: Denis <student@alice.it>\n"
 "Language-Team: \n"
@@ -141,8 +141,8 @@ msgstr "PIN:"
 msgid "Passphrase:"
 msgstr "Passphrase:"
 
-#: agent/call-pinentry.c:1531 agent/call-pinentry.c:1801 agent/command.c:2202
-#: agent/command.c:2261 agent/command-ssh.c:3325 agent/genkey.c:497
+#: agent/call-pinentry.c:1531 agent/call-pinentry.c:1801 agent/command.c:2211
+#: agent/command.c:2270 agent/command-ssh.c:3325 agent/genkey.c:497
 msgid "does not match - try again"
 msgstr "non corrisponde - riprova"
 
@@ -202,12 +202,12 @@ msgstr "Nota: richiesta da un sito remoto."
 msgid "error getting serial number of card: %s\n"
 msgstr "errore durante il recupero del numero di serie della scheda: %s\n"
 
-#: agent/command.c:2030 agent/command.c:2194 agent/command-ssh.c:3253
+#: agent/command.c:2030 agent/command.c:2203 agent/command-ssh.c:3253
 #: agent/genkey.c:432
 msgid "Please re-enter this passphrase"
 msgstr "Inserisci di nuovo questa passphrase"
 
-#: agent/command.c:3056
+#: agent/command.c:3066
 #, c-format
 msgid ""
 "Please enter the passphrase to protect the imported object within the %s "
@@ -216,7 +216,7 @@ msgstr ""
 "Immettere la passphrase per proteggere l'oggetto importato all'interno %s "
 "sistema."
 
-#: agent/command.c:3203
+#: agent/command.c:3213
 msgid ""
 "This key (or subkey) is not protected with a passphrase.  Please enter a new "
 "passphrase to export it."
@@ -245,8 +245,8 @@ msgstr "impossibile creare '%s': %s\n"
 #: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1125 g10/sign.c:1369
 #: g10/sign.c:1491 g10/sign.c:1665 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
-#: sm/gpgsm.c:1989 sm/gpgsm.c:2021 sm/gpgsm.c:2071 sm/gpgsm.c:2085
-#: sm/gpgsm.c:2091 sm/gpgsm.c:2119 sm/gpgsm.c:2473 sm/gpgsm.c:2512
+#: sm/gpgsm.c:2012 sm/gpgsm.c:2044 sm/gpgsm.c:2094 sm/gpgsm.c:2108
+#: sm/gpgsm.c:2114 sm/gpgsm.c:2142 sm/gpgsm.c:2498 sm/gpgsm.c:2537
 #: sm/keylist.c:1893 sm/qualified.c:65 dirmngr/certcache.c:421
 #: dirmngr/certcache.c:503 dirmngr/certcache.c:505 dirmngr/crlcache.c:2674
 #: dirmngr/dirmngr.c:1920 tools/gpg-card.c:428
@@ -618,7 +618,7 @@ msgstr "consentire la passphrase tramite Emacs"
 #. reporting address without breaking the translations.
 #: agent/gpg-agent.c:584 agent/preset-passphrase.c:102 agent/protect-tool.c:153
 #: g10/gpg.c:1209 g10/gpgv.c:155 kbx/kbxutil.c:117 scd/scdaemon.c:319
-#: sm/gpgsm.c:658 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:475
+#: sm/gpgsm.c:667 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:475
 #: tools/gpg-connect-agent.c:222 tools/gpgconf.c:170
 #: tools/gpg-check-pattern.c:143
 msgid "Please report bugs to <@EMAIL@>.\n"
@@ -636,26 +636,26 @@ msgstr ""
 "Sintassi: @GPG_AGENT@ [opzioni] [comando [args]]\n"
 "Gestione delle chiavi segrete per @GNUPG@\n"
 
-#: agent/gpg-agent.c:640 g10/gpg.c:1407 scd/scdaemon.c:391 sm/gpgsm.c:806
+#: agent/gpg-agent.c:640 g10/gpg.c:1407 scd/scdaemon.c:391 sm/gpgsm.c:815
 #: dirmngr/dirmngr.c:569
 #, c-format
 msgid "invalid debug-level '%s' given\n"
 msgstr "'%s' a livello di debug non valido specificato\n"
 
-#: agent/gpg-agent.c:1014 g10/gpg.c:4125 g10/gpg.c:4149 sm/gpgsm.c:1749
-#: sm/gpgsm.c:1755
+#: agent/gpg-agent.c:1014 g10/gpg.c:4125 g10/gpg.c:4149 sm/gpgsm.c:1771
+#: sm/gpgsm.c:1777
 #, c-format
 msgid "selected digest algorithm is invalid\n"
 msgstr "l'algoritmo di digest selezionato non è valido\n"
 
 #: agent/gpg-agent.c:1243 agent/gpg-agent.c:2099 common/comopt.c:97
-#: g10/gpg.c:2675 scd/scdaemon.c:555 sm/gpgsm.c:1073 dirmngr/dirmngr.c:1177
+#: g10/gpg.c:2675 scd/scdaemon.c:555 sm/gpgsm.c:1082 dirmngr/dirmngr.c:1177
 #: dirmngr/dirmngr.c:2046
 #, c-format
 msgid "reading options from '%s'\n"
 msgstr "opzioni di lettura da '%s'\n"
 
-#: agent/gpg-agent.c:1369 g10/gpg.c:4080 scd/scdaemon.c:705 sm/gpgsm.c:1693
+#: agent/gpg-agent.c:1369 g10/gpg.c:4080 scd/scdaemon.c:705 sm/gpgsm.c:1703
 #: dirmngr/dirmngr.c:1299 tools/gpg-connect-agent.c:1332 tools/gpgconf.c:768
 #, c-format
 msgid "Note: '%s' is not considered an option\n"
@@ -1234,7 +1234,7 @@ msgid "server '%s' is older than us (%s < %s)"
 msgstr "il server '%s' è precedente a noi (%s < %s)"
 
 #: common/asshelp.c:784 g10/call-dirmngr.c:433 sm/call-dirmngr.c:472
-#: sm/keydb.c:1156
+#: sm/keydb.c:1173
 #, c-format
 msgid "WARNING: %s\n"
 msgstr "AVVISO: %s\n"
@@ -1520,7 +1520,7 @@ msgstr "blocco '%s' non effettuato: %s\n"
 msgid "waiting for lock %s...\n"
 msgstr "attesa del blocco %s...\n"
 
-#: common/init.c:183 sm/gpgsm.c:954 dirmngr/dirmngr.c:1083
+#: common/init.c:183 sm/gpgsm.c:963 dirmngr/dirmngr.c:1083
 #: dirmngr/dirmngr.c:1092
 #, c-format
 msgid "%s is too old (need %s, have %s)\n"
@@ -1686,7 +1686,7 @@ msgid "Enter passphrase: "
 msgstr "Inserisci la passphrase: "
 
 #: g10/call-agent.c:322 g10/encrypt.c:205 g10/encrypt.c:465 g10/sign.c:492
-#: sm/call-agent.c:249 sm/encrypt.c:719 sm/sign.c:640
+#: sm/call-agent.c:249 sm/encrypt.c:733 sm/sign.c:729
 #, c-format
 msgid "%s is not compliant with %s mode\n"
 msgstr "%s non è conforme alla modalità %s\n"
@@ -1743,7 +1743,7 @@ msgstr "il reindirizzamento HTTP dal server è stato pulito"
 msgid "server uses an invalid certificate"
 msgstr "server utilizza un certificato non valido"
 
-#: g10/call-dirmngr.c:431 g10/gpg.c:4858 sm/call-dirmngr.c:470 sm/keydb.c:1154
+#: g10/call-dirmngr.c:431 g10/gpg.c:4858 sm/call-dirmngr.c:470 sm/keydb.c:1171
 #, c-format
 msgid "Note: %s\n"
 msgstr "Nota: %s\n"
@@ -2212,7 +2212,7 @@ msgid "can't open '%s'\n"
 msgstr "impossibile aprire '%s'\n"
 
 #: g10/delkey.c:89 g10/export.c:2435 g10/export.c:2924 g10/export.c:3045
-#: g10/export.c:3123 g10/getkey.c:2139 g10/gpg.c:5567 g10/keyedit.c:1597
+#: g10/export.c:3123 g10/getkey.c:2143 g10/gpg.c:5567 g10/keyedit.c:1597
 #: g10/keyedit.c:2636 g10/keyedit.c:3061 g10/keyedit.c:5021 g10/keyedit.c:5278
 #: g10/keyedit.c:5305 g10/keylist.c:1014 g10/keyserver.c:1104 g10/revoke.c:230
 #: g10/tofu.c:2172
@@ -2220,7 +2220,7 @@ msgstr "impossibile aprire '%s'\n"
 msgid "key \"%s\" not found: %s\n"
 msgstr "chiave \"%s\" non trovata: %s\n"
 
-#: g10/delkey.c:98 g10/export.c:2470 g10/getkey.c:2147 g10/getkey.c:4721
+#: g10/delkey.c:98 g10/export.c:2470 g10/getkey.c:2151 g10/getkey.c:4725
 #: g10/gpg.c:5576 g10/keyedit.c:2608 g10/keyserver.c:1122 g10/revoke.c:236
 #: g10/revoke.c:666 g10/tofu.c:2180
 #, c-format
@@ -2336,13 +2336,13 @@ msgid "(use option \"%s\" to override)\n"
 msgstr "(utilizzare l'opzione \"%s\" per ignorare)\n"
 
 #: g10/encrypt.c:195 g10/encrypt.c:738 g10/decrypt-data.c:272 g10/gpg.c:4295
-#: g10/gpg.c:4337 sm/decrypt.c:1090 sm/encrypt.c:709 sm/gpgsm.c:1773
+#: g10/gpg.c:4337 sm/decrypt.c:1090 sm/encrypt.c:723 sm/gpgsm.c:1795
 #, c-format
 msgid "cipher algorithm '%s' may not be used in %s mode\n"
 msgstr ""
 "l'algoritmo di crittografia '%s' non può essere utilizzato in modalità %s\n"
 
-#: g10/encrypt.c:227 g10/keyedit.c:5154 sm/encrypt.c:785
+#: g10/encrypt.c:227 g10/keyedit.c:5154 sm/encrypt.c:790
 #, c-format
 msgid "WARNING: key %s is not suitable for encryption in %s mode\n"
 msgstr "AVVISO: la chiave %s non è adatta per la crittografia in modalità %s\n"
@@ -2375,7 +2375,7 @@ msgid "'%s' already compressed\n"
 msgstr "'%s' già compresso\n"
 
 #: g10/encrypt.c:747 g10/gpg.c:4301 g10/gpg.c:4349 g10/sig-check.c:173
-#: g10/sign.c:470 sm/gpgsm.c:1783 sm/gpgsm.c:1793 sm/sign.c:813 sm/verify.c:512
+#: g10/sign.c:470 sm/gpgsm.c:1805 sm/gpgsm.c:1815 sm/sign.c:902 sm/verify.c:512
 #, c-format
 msgid "digest algorithm '%s' may not be used in %s mode\n"
 msgstr "l'algoritmo digest '%s' non può essere utilizzato in modalità %s\n"
@@ -2505,62 +2505,62 @@ msgstr "ATTENZIONE: non è stato esportato nulla\n"
 msgid "[User ID not found]"
 msgstr "[ID utente non trovato]"
 
-#: g10/getkey.c:1406
+#: g10/getkey.c:1410
 #, c-format
 msgid "automatically retrieved '%s' via %s\n"
 msgstr "recuperato automaticamente '%s' tramite %s\n"
 
-#: g10/getkey.c:1412
+#: g10/getkey.c:1416
 #, c-format
 msgid "error retrieving '%s' via %s: %s\n"
 msgstr "errore durante il recupero di '%s' tramite %s: %s\n"
 
-#: g10/getkey.c:1414
+#: g10/getkey.c:1418
 msgid "No fingerprint"
 msgstr "Nessuna impronta digitale"
 
-#: g10/getkey.c:1656
+#: g10/getkey.c:1660
 #, c-format
 msgid "checking for a fresh copy of an expired key via %s\n"
 msgstr ""
 "verifica della presenza di una nuova copia di una chiave scaduta tramite %s\n"
 
-#: g10/getkey.c:2116 g10/revoke.c:658 g10/revoke.c:719
+#: g10/getkey.c:2120 g10/revoke.c:658 g10/revoke.c:719
 #, c-format
 msgid "secret key \"%s\" not found: %s\n"
 msgstr "chiave segreta \"%s\" non trovata: %s\n"
 
-#: g10/getkey.c:2119 g10/pkclist.c:1032
+#: g10/getkey.c:2123 g10/pkclist.c:1032
 #, c-format
 msgid "(check argument of option '%s')\n"
 msgstr "(controllare l'argomento dell'opzione '%s')\n"
 
-#: g10/getkey.c:2214
+#: g10/getkey.c:2218
 #, c-format
 msgid "Warning: not using '%s' as default key: %s\n"
 msgstr "Avviso: impossibile utilizzare '%s' come chiave predefinita: %s\n"
 
-#: g10/getkey.c:2222
+#: g10/getkey.c:2226
 #, c-format
 msgid "using \"%s\" as default secret key for signing\n"
 msgstr "utilizzo di \"%s\" come chiave segreta predefinita per la firma\n"
 
-#: g10/getkey.c:2229
+#: g10/getkey.c:2233
 #, c-format
 msgid "all values passed to '%s' ignored\n"
 msgstr "tutti i valori passati a '%s' ignorati\n"
 
-#: g10/getkey.c:3139
+#: g10/getkey.c:3143
 #, c-format
 msgid "Invalid key %s made valid by --allow-non-selfsigned-uid\n"
 msgstr "Chiave non valida %s resa valida da --allow-non-selfsigned-uid\n"
 
-#: g10/getkey.c:4089
+#: g10/getkey.c:4093
 #, c-format
 msgid "using subkey %s instead of primary key %s\n"
 msgstr "utilizzando la sottochiave %s anziché la chiave primaria %s\n"
 
-#: g10/getkey.c:4650 g10/gpg.c:2268
+#: g10/getkey.c:4654 g10/gpg.c:2268
 #, c-format
 msgid "valid values for option '%s':\n"
 msgstr "valori validi per l'opzione '%s':\n"
@@ -2867,7 +2867,7 @@ msgstr ""
 "Firmare, controllare, crittografare o decrittografare\n"
 "Il funzionamento predefinito dipende dai dati di input\n"
 
-#: g10/gpg.c:1245 sm/gpgsm.c:682
+#: g10/gpg.c:1245 sm/gpgsm.c:691
 msgid ""
 "\n"
 "Supported algorithms:\n"
@@ -2891,12 +2891,12 @@ msgstr "Hash: "
 msgid "Compression: "
 msgstr "Compressione: "
 
-#: g10/gpg.c:1344 sm/gpgsm.c:756
+#: g10/gpg.c:1344 sm/gpgsm.c:765
 #, c-format
 msgid "usage: %s [options] %s\n"
 msgstr "utilizzo: %s [opzioni] %s\n"
 
-#: g10/gpg.c:1546 sm/gpgsm.c:849
+#: g10/gpg.c:1546 sm/gpgsm.c:858
 #, c-format
 msgid "conflicting commands\n"
 msgstr "comandi in conflitto\n"
@@ -3088,12 +3088,12 @@ msgstr "'%s' non è una scadenza di firma valida\n"
 msgid "\"%s\" is not a proper mail address\n"
 msgstr "\"%s\" non è un indirizzo di posta elettronica corretto\n"
 
-#: g10/gpg.c:3350 sm/gpgsm.c:1188
+#: g10/gpg.c:3350 sm/gpgsm.c:1197
 #, c-format
 msgid "invalid pinentry mode '%s'\n"
 msgstr "modalità pinentry non valida '%s'\n"
 
-#: g10/gpg.c:3356 sm/gpgsm.c:1198
+#: g10/gpg.c:3356 sm/gpgsm.c:1207
 #, c-format
 msgid "invalid request origin '%s'\n"
 msgstr "origine richiesta non valida '%s'\n"
@@ -3226,12 +3226,12 @@ msgstr "argomento non valido per l'opzione \"%.50s\"\n"
 msgid "error parsing value for option '%s': %s\n"
 msgstr "errore durante l'analisi della specifica della chiave '%s': %s\n"
 
-#: g10/gpg.c:4036 sm/gpgsm.c:1645
+#: g10/gpg.c:4036 sm/gpgsm.c:1655
 #, c-format
 msgid "WARNING: program may create a core file!\n"
 msgstr "ATTENZIONE: il programma potrebbe creare un file core!\n"
 
-#: g10/gpg.c:4040 sm/gpgsm.c:1651
+#: g10/gpg.c:4040 sm/gpgsm.c:1661
 #, c-format
 msgid "WARNING: %s overrides %s\n"
 msgstr "ATTENZIONE: %s ha la precedenza su %s\n"
@@ -3246,7 +3246,7 @@ msgstr "Non è permesso usare %s con %s!\n"
 msgid "%s makes no sense with %s!\n"
 msgstr "Non ha senso usare %s con %s!\n"
 
-#: g10/gpg.c:4067 sm/gpgsm.c:1680 dirmngr/dirmngr.c:1314
+#: g10/gpg.c:4067 sm/gpgsm.c:1690 dirmngr/dirmngr.c:1314
 #, c-format
 msgid "WARNING: running with faked system time: "
 msgstr "AVVISO: in esecuzione con l'ora di sistema falso: "
@@ -3256,7 +3256,7 @@ msgstr "AVVISO: in esecuzione con l'ora di sistema falso: "
 msgid "will not run with insecure memory due to %s\n"
 msgstr "non verrà eseguito con memoria non protetta a causa di %s\n"
 
-#: g10/gpg.c:4119 g10/gpg.c:4143 sm/gpgsm.c:1743
+#: g10/gpg.c:4119 g10/gpg.c:4143 sm/gpgsm.c:1765
 #, c-format
 msgid "selected cipher algorithm is invalid\n"
 msgstr "l'algoritmo di cifratura selezionato non è valido\n"
@@ -6245,7 +6245,7 @@ msgstr "ATTENZIONE: il messaggio cifrato è stato manipolato!\n"
 msgid "decryption failed: %s\n"
 msgstr "decifratura fallita: %s\n"
 
-#: g10/mainproc.c:947 g10/mainproc.c:2646 sm/decrypt.c:1349 sm/encrypt.c:836
+#: g10/mainproc.c:947 g10/mainproc.c:2646 sm/decrypt.c:1350 sm/encrypt.c:841
 #: sm/verify.c:668
 #, c-format
 msgid "operation forced to fail due to unfulfilled compliance rules\n"
@@ -7333,7 +7333,7 @@ msgstr "(Non è stata data una descrizione)\n"
 msgid "Is this okay? (y/N) "
 msgstr "Va bene così? (y/N) "
 
-#: g10/seskey.c:62 sm/encrypt.c:126
+#: g10/seskey.c:62 sm/encrypt.c:127
 #, c-format
 msgid "weak key created - retrying\n"
 msgstr "creata una chiave debole - riprovo\n"
@@ -7356,7 +7356,7 @@ msgid "%s key %s requires a %zu bit or larger hash (hash is %s)\n"
 msgstr ""
 "La chiave %s %s richiede un bit %zu o un hash superiore (l'hash è %s)\n"
 
-#: g10/sig-check.c:81 g10/sign.c:482 sm/sign.c:827 sm/verify.c:504
+#: g10/sig-check.c:81 g10/sign.c:482 sm/sign.c:916 sm/verify.c:504
 #, c-format
 msgid "key %s may not be used for signing in %s mode\n"
 msgstr "impossibile utilizzare la chiave %s per l'accesso in modalità %s\n"
@@ -8864,7 +8864,7 @@ msgstr "Nota: i criteri di certificato non critici non sono consentiti"
 msgid "certificate policy not allowed"
 msgstr "criteri certificato non consentiti"
 
-#: sm/certchain.c:613 sm/keydb.c:1996 sm/keydb.c:2085
+#: sm/certchain.c:613 sm/keydb.c:2013 sm/keydb.c:2137
 #, c-format
 msgid "failed to get the fingerprint\n"
 msgstr "non è riuscito a ottenere l'impronta digitale\n"
@@ -8900,8 +8900,8 @@ msgid "dirmngr cache-only key lookup failed: %s\n"
 msgstr "ricerca chiave solo cache dirmngr non riuscita: %s\n"
 
 #: sm/certchain.c:1112 sm/certchain.c:1674 sm/certchain.c:2445 sm/decrypt.c:996
-#: sm/encrypt.c:650 sm/import.c:407 sm/keydb.c:2003 sm/keydb.c:2092
-#: sm/sign.c:632 sm/verify.c:117
+#: sm/encrypt.c:651 sm/import.c:407 sm/keydb.c:2020 sm/keydb.c:2144
+#: sm/sign.c:721 sm/verify.c:117
 #, c-format
 msgid "failed to allocate keyDB handle\n"
 msgstr "impossibile allocare l'handle keyDB\n"
@@ -9432,7 +9432,7 @@ msgstr "crittografato per %s chiave %s\n"
 msgid "certificate '%s' not found: %s\n"
 msgstr "certificato '%s' non trovato: %s\n"
 
-#: sm/delete.c:67 sm/keydb.c:2104 sm/keydb.c:2203
+#: sm/delete.c:67 sm/keydb.c:2155 sm/keydb.c:2264
 #, c-format
 msgid "error locking keybox: %s\n"
 msgstr "errore durante il blocco della keybox: %s\n"
@@ -9452,7 +9452,7 @@ msgstr "certificato '%s' eliminato\n"
 msgid "deleting certificate \"%s\" failed: %s\n"
 msgstr "eliminazione del certificato \"%s\" non riuscita: %s\n"
 
-#: sm/encrypt.c:636
+#: sm/encrypt.c:637
 #, c-format
 msgid "no valid recipients given\n"
 msgstr "nessun destinatario valido dato\n"
@@ -9569,11 +9569,11 @@ msgstr "risponde \"no\" a quasi tutte le domande"
 msgid "|FILE|write an audit log to FILE"
 msgstr "|FILE|scrittura di un registro di controllo in FILE"
 
-#: sm/gpgsm.c:661
+#: sm/gpgsm.c:670
 msgid "Usage: @GPGSM@ [options] [files] (-h for help)"
 msgstr "Utilizzo: @GPGSM@ [opzioni] [file] (-h per assistenza)"
 
-#: sm/gpgsm.c:664
+#: sm/gpgsm.c:673
 msgid ""
 "Syntax: @GPGSM@ [options] [files]\n"
 "Sign, check, encrypt or decrypt using the S/MIME protocol\n"
@@ -9584,33 +9584,33 @@ msgstr ""
 "protocollo S/MIME\n"
 "Il funzionamento predefinito dipende dai dati di input\n"
 
-#: sm/gpgsm.c:872
+#: sm/gpgsm.c:881
 #, c-format
 msgid "Note: won't be able to encrypt to '%s': %s\n"
 msgstr "Nota: impossibile eseguire la crittografia in '%s': %s\n"
 
-#: sm/gpgsm.c:883
+#: sm/gpgsm.c:892
 #, c-format
 msgid "unknown validation model '%s'\n"
 msgstr "modello di convalida sconosciuto '%s'\n"
 
-#: sm/gpgsm.c:1728
+#: sm/gpgsm.c:1751
 #, fuzzy, c-format
 #| msgid "cipher algorithm %d%s is unknown or disabled\n"
 msgid "given cipher algorithm '%s' is unknown - using '%s'\n"
 msgstr "l'algoritmo di cifratura %d%s è sconosciuto o disattivato\n"
 
-#: sm/gpgsm.c:1842
+#: sm/gpgsm.c:1864
 #, c-format
 msgid "importing common certificates '%s'\n"
 msgstr "importazione di certificati comuni '%s'\n"
 
-#: sm/gpgsm.c:1888
+#: sm/gpgsm.c:1910
 #, c-format
 msgid "can't sign using '%s': %s\n"
 msgstr "impossibile firmare utilizzando '%s': %s\n"
 
-#: sm/gpgsm.c:2324
+#: sm/gpgsm.c:2347
 #, c-format
 msgid "invalid command (there is no implicit command)\n"
 msgstr "comando non valido (non esiste alcun comando implicito)\n"
@@ -9630,7 +9630,7 @@ msgstr "errore durante l'archiviazione del certificato\n"
 msgid "basic certificate checks failed - not imported\n"
 msgstr "controlli certificati di base non riusciti - non importati\n"
 
-#: sm/import.c:457 sm/keydb.c:2123 sm/keydb.c:2216
+#: sm/import.c:457 sm/keydb.c:2100 sm/keydb.c:2298
 #, c-format
 msgid "error getting stored flags: %s\n"
 msgstr "errore durante il recupero dei flag memorizzati: %s\n"
@@ -9655,30 +9655,30 @@ msgstr "nessuna cassetta delle chiavi in esecuzione in questa sessione\n"
 msgid "error opening key DB: %s\n"
 msgstr "errore durante l'apertura della chiave DB: %s\n"
 
-#: sm/keydb.c:2041
+#: sm/keydb.c:2058
 #, c-format
 msgid "problem looking for existing certificate: %s\n"
 msgstr "problema durante la ricerca del certificato esistente: %s\n"
 
-#: sm/keydb.c:2053
+#: sm/keydb.c:2070
 #, c-format
 msgid "error finding writable keyDB: %s\n"
 msgstr "errore durante la ricerca della chiave scrivibile keyDB: %s\n"
 
-#: sm/keydb.c:2061
+#: sm/keydb.c:2078
 #, c-format
 msgid "error storing certificate: %s\n"
 msgstr "errore durante l'archiviazione del certificato: %s\n"
 
-#: sm/keydb.c:2114
-#, c-format
-msgid "problem re-searching certificate: %s\n"
-msgstr "problema durante la ri-ricerca del certificato: %s\n"
-
-#: sm/keydb.c:2135 sm/keydb.c:2227
+#: sm/keydb.c:2111 sm/keydb.c:2309
 #, c-format
 msgid "error storing flags: %s\n"
 msgstr "errore durante l'archiviazione dei flag: %s\n"
+
+#: sm/keydb.c:2164
+#, c-format
+msgid "problem re-searching certificate: %s\n"
+msgstr "problema durante la ri-ricerca del certificato: %s\n"
 
 #: sm/keylist.c:826
 msgid "Error - "
@@ -9737,23 +9737,23 @@ msgstr ""
 "\"%s\"\n"
 "Si noti che questo certificato NON creerà una firma qualificata!"
 
-#: sm/sign.c:800
+#: sm/sign.c:889
 #, c-format
 msgid "hash algorithm %d (%s) for signer %d not supported; using %s\n"
 msgstr ""
 "algoritmo hash %d (%s) per firmatario %d non supportato; utilizzando %s\n"
 
-#: sm/sign.c:839
+#: sm/sign.c:928
 #, c-format
 msgid "hash algorithm used for signer %d: %s (%s)\n"
 msgstr "algoritmo hash utilizzato per firmatario %d: %s (%s)\n"
 
-#: sm/sign.c:889
+#: sm/sign.c:978
 #, c-format
 msgid "checking for qualified certificate failed: %s\n"
 msgstr "controllo del certificato qualificato non riuscito: %s\n"
 
-#: sm/sign.c:1125
+#: sm/sign.c:1211
 #, c-format
 msgid "%s/%s signature using %s key %s\n"
 msgstr "%s/%s firma con %s chiave %s\n"
