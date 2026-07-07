@@ -216,6 +216,7 @@ any8bitchar (const char *string)
 
 /* Helper for gnupg_w32_set_errno.  */
 #ifdef HAVE_W32_SYSTEM
+#if GPGRT_VERSION_NUMBER < 0x013e00  /* gpgrt < 1.62 */
 static int
 map_w32_to_errno (DWORD w32_err)
 {
@@ -326,6 +327,7 @@ map_w32_to_errno (DWORD w32_err)
       return EIO;
     }
 }
+#endif
 #endif /*HAVE_W32_SYSTEM*/
 
 
@@ -335,11 +337,14 @@ map_w32_to_errno (DWORD w32_err)
 int
 gnupg_w32_set_errno (int ec)
 {
-  /* FIXME: Replace by gpgrt_w32_set_errno.  */
+#if GPGRT_VERSION_NUMBER >= 0x013e00  /* gpgrt >= 1.62 */
+  return gpgrt_w32_set_errno (ec);
+#else
   if (ec == -1)
     ec = GetLastError ();
   _set_errno (map_w32_to_errno (ec));
   return ec;
+#endif
 }
 #endif /*HAVE_W32_SYSTEM*/
 
@@ -927,7 +932,7 @@ gnupg_allow_set_foregound_window (pid_t pid)
 #ifdef HAVE_W32_SYSTEM
 static int
 w32_wait_when_sharing_violation (int wtime, const char *fname)
-{
+{                               /* in milliseconds */
   int ec = GetLastError ();
 
   if (ec != ERROR_SHARING_VIOLATION)
@@ -954,7 +959,7 @@ w32_wait_when_sharing_violation (int wtime, const char *fname)
     log_info (_("waiting for file '%s' to become accessible ...\n"),
               fname);
 
-  gnupg_usleep (wtime);
+  gnupg_usleep ((unsigned int)wtime*1000);
   return wtime;  /* Note: WTIME is always > 0 */
 }
 #endif /*HAVE_W32_SYSTEM*/
