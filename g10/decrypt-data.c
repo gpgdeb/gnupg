@@ -512,16 +512,15 @@ decrypt_data (ctrl_t ctrl, void *procctx, PKT_encrypted *ed, DEK *dek,
 
   if (opt.unwrap_encryption)
     {
-      char *filename = NULL;
-      estream_t fp;
+      struct pfg pfg;
 
-      rc = get_output_file ("", 0, ed->buf, &filename, &fp);
+      rc = pfg_open_file ("", 0, ed->buf, &pfg);
       if (! rc)
         {
-          iobuf_t output = iobuf_esopen (fp, "w", 0, 0);
+          iobuf_t output = iobuf_esopen (pfg.fp, "w", 1, 0);
           armor_filter_context_t *afx = NULL;
 
-	  es_setbuf (fp, NULL);
+	  es_setbuf (pfg.fp, NULL);
 
           if (opt.armor)
             {
@@ -532,15 +531,15 @@ decrypt_data (ctrl_t ctrl, void *procctx, PKT_encrypted *ed, DEK *dek,
           iobuf_copy (output, ed->buf);
           if ((rc = iobuf_error (ed->buf)))
             log_error (_("error reading '%s': %s\n"),
-                       filename, gpg_strerror (rc));
+                       ed->buf->real_fname, gpg_strerror (rc));
           else if ((rc = iobuf_error (output)))
             log_error (_("error writing '%s': %s\n"),
-                       filename, gpg_strerror (rc));
+                       pfg.fname, gpg_strerror (rc));
 
           iobuf_close (output);
           release_armor_context (afx);
+          pfg_close_file (&pfg, rc);
         }
-      xfree (filename);
     }
   else
     proc_packets (ctrl, procctx, ed->buf );
@@ -579,7 +578,11 @@ decrypt_data (ctrl_t ctrl, void *procctx, PKT_encrypted *ed, DEK *dek,
           || dfx->holdback[1] != '\x14'
           || datalen != 20
           || memcmp (gcry_md_read (dfx->mdc_hash, 0), dfx->holdback+2, datalen))
-        rc = gpg_error (GPG_ERR_BAD_SIGNATURE);
+        {
+          log_error ("MDC check failed: %s\n", gpg_strerror (GPG_ERR_CHECKSUM));
+          write_status_error ("mdc_check", GPG_ERR_CHECKSUM);
+          rc = gpg_error (GPG_ERR_BAD_SIGNATURE);
+        }
       /* log_printhex("MDC message:", dfx->holdback, 22); */
       /* log_printhex("MDC calc:", gcry_md_read (dfx->mdc_hash,0), datalen); */
     }
@@ -876,11 +879,6 @@ aead_underflow (decode_filter_ctx_t dfx, iobuf_t a, byte *buf, size_t *ret_len)
   if (DBG_FILTER)
     log_debug ("aead_underflow: returning %zu (%s)\n",
                totallen, gpg_strerror (err));
-
-  /* In case of an auth error we map the error code to the same as
-   * used by the MDC decryption.  */
-  if (gpg_err_code (err) == GPG_ERR_CHECKSUM)
-    err = gpg_error (GPG_ERR_BAD_SIGNATURE);
 
   /* In case of an error we better wipe out the buffer than to convey
    * partly decrypted data.  */
