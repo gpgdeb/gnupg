@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg 1.2.5\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2026-05-13 14:35+0200\n"
+"POT-Creation-Date: 2026-07-02 14:43+0200\n"
 "PO-Revision-Date: 2004-07-20 15:52+0200\n"
 "Last-Translator: Michal Majer <mmajer@econ.umb.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
@@ -214,14 +214,14 @@ msgstr "chyba pri vytváraní hesla: %s\n"
 msgid "Please re-enter this passphrase"
 msgstr "zmeniť heslo"
 
-#: agent/command.c:3066
+#: agent/command.c:3067
 #, fuzzy, c-format
 msgid ""
 "Please enter the passphrase to protect the imported object within the %s "
 "system."
 msgstr "Prosím, vložte heslo; toto je tajná veta \n"
 
-#: agent/command.c:3213
+#: agent/command.c:3214
 msgid ""
 "This key (or subkey) is not protected with a passphrase.  Please enter a new "
 "passphrase to export it."
@@ -233,7 +233,7 @@ msgid "ssh keys greater than %d bits are not supported\n"
 msgstr "ochranný algoritmus %d%s nie je podporováný\n"
 
 #: agent/command-ssh.c:895 common/dotlock.c:958 g10/card-util.c:1004
-#: g10/export.c:1610 g10/gpg.c:1510 g10/keygen.c:6418 g10/keyring.c:1336
+#: g10/export.c:1610 g10/gpg.c:1511 g10/keygen.c:6423 g10/keyring.c:1336
 #: g10/keyring.c:1650 g10/openfile.c:299 g10/photoid.c:638 g10/photoid.c:656
 #: g10/sign.c:1145 g10/sign.c:1510 g10/tdbio.c:739 tools/gpg-card.c:499
 #, fuzzy, c-format
@@ -244,13 +244,13 @@ msgstr "nemôžem vytvoriť `%s': %s\n"
 #: agent/command-ssh.c:907 common/helpfile.c:59 g10/card-util.c:969
 #: g10/dearmor.c:59 g10/dearmor.c:110 g10/decrypt.c:74 g10/decrypt.c:168
 #: g10/decrypt.c:179 g10/decrypt.c:192 g10/encrypt.c:491 g10/encrypt.c:911
-#: g10/gpg.c:1511 g10/import.c:389 g10/import.c:576 g10/import.c:811
-#: g10/keygen.c:5271 g10/keyring.c:1676 g10/openfile.c:203 g10/openfile.c:217
-#: g10/plaintext.c:128 g10/plaintext.c:633 g10/sign.c:1125 g10/sign.c:1369
+#: g10/gpg.c:1512 g10/import.c:389 g10/import.c:576 g10/import.c:811
+#: g10/keygen.c:5276 g10/keyring.c:1676 g10/openfile.c:203 g10/openfile.c:217
+#: g10/plaintext.c:130 g10/plaintext.c:718 g10/sign.c:1125 g10/sign.c:1369
 #: g10/sign.c:1491 g10/sign.c:1665 g10/tdbdump.c:146 g10/tdbdump.c:150
 #: g10/tdbio.c:744 g10/tdbio.c:799 g10/verify.c:99 g10/verify.c:163
-#: sm/gpgsm.c:2012 sm/gpgsm.c:2044 sm/gpgsm.c:2094 sm/gpgsm.c:2108
-#: sm/gpgsm.c:2114 sm/gpgsm.c:2142 sm/gpgsm.c:2498 sm/gpgsm.c:2537
+#: sm/gpgsm.c:2013 sm/gpgsm.c:2045 sm/gpgsm.c:2095 sm/gpgsm.c:2109
+#: sm/gpgsm.c:2115 sm/gpgsm.c:2160 sm/gpgsm.c:2525 sm/gpgsm.c:2564
 #: sm/keylist.c:1893 sm/qualified.c:65 dirmngr/certcache.c:421
 #: dirmngr/certcache.c:503 dirmngr/certcache.c:505 dirmngr/crlcache.c:2674
 #: dirmngr/dirmngr.c:1920 tools/gpg-card.c:428
@@ -634,8 +634,8 @@ msgstr ""
 #. reporting address.  This is so that we can change the
 #. reporting address without breaking the translations.
 #: agent/gpg-agent.c:584 agent/preset-passphrase.c:102 agent/protect-tool.c:153
-#: g10/gpg.c:1209 g10/gpgv.c:155 kbx/kbxutil.c:117 scd/scdaemon.c:319
-#: sm/gpgsm.c:667 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:475
+#: g10/gpg.c:1210 g10/gpgv.c:155 kbx/kbxutil.c:117 scd/scdaemon.c:319
+#: sm/gpgsm.c:668 dirmngr/dirmngr-client.c:167 dirmngr/dirmngr.c:475
 #: tools/gpg-connect-agent.c:222 tools/gpgconf.c:170
 #: tools/gpg-check-pattern.c:143
 #, fuzzy
@@ -655,34 +655,34 @@ msgid ""
 "Secret key management for @GNUPG@\n"
 msgstr ""
 
-#: agent/gpg-agent.c:640 g10/gpg.c:1407 scd/scdaemon.c:391 sm/gpgsm.c:815
+#: agent/gpg-agent.c:640 g10/gpg.c:1408 scd/scdaemon.c:391 sm/gpgsm.c:816
 #: dirmngr/dirmngr.c:569
 #, c-format
 msgid "invalid debug-level '%s' given\n"
 msgstr ""
 
-#: agent/gpg-agent.c:1014 g10/gpg.c:4125 g10/gpg.c:4149 sm/gpgsm.c:1771
-#: sm/gpgsm.c:1777
+#: agent/gpg-agent.c:1014 g10/gpg.c:4126 g10/gpg.c:4150 sm/gpgsm.c:1772
+#: sm/gpgsm.c:1778
 #, c-format
 msgid "selected digest algorithm is invalid\n"
 msgstr "vybraný hashovací algoritmus je neplatný\n"
 
 #: agent/gpg-agent.c:1243 agent/gpg-agent.c:2099 common/comopt.c:97
-#: g10/gpg.c:2675 scd/scdaemon.c:555 sm/gpgsm.c:1082 dirmngr/dirmngr.c:1177
+#: g10/gpg.c:2676 scd/scdaemon.c:555 sm/gpgsm.c:1083 dirmngr/dirmngr.c:1177
 #: dirmngr/dirmngr.c:2046
 #, fuzzy, c-format
 #| msgid "reading options from `%s'\n"
 msgid "reading options from '%s'\n"
 msgstr "čítam možnosti z `%s'\n"
 
-#: agent/gpg-agent.c:1369 g10/gpg.c:4080 scd/scdaemon.c:705 sm/gpgsm.c:1703
+#: agent/gpg-agent.c:1369 g10/gpg.c:4081 scd/scdaemon.c:705 sm/gpgsm.c:1704
 #: dirmngr/dirmngr.c:1299 tools/gpg-connect-agent.c:1332 tools/gpgconf.c:768
 #, fuzzy, c-format
 #| msgid "WARNING: \"%s\" is a deprecated option\n"
 msgid "Note: '%s' is not considered an option\n"
 msgstr "VAROVÁNÍ: použitie parametra \"%s\" sa neodporúča\n"
 
-#: agent/gpg-agent.c:1420 g10/gpg.c:3966 g10/misc.c:1203 dirmngr/dirmngr.c:1383
+#: agent/gpg-agent.c:1420 g10/gpg.c:3967 g10/misc.c:1203 dirmngr/dirmngr.c:1383
 #, c-format
 msgid "WARNING: \"%s\" is a deprecated option\n"
 msgstr "VAROVÁNÍ: použitie parametra \"%s\" sa neodporúča\n"
@@ -1093,22 +1093,22 @@ msgstr "problém s agentom: agent vracia 0x%lx\n"
 msgid "can't disable core dumps: %s\n"
 msgstr "nemôžem vypnúť vytváranie core súborov: %s\n"
 
-#: common/sysutils.c:433
+#: common/sysutils.c:438
 #, fuzzy, c-format
 msgid "Warning: unsafe ownership on %s \"%s\"\n"
 msgstr "VAROVANIE: vlastníctvo pre %s nastavené nebezpečne \"%s\"\n"
 
-#: common/sysutils.c:465
+#: common/sysutils.c:470
 #, fuzzy, c-format
 msgid "Warning: unsafe permissions on %s \"%s\"\n"
 msgstr "VAROVANIE: prístupové práva pre %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: common/sysutils.c:954
+#: common/sysutils.c:959
 #, fuzzy, c-format
 msgid "waiting for file '%s' to become accessible ...\n"
 msgstr "aktualizácia zlyhala: %s\n"
 
-#: common/sysutils.c:1099
+#: common/sysutils.c:1104
 #, fuzzy, c-format
 msgid "renaming '%s' to '%s' failed: %s\n"
 msgstr "kódovanie do ASCII formátu zlyhalo: %s\n"
@@ -1552,14 +1552,14 @@ msgstr "verejný kľúč %08lX nebol nájdený: %s\n"
 msgid "waiting for lock %s...\n"
 msgstr "zapisujem tajný kľúč do `%s'\n"
 
-#: common/init.c:183 sm/gpgsm.c:963 dirmngr/dirmngr.c:1083
+#: common/init.c:183 sm/gpgsm.c:964 dirmngr/dirmngr.c:1083
 #: dirmngr/dirmngr.c:1092
 #, c-format
 msgid "%s is too old (need %s, have %s)\n"
 msgstr ""
 
-#: common/homedir.c:276 g10/export.c:3060 g10/export.c:3288 g10/plaintext.c:154
-#: g10/plaintext.c:160
+#: common/homedir.c:276 g10/export.c:3060 g10/export.c:3288 g10/plaintext.c:156
+#: g10/plaintext.c:181
 #, fuzzy, c-format
 #| msgid "error creating `%s': %s\n"
 msgid "error creating '%s': %s\n"
@@ -1663,13 +1663,13 @@ msgstr ""
 "neplatný znak (quoted-printable) v ASCII kódovaní - pravdepodobne bol "
 "použitý nesprávny MTA\n"
 
-#: g10/build-packet.c:1572
+#: g10/build-packet.c:1584
 #, fuzzy, c-format
 #| msgid "not human readable"
 msgid "[ not human readable (%zu bytes: %s%s) ]"
 msgstr "nie je v priamo čitateľnom formáte"
 
-#: g10/build-packet.c:1625
+#: g10/build-packet.c:1637
 #, c-format
 msgid ""
 "a notation name must have only printable characters or spaces, and end with "
@@ -1678,27 +1678,27 @@ msgstr ""
 "meno môže obsahovať len písmená, číslice, bodky, podčiarníky alebo medzery a "
 "končiť s '='\n"
 
-#: g10/build-packet.c:1637 g10/build-packet.c:1749
+#: g10/build-packet.c:1649 g10/build-packet.c:1761
 #, c-format
 msgid "a user notation name must contain the '@' character\n"
 msgstr "hodnota musí obsahovať znak '@'\n"
 
-#: g10/build-packet.c:1643 g10/build-packet.c:1755
+#: g10/build-packet.c:1655 g10/build-packet.c:1767
 #, fuzzy, c-format
 msgid "a notation name must not contain more than one '@' character\n"
 msgstr "hodnota musí obsahovať znak '@'\n"
 
-#: g10/build-packet.c:1661
+#: g10/build-packet.c:1673
 #, c-format
 msgid "a notation value must not use any control characters\n"
 msgstr "hodnota nesmie obsahovať žiadne kontrolné znaky\n"
 
-#: g10/build-packet.c:1733
+#: g10/build-packet.c:1745
 #, fuzzy, c-format
 msgid "a notation name may not contain an '=' character\n"
 msgstr "hodnota musí obsahovať znak '@'\n"
 
-#: g10/build-packet.c:1739
+#: g10/build-packet.c:1751
 #, fuzzy, c-format
 #| msgid ""
 #| "a notation name must have only printable characters or spaces, and end "
@@ -1708,8 +1708,8 @@ msgstr ""
 "meno môže obsahovať len písmená, číslice, bodky, podčiarníky alebo medzery a "
 "končiť s '='\n"
 
-#: g10/build-packet.c:1798 g10/build-packet.c:1809 g10/build-packet.c:1868
-#: g10/build-packet.c:1879
+#: g10/build-packet.c:1810 g10/build-packet.c:1821 g10/build-packet.c:1880
+#: g10/build-packet.c:1891
 #, c-format
 msgid "WARNING: invalid notation data found\n"
 msgstr "VAROVANIE: nájdený neplatný formát zápisu dátumu\n"
@@ -1787,7 +1787,7 @@ msgstr ""
 msgid "server uses an invalid certificate"
 msgstr "vytvoriť revokačný certifikát"
 
-#: g10/call-dirmngr.c:431 g10/gpg.c:4858 sm/call-dirmngr.c:470 sm/keydb.c:1171
+#: g10/call-dirmngr.c:431 g10/gpg.c:4859 sm/call-dirmngr.c:470 sm/keydb.c:1171
 #, fuzzy, c-format
 #| msgid "armor: %s\n"
 msgid "Note: %s\n"
@@ -1805,7 +1805,7 @@ msgid "OpenPGP card no. %s detected\n"
 msgstr ""
 
 #: g10/card-util.c:103 g10/card-util.c:2372 g10/delkey.c:172 g10/keyedit.c:1575
-#: g10/keygen.c:5741 g10/revoke.c:214 g10/revoke.c:639
+#: g10/keygen.c:5746 g10/revoke.c:214 g10/revoke.c:639
 #, fuzzy, c-format
 msgid "can't do this in batch mode\n"
 msgstr "nemožno previesť v dávkovom móde\n"
@@ -1894,7 +1894,7 @@ msgid "URL to retrieve public key: "
 msgstr "žiadny zodpovedajúci verejný kľúč: %s\n"
 
 #: g10/card-util.c:985 g10/dearmor.c:71 g10/dearmor.c:125 g10/encrypt.c:687
-#: g10/encrypt.c:1062 g10/encrypt.c:1183 g10/decrypt-data.c:534
+#: g10/encrypt.c:1062 g10/encrypt.c:1183 g10/decrypt-data.c:533
 #: g10/import.c:424 g10/import.c:774 g10/import.c:833 dirmngr/crlcache.c:662
 #: dirmngr/crlcache.c:667 dirmngr/crlcache.c:921 dirmngr/crlcache.c:927
 #: dirmngr/dirmngr.c:1856 tools/gpgconf.c:529 tools/gpgconf.c:577
@@ -1905,7 +1905,7 @@ msgid "error reading '%s': %s\n"
 msgstr "chyba pri čítaní `%s': %s\n"
 
 #: g10/card-util.c:1010 g10/dearmor.c:74 g10/dearmor.c:128 g10/encrypt.c:690
-#: g10/encrypt.c:1065 g10/encrypt.c:1186 g10/decrypt-data.c:537
+#: g10/encrypt.c:1065 g10/encrypt.c:1186 g10/decrypt-data.c:536
 #: g10/export.c:3078 g10/export.c:3312 dirmngr/crlcache.c:932
 #: tools/gpg-card.c:506 tools/gpg-card.c:513
 #, fuzzy, c-format
@@ -1964,7 +1964,7 @@ msgstr "Vytvorenie kľúča sa nepodarilo: %s\n"
 msgid "not an OpenPGP card"
 msgstr "nenájdené žiadne platné dáta vo formáte OpenPGP.\n"
 
-#: g10/card-util.c:1325 g10/keygen.c:5761 g10/keygen.c:7141
+#: g10/card-util.c:1325 g10/keygen.c:5766 g10/keygen.c:7146
 #, fuzzy, c-format
 msgid "error getting current key info: %s\n"
 msgstr "chyba pri zápise do súboru tajných kľúčov `%s': %s\n"
@@ -2265,14 +2265,14 @@ msgstr "dešifrovanie zlyhalo: %s\n"
 msgid "--output doesn't work for this command\n"
 msgstr "--output pre tento príkaz nefunguje\n"
 
-#: g10/decrypt.c:286 g10/gpg.c:5622 g10/keyring.c:406 g10/keyring.c:757
+#: g10/decrypt.c:286 g10/gpg.c:5623 g10/keyring.c:406 g10/keyring.c:757
 #, fuzzy, c-format
 #| msgid "can't open `%s'\n"
 msgid "can't open '%s'\n"
 msgstr "nemožno otvoriť `%s'\n"
 
 #: g10/delkey.c:89 g10/export.c:2435 g10/export.c:2924 g10/export.c:3045
-#: g10/export.c:3123 g10/getkey.c:2143 g10/gpg.c:5567 g10/keyedit.c:1597
+#: g10/export.c:3123 g10/getkey.c:2143 g10/gpg.c:5568 g10/keyedit.c:1597
 #: g10/keyedit.c:2636 g10/keyedit.c:3061 g10/keyedit.c:5021 g10/keyedit.c:5278
 #: g10/keyedit.c:5305 g10/keylist.c:1014 g10/keyserver.c:1104 g10/revoke.c:230
 #: g10/tofu.c:2172
@@ -2281,7 +2281,7 @@ msgid "key \"%s\" not found: %s\n"
 msgstr "kľúč `%s' nebol nájdený: %s\n"
 
 #: g10/delkey.c:98 g10/export.c:2470 g10/getkey.c:2151 g10/getkey.c:4725
-#: g10/gpg.c:5576 g10/keyedit.c:2608 g10/keyserver.c:1122 g10/revoke.c:236
+#: g10/gpg.c:5577 g10/keyedit.c:2608 g10/keyserver.c:1122 g10/revoke.c:236
 #: g10/revoke.c:666 g10/tofu.c:2180
 #, c-format
 msgid "error reading keyblock: %s\n"
@@ -2392,8 +2392,8 @@ msgstr "nemôžete použiť šifrovací algoritmus \"%s\" v móde %s\n"
 msgid "(use option \"%s\" to override)\n"
 msgstr ""
 
-#: g10/encrypt.c:195 g10/encrypt.c:738 g10/decrypt-data.c:272 g10/gpg.c:4295
-#: g10/gpg.c:4337 sm/decrypt.c:1090 sm/encrypt.c:723 sm/gpgsm.c:1795
+#: g10/encrypt.c:195 g10/encrypt.c:738 g10/decrypt-data.c:272 g10/gpg.c:4296
+#: g10/gpg.c:4338 sm/decrypt.c:1090 sm/encrypt.c:723 sm/gpgsm.c:1796
 #, fuzzy, c-format
 msgid "cipher algorithm '%s' may not be used in %s mode\n"
 msgstr "nemôžete použiť šifrovací algoritmus \"%s\" v móde %s\n"
@@ -2432,8 +2432,8 @@ msgstr "VAROVANIE: súbor `%s' je prázdny\n"
 msgid "'%s' already compressed\n"
 msgstr "`%s' je už skomprimovaný\n"
 
-#: g10/encrypt.c:747 g10/gpg.c:4301 g10/gpg.c:4349 g10/sig-check.c:173
-#: g10/sign.c:470 sm/gpgsm.c:1805 sm/gpgsm.c:1815 sm/sign.c:902 sm/verify.c:512
+#: g10/encrypt.c:747 g10/gpg.c:4302 g10/gpg.c:4350 g10/sig-check.c:173
+#: g10/sign.c:470 sm/gpgsm.c:1806 sm/gpgsm.c:1816 sm/sign.c:902 sm/verify.c:512
 #, fuzzy, c-format
 msgid "digest algorithm '%s' may not be used in %s mode\n"
 msgstr "nemôžete použiť hashovací algoritmus \"%s\" v móde %s\n"
@@ -2631,7 +2631,7 @@ msgstr ""
 msgid "using subkey %s instead of primary key %s\n"
 msgstr "používam sekundárny kľúč %08lX namiesto primárneho kľúča %08lX\n"
 
-#: g10/getkey.c:4654 g10/gpg.c:2268
+#: g10/getkey.c:4654 g10/gpg.c:2269
 #, fuzzy, c-format
 msgid "valid values for option '%s':\n"
 msgstr "neplatný parameter pre import\n"
@@ -2965,13 +2965,13 @@ msgstr ""
 " --list-keys [mená]        vypísať kľúče\n"
 " --fingerprint [mená]      vypísať fingerprinty\n"
 
-#: g10/gpg.c:1231
+#: g10/gpg.c:1232
 #, fuzzy
 #| msgid "Usage: gpg [options] [files] (-h for help)"
 msgid "Usage: @GPG@ [options] [files] (-h for help)"
 msgstr "Použitie: gpg [možnosti] [súbory] (-h pre pomoc)"
 
-#: g10/gpg.c:1234
+#: g10/gpg.c:1235
 #, fuzzy
 #| msgid ""
 #| "Syntax: gpg [options] [files]\n"
@@ -2986,7 +2986,7 @@ msgstr ""
 "podpísať, overiť, šifrovať alebo dešifrovať\n"
 "implicitné operácie závisia od vstupných dát\n"
 
-#: g10/gpg.c:1245 sm/gpgsm.c:691
+#: g10/gpg.c:1246 sm/gpgsm.c:692
 msgid ""
 "\n"
 "Supported algorithms:\n"
@@ -2994,589 +2994,589 @@ msgstr ""
 "\n"
 "Podporované algoritmy:\n"
 
-#: g10/gpg.c:1248
+#: g10/gpg.c:1249
 msgid "Pubkey: "
 msgstr "Verejné kľúče: "
 
-#: g10/gpg.c:1255 g10/keylist.c:431
+#: g10/gpg.c:1256 g10/keylist.c:431
 msgid "Cipher: "
 msgstr "Šifry: "
 
-#: g10/gpg.c:1262
+#: g10/gpg.c:1263
 msgid "Hash: "
 msgstr "Hash: "
 
-#: g10/gpg.c:1269 g10/keylist.c:494
+#: g10/gpg.c:1270 g10/keylist.c:494
 msgid "Compression: "
 msgstr "Kompresia: "
 
-#: g10/gpg.c:1344 sm/gpgsm.c:765
+#: g10/gpg.c:1345 sm/gpgsm.c:766
 #, fuzzy, c-format
 msgid "usage: %s [options] %s\n"
 msgstr "použitie: gpg [možnosti] "
 
-#: g10/gpg.c:1546 sm/gpgsm.c:858
+#: g10/gpg.c:1547 sm/gpgsm.c:859
 #, c-format
 msgid "conflicting commands\n"
 msgstr "konfliktné príkazy\n"
 
-#: g10/gpg.c:1564
+#: g10/gpg.c:1565
 #, fuzzy, c-format
 msgid "no = sign found in group definition '%s'\n"
 msgstr "no = podpis nájdený v definícii skupiny \"%s\"\n"
 
-#: g10/gpg.c:1763
+#: g10/gpg.c:1764
 #, fuzzy, c-format
 msgid "WARNING: unsafe ownership on homedir '%s'\n"
 msgstr "VAROVANIE: vlastníctvo pre %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1766
+#: g10/gpg.c:1767
 #, fuzzy, c-format
 msgid "WARNING: unsafe ownership on configuration file '%s'\n"
 msgstr "VAROVANIE: vlastníctvo pre %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1769
+#: g10/gpg.c:1770
 #, fuzzy, c-format
 msgid "WARNING: unsafe ownership on extension '%s'\n"
 msgstr "VAROVANIE: vlastníctvo pre %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1775
+#: g10/gpg.c:1776
 #, fuzzy, c-format
 msgid "WARNING: unsafe permissions on homedir '%s'\n"
 msgstr "VAROVANIE: prístupové práva pre %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:1778
+#: g10/gpg.c:1779
 #, fuzzy, c-format
 msgid "WARNING: unsafe permissions on configuration file '%s'\n"
 msgstr "VAROVANIE: prístupové práva pre %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:1781
+#: g10/gpg.c:1782
 #, fuzzy, c-format
 msgid "WARNING: unsafe permissions on extension '%s'\n"
 msgstr "VAROVANIE: prístupové práva pre %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:1787
+#: g10/gpg.c:1788
 #, fuzzy, c-format
 msgid "WARNING: unsafe enclosing directory ownership on homedir '%s'\n"
 msgstr "VAROVANIE: vlastníctvo adresára %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1790
+#: g10/gpg.c:1791
 #, fuzzy, c-format
 msgid ""
 "WARNING: unsafe enclosing directory ownership on configuration file '%s'\n"
 msgstr "VAROVANIE: vlastníctvo adresára %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1793
+#: g10/gpg.c:1794
 #, fuzzy, c-format
 msgid "WARNING: unsafe enclosing directory ownership on extension '%s'\n"
 msgstr "VAROVANIE: vlastníctvo adresára %s nastavené nebezpečne \"%s\"\n"
 
-#: g10/gpg.c:1799
+#: g10/gpg.c:1800
 #, fuzzy, c-format
 msgid "WARNING: unsafe enclosing directory permissions on homedir '%s'\n"
 msgstr ""
 "VAROVANIE: prístupové práva adresára %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:1802
+#: g10/gpg.c:1803
 #, fuzzy, c-format
 msgid ""
 "WARNING: unsafe enclosing directory permissions on configuration file '%s'\n"
 msgstr ""
 "VAROVANIE: prístupové práva adresára %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:1805
+#: g10/gpg.c:1806
 #, fuzzy, c-format
 msgid "WARNING: unsafe enclosing directory permissions on extension '%s'\n"
 msgstr ""
 "VAROVANIE: prístupové práva adresára %s nie sú nastavené bezpečne \"%s\"\n"
 
-#: g10/gpg.c:2021
+#: g10/gpg.c:2022
 #, fuzzy, c-format
 msgid "unknown configuration item '%s'\n"
 msgstr "neznáma položka konfigurácie \"%s\"\n"
 
-#: g10/gpg.c:2119
+#: g10/gpg.c:2120
 msgid "display photo IDs during key listings"
 msgstr ""
 
-#: g10/gpg.c:2121
+#: g10/gpg.c:2122
 #, fuzzy
 msgid "show key usage information during key listings"
 msgstr "V súbore tajných kľúčov chýba zodpovedajúci podpis\n"
 
-#: g10/gpg.c:2123
+#: g10/gpg.c:2124
 msgid "show policy URLs during signature listings"
 msgstr ""
 
-#: g10/gpg.c:2125
+#: g10/gpg.c:2126
 #, fuzzy
 msgid "show all notations during signature listings"
 msgstr "V súbore tajných kľúčov chýba zodpovedajúci podpis\n"
 
-#: g10/gpg.c:2127
+#: g10/gpg.c:2128
 msgid "show IETF standard notations during signature listings"
 msgstr ""
 
-#: g10/gpg.c:2131
+#: g10/gpg.c:2132
 msgid "show user-supplied notations during signature listings"
 msgstr ""
 
-#: g10/gpg.c:2137
+#: g10/gpg.c:2138
 #, fuzzy
 msgid "show preferred keyserver URLs during signature listings"
 msgstr "zadané URL pre podpisovú politiku je neplatné\n"
 
-#: g10/gpg.c:2139
+#: g10/gpg.c:2140
 msgid "show user ID validity during key listings"
 msgstr ""
 
-#: g10/gpg.c:2141
+#: g10/gpg.c:2142
 msgid "show revoked and expired user IDs in key listings"
 msgstr ""
 
-#: g10/gpg.c:2143
+#: g10/gpg.c:2144
 msgid "show revoked and expired subkeys in key listings"
 msgstr ""
 
-#: g10/gpg.c:2145
+#: g10/gpg.c:2146
 #, fuzzy
 msgid "show signatures with invalid algorithms during signature listings"
 msgstr "V súbore tajných kľúčov chýba zodpovedajúci podpis\n"
 
-#: g10/gpg.c:2147
+#: g10/gpg.c:2148
 #, fuzzy
 msgid "show the keyring name in key listings"
 msgstr "ukáž v ktorom súbore kľúčov je vypísaný kľúč"
 
-#: g10/gpg.c:2149
+#: g10/gpg.c:2150
 #, fuzzy
 msgid "show expiration dates during signature listings"
 msgstr "V súbore tajných kľúčov chýba zodpovedajúci podpis\n"
 
-#: g10/gpg.c:2151 g10/gpg.c:2153
+#: g10/gpg.c:2152 g10/gpg.c:2154
 #, fuzzy
 #| msgid "set preference list"
 msgid "show preferences"
 msgstr "nastaviť zoznam predvolieb"
 
-#: g10/gpg.c:2155
+#: g10/gpg.c:2156
 #, fuzzy
 #| msgid "change the ownertrust"
 msgid "show ownertrust"
 msgstr "zmeniť dôveryhodnosť vlastníka kľúča"
 
-#: g10/gpg.c:2157
+#: g10/gpg.c:2158
 #, fuzzy
 #| msgid "Critical signature notation: "
 msgid "show trust signature information"
 msgstr "Kritická podpisová notácia: "
 
-#: g10/gpg.c:2279
+#: g10/gpg.c:2280
 #, fuzzy, c-format
 msgid "unknown TOFU policy '%s'\n"
 msgstr "neznámy implicitný adresát `%s'\n"
 
-#: g10/gpg.c:2281
+#: g10/gpg.c:2282
 #, c-format
 msgid "(use \"help\" to list choices)\n"
 msgstr ""
 
-#: g10/gpg.c:2383 g10/keyedit.c:1885
+#: g10/gpg.c:2384 g10/keyedit.c:1885
 #, c-format
 msgid "This command is not allowed while in %s mode.\n"
 msgstr "Tento príkaz nie je v módoch %s dovolený.\n"
 
-#: g10/gpg.c:3092 g10/gpg.c:4047 g10/gpg.c:4059
+#: g10/gpg.c:3093 g10/gpg.c:4048 g10/gpg.c:4060
 #, fuzzy, c-format
 #| msgid "NOTE: %s is not for normal use!\n"
 msgid "Note: %s is not for normal use!\n"
 msgstr "POZNÁMKA: %s nie je pre normálne použitie!\n"
 
-#: g10/gpg.c:3278 g10/gpg.c:3290
+#: g10/gpg.c:3279 g10/gpg.c:3291
 #, fuzzy, c-format
 msgid "'%s' is not a valid signature expiration\n"
 msgstr "%s nie je platná znaková sada\n"
 
-#: g10/gpg.c:3312
+#: g10/gpg.c:3313
 #, fuzzy, c-format
 msgid "\"%s\" is not a proper mail address\n"
 msgstr "Neplatná e-mailová adresa\n"
 
-#: g10/gpg.c:3350 sm/gpgsm.c:1197
+#: g10/gpg.c:3351 sm/gpgsm.c:1198
 #, fuzzy, c-format
 msgid "invalid pinentry mode '%s'\n"
 msgstr "neplatný hashovací algoritmus `%s'\n"
 
-#: g10/gpg.c:3356 sm/gpgsm.c:1207
+#: g10/gpg.c:3357 sm/gpgsm.c:1208
 #, fuzzy, c-format
 msgid "invalid request origin '%s'\n"
 msgstr "neplatný parameter pre import\n"
 
-#: g10/gpg.c:3410
+#: g10/gpg.c:3411
 #, fuzzy, c-format
 msgid "'%s' is not a valid character set\n"
 msgstr "%s nie je platná znaková sada\n"
 
-#: g10/gpg.c:3432 g10/gpg.c:3674 g10/keyedit.c:5983
+#: g10/gpg.c:3433 g10/gpg.c:3675 g10/keyedit.c:5983
 #, fuzzy, c-format
 msgid "could not parse keyserver URL\n"
 msgstr "nemožno použiť URI servera kľúčov - chyba analýzy URI\n"
 
-#: g10/gpg.c:3450
+#: g10/gpg.c:3451
 #, fuzzy, c-format
 msgid "%s:%d: invalid keyserver options\n"
 msgstr "%s:%d: neplatný parameter pre export\n"
 
-#: g10/gpg.c:3453
+#: g10/gpg.c:3454
 #, fuzzy, c-format
 msgid "invalid keyserver options\n"
 msgstr "neplatný parameter pre export\n"
 
-#: g10/gpg.c:3460
+#: g10/gpg.c:3461
 #, c-format
 msgid "%s:%d: invalid import options\n"
 msgstr "%s:%d: neplatný parameter pre import\n"
 
-#: g10/gpg.c:3463
+#: g10/gpg.c:3464
 #, c-format
 msgid "invalid import options\n"
 msgstr "neplatný parameter pre import\n"
 
-#: g10/gpg.c:3469 g10/gpg.c:3484 g10/gpg.c:3489
+#: g10/gpg.c:3470 g10/gpg.c:3485 g10/gpg.c:3490
 #, fuzzy, c-format
 msgid "invalid filter option: %s\n"
 msgstr "neplatný parameter pre import\n"
 
-#: g10/gpg.c:3475
+#: g10/gpg.c:3476
 #, c-format
 msgid "%s:%d: invalid export options\n"
 msgstr "%s:%d: neplatný parameter pre export\n"
 
-#: g10/gpg.c:3478
+#: g10/gpg.c:3479
 #, c-format
 msgid "invalid export options\n"
 msgstr "neplatný parameter pre export\n"
 
-#: g10/gpg.c:3495
+#: g10/gpg.c:3496
 #, fuzzy, c-format
 msgid "%s:%d: invalid list options\n"
 msgstr "%s:%d: neplatný parameter pre import\n"
 
-#: g10/gpg.c:3498
+#: g10/gpg.c:3499
 #, fuzzy, c-format
 msgid "invalid list options\n"
 msgstr "neplatný parameter pre import\n"
 
-#: g10/gpg.c:3506
+#: g10/gpg.c:3507
 msgid "display photo IDs during signature verification"
 msgstr ""
 
-#: g10/gpg.c:3508
+#: g10/gpg.c:3509
 msgid "show policy URLs during signature verification"
 msgstr ""
 
-#: g10/gpg.c:3510
+#: g10/gpg.c:3511
 #, fuzzy
 msgid "show all notations during signature verification"
 msgstr "%s nie je platná znaková sada\n"
 
-#: g10/gpg.c:3512
+#: g10/gpg.c:3513
 msgid "show IETF standard notations during signature verification"
 msgstr ""
 
-#: g10/gpg.c:3516
+#: g10/gpg.c:3517
 msgid "show user-supplied notations during signature verification"
 msgstr ""
 
-#: g10/gpg.c:3520
+#: g10/gpg.c:3521
 #, fuzzy
 msgid "show preferred keyserver URLs during signature verification"
 msgstr "zadané URL pre podpisovú politiku je neplatné\n"
 
-#: g10/gpg.c:3522
+#: g10/gpg.c:3523
 #, fuzzy
 msgid "show user ID validity during signature verification"
 msgstr "%s nie je platná znaková sada\n"
 
-#: g10/gpg.c:3524
+#: g10/gpg.c:3525
 msgid "show revoked and expired user IDs in signature verification"
 msgstr ""
 
-#: g10/gpg.c:3526
+#: g10/gpg.c:3527
 #, fuzzy
 msgid "show only the primary user ID in signature verification"
 msgstr "%s nie je platná znaková sada\n"
 
-#: g10/gpg.c:3533
+#: g10/gpg.c:3534
 #, fuzzy, c-format
 msgid "%s:%d: invalid verify options\n"
 msgstr "%s:%d: neplatný parameter pre export\n"
 
-#: g10/gpg.c:3536
+#: g10/gpg.c:3537
 #, fuzzy, c-format
 msgid "invalid verify options\n"
 msgstr "neplatný parameter pre export\n"
 
-#: g10/gpg.c:3543
+#: g10/gpg.c:3544
 #, c-format
 msgid "unable to set exec-path to %s\n"
 msgstr "nemožno nastaviť exec-path na %s\n"
 
-#: g10/gpg.c:3782
+#: g10/gpg.c:3783
 #, fuzzy, c-format
 msgid "%s:%d: invalid auto-key-locate list\n"
 msgstr "%s:%d: neplatný parameter pre export\n"
 
-#: g10/gpg.c:3785
+#: g10/gpg.c:3786
 #, c-format
 msgid "invalid auto-key-locate list\n"
 msgstr ""
 
-#: g10/gpg.c:3794
+#: g10/gpg.c:3795
 #, fuzzy, c-format
 msgid "invalid argument for option \"%.50s\"\n"
 msgstr "neplatný parameter pre import\n"
 
-#: g10/gpg.c:3861
+#: g10/gpg.c:3862
 #, fuzzy, c-format
 msgid "error parsing value for option '%s': %s\n"
 msgstr "chyba pri vytváraní hesla: %s\n"
 
-#: g10/gpg.c:4036 sm/gpgsm.c:1655
+#: g10/gpg.c:4037 sm/gpgsm.c:1656
 #, c-format
 msgid "WARNING: program may create a core file!\n"
 msgstr "VAROVANIE: program môže vytvoriť súbor core!\n"
 
-#: g10/gpg.c:4040 sm/gpgsm.c:1661
+#: g10/gpg.c:4041 sm/gpgsm.c:1662
 #, c-format
 msgid "WARNING: %s overrides %s\n"
 msgstr "VAROVANIE: %s prepíše %s\n"
 
-#: g10/gpg.c:4049
+#: g10/gpg.c:4050
 #, c-format
 msgid "%s not allowed with %s!\n"
 msgstr "Nie je dovolené používať %s s %s!\n"
 
-#: g10/gpg.c:4052
+#: g10/gpg.c:4053
 #, c-format
 msgid "%s makes no sense with %s!\n"
 msgstr "%s nedáva s %s zmysel!\n"
 
-#: g10/gpg.c:4067 sm/gpgsm.c:1690 dirmngr/dirmngr.c:1314
+#: g10/gpg.c:4068 sm/gpgsm.c:1691 dirmngr/dirmngr.c:1314
 #, c-format
 msgid "WARNING: running with faked system time: "
 msgstr ""
 
-#: g10/gpg.c:4088
+#: g10/gpg.c:4089
 #, fuzzy, c-format
 msgid "will not run with insecure memory due to %s\n"
 msgstr "zapisujem tajný kľúč do `%s'\n"
 
-#: g10/gpg.c:4119 g10/gpg.c:4143 sm/gpgsm.c:1765
+#: g10/gpg.c:4120 g10/gpg.c:4144 sm/gpgsm.c:1766
 #, c-format
 msgid "selected cipher algorithm is invalid\n"
 msgstr "vybraný šifrovací algoritmus je neplatný\n"
 
-#: g10/gpg.c:4131
+#: g10/gpg.c:4132
 #, fuzzy, c-format
 msgid "selected compression algorithm is invalid\n"
 msgstr "vybraný šifrovací algoritmus je neplatný\n"
 
-#: g10/gpg.c:4137
+#: g10/gpg.c:4138
 #, c-format
 msgid "selected certification digest algorithm is invalid\n"
 msgstr "vybraný hashovací algoritmus je neplatný\n"
 
-#: g10/gpg.c:4152
+#: g10/gpg.c:4153
 #, c-format
 msgid "completes-needed must be greater than 0\n"
 msgstr "položka completes-needed musí byť väčšia ako 0\n"
 
-#: g10/gpg.c:4154
+#: g10/gpg.c:4155
 #, c-format
 msgid "marginals-needed must be greater than 1\n"
 msgstr "položka marginals-needed musí byť väčšia ako 1\n"
 
-#: g10/gpg.c:4156
+#: g10/gpg.c:4157
 #, fuzzy, c-format
 msgid "max-cert-depth must be in the range from 1 to 255\n"
 msgstr "položka max-cert-depth musí byť v rozmedzí od 1 do 255\n"
 
-#: g10/gpg.c:4158
+#: g10/gpg.c:4159
 #, c-format
 msgid "invalid default-cert-level; must be 0, 1, 2, or 3\n"
 msgstr "neplatná implicitná úroveň certifikácie; musí byť 0, 1, 2 alebo 3\n"
 
-#: g10/gpg.c:4160
+#: g10/gpg.c:4161
 #, c-format
 msgid "invalid min-cert-level; must be 1, 2, or 3\n"
 msgstr "neplatná minimálna úroveň certifikácie; musí byť 0, 1, 2 alebo 3\n"
 
-#: g10/gpg.c:4164
+#: g10/gpg.c:4165
 #, fuzzy, c-format
 #| msgid "NOTE: simple S2K mode (0) is strongly discouraged\n"
 msgid "Note: simple S2K mode (0) is strongly discouraged\n"
 msgstr "POZNÁMKA: jednoduchý mód S2K (0) je dôrazne nedoporučovaný\n"
 
-#: g10/gpg.c:4168
+#: g10/gpg.c:4169
 #, c-format
 msgid "invalid S2K mode; must be 0, 1 or 3\n"
 msgstr "neplatný mód S2K; musí byť 0, 1 alebo 3\n"
 
-#: g10/gpg.c:4175
+#: g10/gpg.c:4176
 #, c-format
 msgid "invalid default preferences\n"
 msgstr "neplatné defaultné predvoľby\n"
 
-#: g10/gpg.c:4179
+#: g10/gpg.c:4180
 #, c-format
 msgid "invalid personal cipher preferences\n"
 msgstr "neplatné užívateľské predvoľby pre šifrovanie\n"
 
-#: g10/gpg.c:4183
+#: g10/gpg.c:4184
 #, c-format
 msgid "invalid personal digest preferences\n"
 msgstr "neplatné užívateľské predvoľby pre hashovanie\n"
 
-#: g10/gpg.c:4187
+#: g10/gpg.c:4188
 #, c-format
 msgid "invalid personal compress preferences\n"
 msgstr "neplatné užívateľské predvoľby pre kompresiu\n"
 
-#: g10/gpg.c:4196 g10/gpg.c:4201
+#: g10/gpg.c:4197 g10/gpg.c:4202
 #, fuzzy, c-format
 #| msgid "keysize invalid; using %u bits\n"
 msgid "chunk size invalid - using %d\n"
 msgstr "neplatná dĺžka kľúča; použijem %u bitov\n"
 
-#: g10/gpg.c:4244
+#: g10/gpg.c:4245
 #, c-format
 msgid "%s does not yet work with %s\n"
 msgstr "%s ešte nepracuje s %s\n"
 
-#: g10/gpg.c:4307
+#: g10/gpg.c:4308
 #, fuzzy, c-format
 msgid "compression algorithm '%s' may not be used in %s mode\n"
 msgstr "nemôžete použiť kompresný algoritmus \"%s\" v móde %s\n"
 
-#: g10/gpg.c:4472
+#: g10/gpg.c:4473
 #, c-format
 msgid "failed to initialize the TrustDB: %s\n"
 msgstr "nemôžem inicializovať databázu dôvery: %s\n"
 
-#: g10/gpg.c:4484
+#: g10/gpg.c:4485
 #, c-format
 msgid "WARNING: recipients (-r) given without using public key encryption\n"
 msgstr ""
 "VAROVANIE: daný adresát (-r) bez použitia šifrovania s verejným kľúčom\n"
 
-#: g10/gpg.c:4559
+#: g10/gpg.c:4560
 #, fuzzy, c-format
 msgid "symmetric encryption of '%s' failed: %s\n"
 msgstr "dešifrovanie zlyhalo: %s\n"
 
-#: g10/gpg.c:4609
+#: g10/gpg.c:4610
 #, c-format
 msgid "you cannot use --symmetric --encrypt with --s2k-mode 0\n"
 msgstr ""
 
-#: g10/gpg.c:4612
+#: g10/gpg.c:4613
 #, fuzzy, c-format
 msgid "you cannot use --symmetric --encrypt in %s mode\n"
 msgstr ""
 "použitie %s nie je v móde %s dovolené\n"
 "\n"
 
-#: g10/gpg.c:4671
+#: g10/gpg.c:4672
 #, c-format
 msgid "you cannot use --symmetric --sign --encrypt with --s2k-mode 0\n"
 msgstr ""
 
-#: g10/gpg.c:4674
+#: g10/gpg.c:4675
 #, fuzzy, c-format
 msgid "you cannot use --symmetric --sign --encrypt in %s mode\n"
 msgstr ""
 "použitie %s nie je v móde %s dovolené\n"
 "\n"
 
-#: g10/gpg.c:5118 g10/keyserver.c:1724
+#: g10/gpg.c:5119 g10/keyserver.c:1724
 #, c-format
 msgid "keyserver send failed: %s\n"
 msgstr "nepodarilo poslať kľúč na server: %s\n"
 
-#: g10/gpg.c:5123 g10/keyserver.c:1688
+#: g10/gpg.c:5124 g10/keyserver.c:1688
 #, c-format
 msgid "keyserver receive failed: %s\n"
 msgstr "nepodarilo sa prijať kľúč zo servera: %s\n"
 
-#: g10/gpg.c:5129
+#: g10/gpg.c:5130
 #, c-format
 msgid "key export failed: %s\n"
 msgstr "nepodaril sa export kľúča: %s\n"
 
-#: g10/gpg.c:5142 g10/gpg.c:5153
+#: g10/gpg.c:5143 g10/gpg.c:5154
 #, fuzzy, c-format
 #| msgid "key export failed: %s\n"
 msgid "export as ssh key failed: %s\n"
 msgstr "nepodaril sa export kľúča: %s\n"
 
-#: g10/gpg.c:5165
+#: g10/gpg.c:5166
 #, c-format
 msgid "keyserver search failed: %s\n"
 msgstr "nepodarilo sa nájsť server: %s\n"
 
-#: g10/gpg.c:5178
+#: g10/gpg.c:5179
 #, c-format
 msgid "keyserver refresh failed: %s\n"
 msgstr "aktualizácia servera zlyhala: %s\n"
 
-#: g10/gpg.c:5247
+#: g10/gpg.c:5248
 #, c-format
 msgid "dearmoring failed: %s\n"
 msgstr "dekódovanie z ASCII formátu zlyhalo: %s\n"
 
-#: g10/gpg.c:5258
+#: g10/gpg.c:5259
 #, c-format
 msgid "enarmoring failed: %s\n"
 msgstr "kódovanie do ASCII formátu zlyhalo: %s\n"
 
-#: g10/gpg.c:5382
+#: g10/gpg.c:5383
 #, fuzzy, c-format
 #| msgid "invalid hash algorithm `%s'\n"
 msgid "invalid hash algorithm '%s'\n"
 msgstr "neplatný hashovací algoritmus `%s'\n"
 
-#: g10/gpg.c:5534 g10/tofu.c:2160
+#: g10/gpg.c:5535 g10/tofu.c:2160
 #, fuzzy, c-format
 msgid "error parsing key specification '%s': %s\n"
 msgstr "chyba pri vytváraní hesla: %s\n"
 
-#: g10/gpg.c:5545
+#: g10/gpg.c:5546
 #, c-format
 msgid "'%s' does not appear to be a valid key ID, fingerprint or keygrip\n"
 msgstr ""
 
-#: g10/gpg.c:5601
+#: g10/gpg.c:5602
 #, c-format
 msgid "WARNING: no command supplied.  Trying to guess what you mean ...\n"
 msgstr ""
 
-#: g10/gpg.c:5612
+#: g10/gpg.c:5613
 #, c-format
 msgid "Go ahead and type your message ...\n"
 msgstr "Začnite písať svoju správu ...\n"
 
-#: g10/gpg.c:5969
+#: g10/gpg.c:5972
 #, c-format
 msgid "the given certification policy URL is invalid\n"
 msgstr "zadané URL pre certifikačnú politiku je neplatné\n"
 
-#: g10/gpg.c:5971
+#: g10/gpg.c:5974
 #, c-format
 msgid "the given signature policy URL is invalid\n"
 msgstr "zadané URL pre podpisovú politiku je neplatné\n"
 
-#: g10/gpg.c:6004
+#: g10/gpg.c:6007
 #, fuzzy, c-format
 msgid "the given preferred keyserver URL is invalid\n"
 msgstr "zadané URL pre podpisovú politiku je neplatné\n"
@@ -3832,7 +3832,7 @@ msgstr ""
 msgid "you can update your preferences with: gpg --edit-key %s updpref save\n"
 msgstr ""
 
-#: g10/import.c:2050 g10/import.c:3294
+#: g10/import.c:2050 g10/import.c:3297
 #, fuzzy, c-format
 msgid "key %s: no user ID\n"
 msgstr "kľúč %08lX: chyba identifikátor užívateľa\n"
@@ -3842,7 +3842,7 @@ msgstr "kľúč %08lX: chyba identifikátor užívateľa\n"
 msgid "key %s: %s\n"
 msgstr "preskočený `%s': %s\n"
 
-#: g10/import.c:2057 g10/import.c:3266
+#: g10/import.c:2057 g10/import.c:3269
 msgid "rejected by import screener"
 msgstr ""
 
@@ -3868,7 +3868,7 @@ msgstr "kľúč %08lX: chýba platný identifikátor užívateľa\n"
 msgid "this may be caused by a missing self-signature\n"
 msgstr "môže to byť spôsobené chýbajúcim podpisom kľúča ním samým\n"
 
-#: g10/import.c:2237 g10/import.c:3677
+#: g10/import.c:2237 g10/import.c:3737
 #, fuzzy, c-format
 msgid "key %s: public key not found: %s\n"
 msgstr "kľúč %08lX: verejný kľúč nenájdený: %s\n"
@@ -3883,7 +3883,7 @@ msgstr "kľúč %08lX: nový kľúč - preskočený\n"
 msgid "no writable keyring found: %s\n"
 msgstr "nenájdený zapisovateľný súbor kľúčov (keyring): %s\n"
 
-#: g10/import.c:2288 g10/import.c:2391 g10/import.c:3759
+#: g10/import.c:2288 g10/import.c:2391 g10/import.c:3826
 #, fuzzy, c-format
 #| msgid "error writing keyring `%s': %s\n"
 msgid "error writing keyring '%s': %s\n"
@@ -3954,23 +3954,23 @@ msgstr "kľúč %08lX: \"%s\" %d nových identifikátorov užívateľa\n"
 msgid "key %s: \"%s\" not changed\n"
 msgstr "kľúč %08lX: \"%s\" bez zmeny\n"
 
-#: g10/import.c:2924 g10/import.c:3128
+#: g10/import.c:2927 g10/import.c:3131
 #, fuzzy, c-format
 msgid "key %s: secret key imported\n"
 msgstr "kľúč %08lX: tajný kľúč importovaný\n"
 
-#: g10/import.c:2932
+#: g10/import.c:2935
 #, fuzzy, c-format
 #| msgid "skipped: secret key already present\n"
 msgid "key %s: secret key already exists\n"
 msgstr "preskočené: tajný kľúč je už v databáze\n"
 
-#: g10/import.c:2940
+#: g10/import.c:2943
 #, fuzzy, c-format
 msgid "key %s: error sending to agent: %s\n"
 msgstr "chyba pri posielaní na `%s': %s\n"
 
-#: g10/import.c:3101
+#: g10/import.c:3104
 #, c-format
 msgid "key %s: card reference is overridden by key material\n"
 msgstr ""
@@ -3983,199 +3983,209 @@ msgstr ""
 #. * Instead, user should be suggested to run 'gpg --card-status',
 #. * then, references to a card will be automatically created
 #. * again.
-#: g10/import.c:3118
+#: g10/import.c:3121
 #, c-format
 msgid "To migrate '%s', with each smartcard, run: %s\n"
 msgstr ""
 
-#: g10/import.c:3265
+#: g10/import.c:3268
 #, fuzzy, c-format
 msgid "secret key %s: %s\n"
 msgstr "tajný kľúč `%s' nebol nájdený: %s\n"
 
-#: g10/import.c:3286 g10/import.c:3325
+#: g10/import.c:3289 g10/import.c:3328
 #, fuzzy, c-format
 msgid "importing secret keys not allowed\n"
 msgstr "zapisujem tajný kľúč do `%s'\n"
 
-#: g10/import.c:3313
+#: g10/import.c:3316
 #, fuzzy, c-format
 msgid "key %s: secret key with invalid cipher %d - skipped\n"
 msgstr "kľúč %08lX: tajný kľúč bez verejného kľúča %d - preskočené\n"
 
-#: g10/import.c:3451 g10/pkclist.c:75 g10/revoke.c:775
+#: g10/import.c:3454 g10/pkclist.c:75 g10/revoke.c:775
 msgid "No reason specified"
 msgstr "Dôvod nebol špecifikovaný"
 
-#: g10/import.c:3452 g10/pkclist.c:77 g10/revoke.c:777
+#: g10/import.c:3455 g10/pkclist.c:77 g10/revoke.c:777
 msgid "Key is superseded"
 msgstr "Kľúč je nahradený"
 
-#: g10/import.c:3453 g10/pkclist.c:79 g10/revoke.c:776
+#: g10/import.c:3456 g10/pkclist.c:79 g10/revoke.c:776
 msgid "Key has been compromised"
 msgstr "Kľúč bol skompromitovaný"
 
-#: g10/import.c:3454 g10/pkclist.c:81 g10/revoke.c:778
+#: g10/import.c:3457 g10/pkclist.c:81 g10/revoke.c:778
 msgid "Key is no longer used"
 msgstr "Kľúč sa už nepoužíva"
 
-#: g10/import.c:3455 g10/pkclist.c:83 g10/revoke.c:779
+#: g10/import.c:3458 g10/pkclist.c:83 g10/revoke.c:779
 msgid "User ID is no longer valid"
 msgstr "Identifikátor užívateľa už neplatí"
 
-#: g10/import.c:3624 g10/keylist.c:1452 g10/keylist.c:1636 g10/pkclist.c:87
+#: g10/import.c:3627 g10/keylist.c:1452 g10/keylist.c:1636 g10/pkclist.c:87
 #, c-format
 msgid "reason for revocation: "
 msgstr "dôvod na revokáciu: "
 
-#: g10/import.c:3670
+#: g10/import.c:3699
+#, fuzzy, c-format
+msgid "key %s: can't locate keyblock: %s\n"
+msgstr "kľúč %08lX: nemôžem nájsť originálny blok kľúča: %s\n"
+
+#: g10/import.c:3708
+#, fuzzy, c-format
+msgid "key %s: can't read keyblock: %s\n"
+msgstr "kľúč %08lX: nemôžem čítať originálny blok kľúča: %s\n"
+
+#: g10/import.c:3730
 #, fuzzy, c-format
 msgid "key %s: no public key - can't apply revocation certificate\n"
 msgstr ""
 "kľúč %08lX: chýba verejný kľúč - nemôžem aplikovať revokačný certifikát\n"
 
-#: g10/import.c:3706
+#: g10/import.c:3766
 #, fuzzy, c-format
 msgid "key %s: can't locate original keyblock: %s\n"
 msgstr "kľúč %08lX: nemôžem nájsť originálny blok kľúča: %s\n"
 
-#: g10/import.c:3713
+#: g10/import.c:3773
 #, fuzzy, c-format
 msgid "key %s: can't read original keyblock: %s\n"
 msgstr "kľúč %08lX: nemôžem čítať originálny blok kľúča: %s\n"
 
-#: g10/import.c:3733
+#: g10/import.c:3800
 #, fuzzy, c-format
 msgid "key %s: invalid revocation certificate: %s - rejected\n"
 msgstr "kľúč %08lX: neplatný revokačný certifikát: %s - zamietnuté\n"
 
-#: g10/import.c:3768
+#: g10/import.c:3835
 #, fuzzy, c-format
 msgid "key %s: \"%s\" revocation certificate imported\n"
 msgstr "kľúč %08lX: \"%s\" revokačný certifikát importovaný\n"
 
-#: g10/import.c:3854
+#: g10/import.c:3921
 #, fuzzy, c-format
 msgid "key %s: no user ID for signature\n"
 msgstr "kľúč %08lX: neexistuje id užívateľa pre podpis\n"
 
-#: g10/import.c:3871
+#: g10/import.c:3938
 #, fuzzy, c-format
 msgid "key %s: unsupported public key algorithm on user ID \"%s\"\n"
 msgstr ""
 "kľúč %08lX: nepodporovaný algoritmus verejného kľúča u užívateľského id \"%s"
 "\"\n"
 
-#: g10/import.c:3873
+#: g10/import.c:3940
 #, fuzzy, c-format
 msgid "key %s: invalid self-signature on user ID \"%s\"\n"
 msgstr ""
 "kľúč %08lX: neplatný podpis kľúča ním samým u užívateľského id \"%s\"\n"
 
-#: g10/import.c:3890 g10/import.c:3918 g10/import.c:3974
+#: g10/import.c:3957 g10/import.c:3985 g10/import.c:4041
 #, fuzzy, c-format
 msgid "key %s: unsupported public key algorithm\n"
 msgstr "kľúč %08lX: nepodporovaný algoritmus verejného kľúča\n"
 
-#: g10/import.c:3891
+#: g10/import.c:3958
 #, fuzzy, c-format
 msgid "key %s: invalid direct key signature\n"
 msgstr "kľúč %08lX: podpis kľúča ním samým (direct key signature)\n"
 
-#: g10/import.c:3905
+#: g10/import.c:3972
 #, fuzzy, c-format
 msgid "key %s: no subkey for key binding\n"
 msgstr "kľúč %08lX: neexistuje podkľúč pre viazanie kľúčov\n"
 
-#: g10/import.c:3920
+#: g10/import.c:3987
 #, fuzzy, c-format
 msgid "key %s: invalid subkey binding\n"
 msgstr "kľúč %08lX: neplatná väzba podkľúča\n"
 
-#: g10/import.c:3939
+#: g10/import.c:4006
 #, fuzzy, c-format
 msgid "key %s: removed multiple subkey binding\n"
 msgstr "kľúč %08lX: zmazaná viacnásobná väzba podkľúča\n"
 
-#: g10/import.c:3963
+#: g10/import.c:4030
 #, fuzzy, c-format
 msgid "key %s: no subkey for key revocation\n"
 msgstr "kľúč %08lX: neexistuje podkľúč na revokáciu kľúča\n"
 
-#: g10/import.c:3976
+#: g10/import.c:4043
 #, fuzzy, c-format
 msgid "key %s: invalid subkey revocation\n"
 msgstr "kľúč %08lX: neplatný revokačný podkľúč\n"
 
-#: g10/import.c:3991
+#: g10/import.c:4058
 #, fuzzy, c-format
 msgid "key %s: removed multiple subkey revocation\n"
 msgstr "kľúč %08lX: zmazaná viacnásobná revokácia podkľúča\n"
 
-#: g10/import.c:4038
+#: g10/import.c:4105
 #, fuzzy, c-format
 msgid "key %s: skipped user ID \"%s\"\n"
 msgstr "kľúč %08lX: identifikátor užívateľa preskočený '"
 
-#: g10/import.c:4065
+#: g10/import.c:4132
 #, fuzzy, c-format
 msgid "key %s: skipped subkey\n"
 msgstr "kľúč %08lX: podkľúč preskočený\n"
 
-#: g10/import.c:4097
+#: g10/import.c:4164
 #, fuzzy, c-format
 msgid "key %s: non exportable signature (class 0x%02X) - skipped\n"
 msgstr "kľúč %08lX: podpis nie je exportovateľný (trieda %02x) - preskočené\n"
 
-#: g10/import.c:4108
+#: g10/import.c:4175
 #, fuzzy, c-format
 msgid "key %s: revocation certificate at wrong place - skipped\n"
 msgstr "kľúč %08lX: revokačný certifikát na zlom mieste - preskočené \n"
 
-#: g10/import.c:4136
+#: g10/import.c:4203
 #, fuzzy, c-format
 msgid "key %s: invalid revocation certificate: %s - skipped\n"
 msgstr "kľúč %08lX: neplatný revokačný certifikát: %s - preskočené\n"
 
-#: g10/import.c:4160
+#: g10/import.c:4227
 #, fuzzy, c-format
 msgid "key %s: subkey signature in wrong place - skipped\n"
 msgstr "kľúč %08lX: podpis subkľúča na zlom mieste - preskočené \n"
 
-#: g10/import.c:4168
+#: g10/import.c:4235
 #, fuzzy, c-format
 msgid "key %s: unexpected signature class (0x%02X) - skipped\n"
 msgstr "kľúč %08lX: neočakávaná podpisová trieda (0x%02X) - preskočené\n"
 
-#: g10/import.c:4341
+#: g10/import.c:4408
 #, fuzzy, c-format
 msgid "key %s: duplicated user ID detected - merged\n"
 msgstr "kľúč %08lX: zistený duplikovaný identifikátor užívateľa - zlúčený\n"
 
-#: g10/import.c:4448
+#: g10/import.c:4515
 #, fuzzy, c-format
 msgid "key %s: duplicated subkeys detected - merged\n"
 msgstr "kľúč %08lX: zistený duplikovaný identifikátor užívateľa - zlúčený\n"
 
-#: g10/import.c:4513
+#: g10/import.c:4580
 #, fuzzy, c-format
 msgid "WARNING: key %s may be revoked: fetching revocation key %s\n"
 msgstr ""
 "VAROVANIE: kľúč %08lX môže byť revokovaný: skúšam získať revokačný kľúč "
 "%08lX\n"
 
-#: g10/import.c:4529
+#: g10/import.c:4596
 #, fuzzy, c-format
 msgid "WARNING: key %s may be revoked: revocation key %s not present.\n"
 msgstr ""
 "VAROVANIE: kľúč %08lX môže byť revokovaný: revokačný kľúč %08lX nenájdený.\n"
 
-#: g10/import.c:4595
+#: g10/import.c:4662
 #, fuzzy, c-format
 msgid "key %s: \"%s\" revocation certificate added\n"
 msgstr "kľúč %08lX: pridaný revokačný certifikát \"%s\"\n"
 
-#: g10/import.c:4633
+#: g10/import.c:4700
 #, fuzzy, c-format
 msgid "key %s: direct key signature added\n"
 msgstr "kľúč %08lX: podpis kľúča ním samým (direct key signature)\n"
@@ -5929,13 +5939,13 @@ msgstr ""
 msgid "WARNING: v4 is specified, but overridden by v5.\n"
 msgstr ""
 
-#: g10/keygen.c:5539 g10/keygen.c:5613 g10/keygen.c:5631 g10/keygen.c:5660
-#: g10/keygen.c:6130 g10/keygen.c:6761 g10/keygen.c:7109 g10/keygen.c:7219
+#: g10/keygen.c:5544 g10/keygen.c:5618 g10/keygen.c:5636 g10/keygen.c:5665
+#: g10/keygen.c:6135 g10/keygen.c:6766 g10/keygen.c:7114 g10/keygen.c:7224
 #, c-format
 msgid "Key generation failed: %s\n"
 msgstr "Vytvorenie kľúča sa nepodarilo: %s\n"
 
-#: g10/keygen.c:5548
+#: g10/keygen.c:5553
 #, c-format
 msgid ""
 "About to create a key for:\n"
@@ -5943,74 +5953,74 @@ msgid ""
 "\n"
 msgstr ""
 
-#: g10/keygen.c:5550
+#: g10/keygen.c:5555
 msgid "Continue? (Y/n) "
 msgstr ""
 
-#: g10/keygen.c:5571
+#: g10/keygen.c:5576
 #, fuzzy, c-format
 msgid "A key for \"%s\" already exists\n"
 msgstr "`%s' je už skomprimovaný\n"
 
-#: g10/keygen.c:5576
+#: g10/keygen.c:5581
 #, fuzzy
 msgid "Create anyway? (y/N) "
 msgstr "Použiť napriek tomu tento kľúč? "
 
-#: g10/keygen.c:5582
+#: g10/keygen.c:5587
 #, fuzzy, c-format
 msgid "creating anyway\n"
 msgstr "vytvoriť nový pár kľúčov"
 
-#: g10/keygen.c:6117
+#: g10/keygen.c:6122
 #, c-format
 msgid "Note: Use \"%s %s\" for a full featured key generation dialog.\n"
 msgstr ""
 
-#: g10/keygen.c:6162
+#: g10/keygen.c:6167
 #, c-format
 msgid "Key generation canceled.\n"
 msgstr "Vytváranie kľúča bolo zrušené.\n"
 
-#: g10/keygen.c:6221
+#: g10/keygen.c:6226
 #, fuzzy, c-format
 msgid "can't create backup file '%s': %s\n"
 msgstr "nemôžem vytvoriť `%s': %s\n"
 
-#: g10/keygen.c:6241
+#: g10/keygen.c:6246
 #, fuzzy, c-format
 msgid "Note: backup of card key saved to '%s'\n"
 msgstr "POZNÁMKA: platnosť tajného kľúča %08lX skončila %s\n"
 
-#: g10/keygen.c:6352
+#: g10/keygen.c:6357
 msgid ""
 "Warning: Although the key has been written to the card, a backup file was\n"
 "         not properly written to the disk.  You may want to repeat the\n"
 "         entire operation or just create a new encryption key on the card.\n"
 msgstr ""
 
-#: g10/keygen.c:6430 g10/keygen.c:6693
+#: g10/keygen.c:6435 g10/keygen.c:6698
 #, fuzzy, c-format
 #| msgid "writing public key to `%s'\n"
 msgid "writing public key to '%s'\n"
 msgstr "zapisujem verejný kľúč do `%s'\n"
 
-#: g10/keygen.c:6685
+#: g10/keygen.c:6690
 #, c-format
 msgid "no writable public keyring found: %s\n"
 msgstr "nenájdený zapisovateľný súbor verejných kľúčov (pubring): %s\n"
 
-#: g10/keygen.c:6701
+#: g10/keygen.c:6706
 #, fuzzy, c-format
 #| msgid "error writing public keyring `%s': %s\n"
 msgid "error writing public keyring '%s': %s\n"
 msgstr "chyba pri zápise do súboru verejných kľúčov `%s': %s\n"
 
-#: g10/keygen.c:6729
+#: g10/keygen.c:6734
 msgid "public and secret key created and signed.\n"
 msgstr "verejný a tajný kľúč boli vytvorené a podpísané.\n"
 
-#: g10/keygen.c:6748
+#: g10/keygen.c:6753
 #, fuzzy
 msgid ""
 "Note that this key cannot be used for encryption.  You may want to use\n"
@@ -6019,13 +6029,13 @@ msgstr ""
 "Tento kľúč nemôže byť použitý na šifrovanie. Pre vytvorenie\n"
 "sekundárneho kľúča na tento účel môžete použiť príkaz \"--edit-key\".\n"
 
-#: g10/keygen.c:6773
+#: g10/keygen.c:6778
 #, fuzzy, c-format
 #| msgid "WARNING: This key has been revoked by its owner!\n"
 msgid "Note: The key has been created with one or more ADSK!\n"
 msgstr "VAROVANIE: Tento kľúč bol revokovaný jeho vlastníkom!\n"
 
-#: g10/keygen.c:6946 g10/keygen.c:7169
+#: g10/keygen.c:6951 g10/keygen.c:7174
 #, c-format
 msgid ""
 "key has been created %lu second in future (time warp or clock problem)\n"
@@ -6033,7 +6043,7 @@ msgstr ""
 "kľúč bol vytvorený %lu sekund v budúcnosti (došlo k zmene času alebo\n"
 "je problém so systémovým časom)\n"
 
-#: g10/keygen.c:6948 g10/keygen.c:7171
+#: g10/keygen.c:6953 g10/keygen.c:7176
 #, c-format
 msgid ""
 "key has been created %lu seconds in future (time warp or clock problem)\n"
@@ -6041,23 +6051,23 @@ msgstr ""
 "kľúč bol vytvorený %lu sekund v budúcnosti (došlo k zmene času alebo\n"
 "je problém so systémovým časom)\n"
 
-#: g10/keygen.c:6959 g10/keygen.c:7182
+#: g10/keygen.c:6964 g10/keygen.c:7187
 #, fuzzy, c-format
 #| msgid "NOTE: creating subkeys for v3 keys is not OpenPGP compliant\n"
 msgid "Note: creating subkeys for v3 keys is not OpenPGP compliant\n"
 msgstr "POZNÁMKA: vytvorenie podkľúča pre kľúče v3 nie je v súlade s OpenPGP\n"
 
-#: g10/keygen.c:6973 g10/keygen.c:6975
+#: g10/keygen.c:6978 g10/keygen.c:6980
 #, c-format
 msgid "Secret parts of primary key are not available.\n"
 msgstr "Tajné časti primárneho kľúča nie sú dostupné.\n"
 
-#: g10/keygen.c:6982 g10/keygen.c:6984
+#: g10/keygen.c:6987 g10/keygen.c:6989
 #, fuzzy, c-format
 msgid "Secret parts of primary key are stored on-card.\n"
 msgstr "Tajné časti primárneho kľúča nie sú dostupné.\n"
 
-#: g10/keygen.c:7022 g10/keygen.c:7196
+#: g10/keygen.c:7027 g10/keygen.c:7201
 #, fuzzy
 msgid "Really create? (y/N) "
 msgstr "Skutočne vytvoriť? "
@@ -6445,7 +6455,7 @@ msgid "decryption failed: %s\n"
 msgstr "dešifrovanie zlyhalo: %s\n"
 
 #: g10/mainproc.c:947 g10/mainproc.c:2646 sm/decrypt.c:1350 sm/encrypt.c:841
-#: sm/verify.c:668
+#: sm/verify.c:702
 #, c-format
 msgid "operation forced to fail due to unfulfilled compliance rules\n"
 msgstr ""
@@ -6740,6 +6750,12 @@ msgstr ""
 msgid "unknown weak digest '%s'\n"
 msgstr "neznáma trieda podpisu"
 
+#: g10/misc.c:2029 g10/plaintext.c:229
+#, fuzzy, c-format
+#| msgid "NOTE: old default options file `%s' ignored\n"
+msgid "Note: partial file '%s' removed\n"
+msgstr "POZNÁMKA: starý implicitný súbor s možnosťami `%s ignorovaný'\n"
+
 #: g10/openfile.c:78
 #, fuzzy, c-format
 #| msgid "File `%s' exists. "
@@ -6782,13 +6798,13 @@ msgid "WARNING: potentially insecure symmetrically encrypted session key\n"
 msgstr ""
 "VAROVANIE: pravdepodobne nebezpečný symetricky šifrovaný kľúč sedenia\n"
 
-#: g10/parse-packet.c:1959
+#: g10/parse-packet.c:1973
 #, fuzzy, c-format
 #| msgid "Critical signature notation: "
 msgid "Unknown critical signature notation: "
 msgstr "Kritická podpisová notácia: "
 
-#: g10/parse-packet.c:2087
+#: g10/parse-packet.c:2101
 #, c-format
 msgid "subpacket of type %d has critical bit set\n"
 msgstr "podpaket typu %d má nastavený kritický bit\n"
@@ -7287,36 +7303,36 @@ msgstr "kľúč %08lX: chyba identifikátor užívateľa\n"
 msgid "Note: key %s has no preference for %s\n"
 msgstr "kľúč %08lX: chyba identifikátor užívateľa\n"
 
-#: g10/plaintext.c:85
+#: g10/plaintext.c:87
 #, c-format
 msgid "data not saved; use option \"--output\" to save it\n"
 msgstr "dáta neboli uložené; na ich uloženie použite prepínač \"--output\"\n"
 
-#: g10/plaintext.c:599
+#: g10/plaintext.c:684
 msgid "Detached signature.\n"
 msgstr "Podpis oddelený od dokumentu.\n"
 
-#: g10/plaintext.c:607
+#: g10/plaintext.c:692
 msgid "Please enter name of data file: "
 msgstr "Prosím, vložte názov dátového súboru: "
 
-#: g10/plaintext.c:644
+#: g10/plaintext.c:729
 #, c-format
 msgid "reading stdin ...\n"
 msgstr "čítam štandardný vstup (stdin) ...\n"
 
-#: g10/plaintext.c:689
+#: g10/plaintext.c:774
 #, c-format
 msgid "no signed data\n"
 msgstr "chýbajú podpísané dáta\n"
 
-#: g10/plaintext.c:707
+#: g10/plaintext.c:792
 #, fuzzy, c-format
 #| msgid "can't open signed data `%s'\n"
 msgid "can't open signed data '%s'\n"
 msgstr "nemôžem otvoriť podpísané dáta '%s'\n"
 
-#: g10/plaintext.c:742
+#: g10/plaintext.c:827
 #, fuzzy, c-format
 msgid "can't open signed data fd=%d: %s\n"
 msgstr "nemôžem otvoriť podpísané dáta '%s'\n"
@@ -7652,12 +7668,18 @@ msgstr ""
 "predpokladám neplatný podpis kľúčom %08lX, pretože je nastavený neznámy "
 "kritický bit\n"
 
-#: g10/sig-check.c:1234
+#: g10/sig-check.c:1207
+#, fuzzy, c-format
+msgid "key %s: no public key - can't check revocation signature.\n"
+msgstr ""
+"kľúč %08lX: chýba verejný kľúč - nemôžem aplikovať revokačný certifikát\n"
+
+#: g10/sig-check.c:1263
 #, fuzzy, c-format
 msgid "key %s: no subkey for subkey revocation signature\n"
 msgstr "kľúč %08lX: neexistuje podkľúč pre revokáciu kľúča\n"
 
-#: g10/sig-check.c:1237
+#: g10/sig-check.c:1266
 #, fuzzy, c-format
 msgid "key %s: no subkey for subkey binding signature\n"
 msgstr "kľúč %08lX: neexistuje podkľúč pre viazanie podkľúčov\n"
@@ -9781,13 +9803,13 @@ msgstr "automaticky odpovedať NIE na väčšinu otázok"
 msgid "|FILE|write an audit log to FILE"
 msgstr "|SÚBOR|nahrať rozširujúci modul SÚBOR"
 
-#: sm/gpgsm.c:670
+#: sm/gpgsm.c:671
 #, fuzzy
 #| msgid "Usage: gpg [options] [files] (-h for help)"
 msgid "Usage: @GPGSM@ [options] [files] (-h for help)"
 msgstr "Použitie: gpg [možnosti] [súbory] (-h pre pomoc)"
 
-#: sm/gpgsm.c:673
+#: sm/gpgsm.c:674
 #, fuzzy
 msgid ""
 "Syntax: @GPGSM@ [options] [files]\n"
@@ -9798,33 +9820,38 @@ msgstr ""
 "podpísať, overiť, šifrovať alebo dešifrovať\n"
 "implicitné operácie závisia od vstupných dát\n"
 
-#: sm/gpgsm.c:881
+#: sm/gpgsm.c:882
 #, fuzzy, c-format
 msgid "Note: won't be able to encrypt to '%s': %s\n"
 msgstr "nemôžem sa pripojiť k `%s': %s\n"
 
-#: sm/gpgsm.c:892
+#: sm/gpgsm.c:893
 #, fuzzy, c-format
 msgid "unknown validation model '%s'\n"
 msgstr "neznámy implicitný adresát `%s'\n"
 
-#: sm/gpgsm.c:1751
+#: sm/gpgsm.c:1752
 #, fuzzy, c-format
 #| msgid "cipher algorithm %d%s is unknown or disabled\n"
 msgid "given cipher algorithm '%s' is unknown - using '%s'\n"
 msgstr "šifrovací algoritmus %d%s je neznamý alebo je zakázaný\n"
 
-#: sm/gpgsm.c:1864
+#: sm/gpgsm.c:1865
 #, fuzzy, c-format
 msgid "importing common certificates '%s'\n"
 msgstr "zapisujem do '%s'\n"
 
-#: sm/gpgsm.c:1910
+#: sm/gpgsm.c:1911
 #, fuzzy, c-format
 msgid "can't sign using '%s': %s\n"
 msgstr "nemôžem zavrieť `%s': %s\n"
 
-#: sm/gpgsm.c:2347
+#: sm/gpgsm.c:2148
+#, fuzzy, c-format
+msgid "can't open outputfile: %s\n"
+msgstr "nemožno otvoriť súbor: %s\n"
+
+#: sm/gpgsm.c:2374
 #, c-format
 msgid "invalid command (there is no implicit command)\n"
 msgstr ""
@@ -10984,7 +11011,7 @@ msgstr "riadok je príliš dlhý\n"
 msgid "%s:%u: invalid fingerprint detected\n"
 msgstr "chyba: neplatný odtlačok\n"
 
-#: dirmngr/dirmngr.c:1934 dirmngr/dirmngr.c:1960 tools/gpgconf-comp.c:3593
+#: dirmngr/dirmngr.c:1934 dirmngr/dirmngr.c:1960 tools/gpgconf-comp.c:3598
 #, fuzzy, c-format
 msgid "%s:%u: read error: %s\n"
 msgstr "chyba pri čítaní: %s\n"
@@ -11570,21 +11597,21 @@ msgstr ""
 msgid "Note: Use the command \"%s%s\" to get details.\n"
 msgstr "Prosím, najskôr použite príkaz \"toggle\" (prepnúť).\n"
 
-#: tools/gpgconf-comp.c:2867
+#: tools/gpgconf-comp.c:2872
 #, c-format
 msgid "External verification of component %s failed"
 msgstr ""
 
-#: tools/gpgconf-comp.c:2997
+#: tools/gpgconf-comp.c:3002
 msgid "Note that group specifications are ignored\n"
 msgstr ""
 
-#: tools/gpgconf-comp.c:3597
+#: tools/gpgconf-comp.c:3602
 #, fuzzy, c-format
 msgid "error closing '%s'\n"
 msgstr "chyba pri čítaní `%s': %s\n"
 
-#: tools/gpgconf-comp.c:3599
+#: tools/gpgconf-comp.c:3604
 #, fuzzy, c-format
 msgid "error parsing '%s'\n"
 msgstr "chyba pri čítaní `%s': %s\n"
@@ -12038,11 +12065,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "run without asking a user"
 #~ msgstr "Ukončiť bez uloženia? "
-
-#, fuzzy
-#~| msgid "NOTE: old default options file `%s' ignored\n"
-#~ msgid "Note: old default options file '%s' ignored\n"
-#~ msgstr "POZNÁMKA: starý implicitný súbor s možnosťami `%s ignorovaný'\n"
 
 #, fuzzy
 #~ msgid ""
@@ -13641,10 +13663,6 @@ msgstr ""
 
 #~ msgid "sorry, can't do this in batch mode\n"
 #~ msgstr "nemožno previesť v dávkovom móde\n"
-
-#, fuzzy
-#~ msgid "can't open file `%s': %s\n"
-#~ msgstr "nemožno otvoriť súbor: %s\n"
 
 #~ msgid "key %08lX: key has been revoked!\n"
 #~ msgstr "kľúč %08lX: kľúč bol revokovaný\n"
