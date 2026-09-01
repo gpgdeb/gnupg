@@ -1419,12 +1419,15 @@ write_selfsigs (ctrl_t ctrl, kbnode_t root, PKT_public_key *psk,
 }
 
 
-/* Write the key binding signature.  If TIMESTAMP is not NULL use the
-   signature creation time.  PRI_PSK is the key use for signing.
-   SUB_PSK is a key used to create a back-signature; that one is only
-   used if USE has the PUBKEY_USAGE_SIG capability.  */
+/* Append a key binding signature to the last subkey in KEYBLOCK.
+ * PRI_PSK is the key used to create (sign) the key binding signature
+ * this is usuallay the primary key.  SUB_PSK is a key used to create
+ * a back-signature; this is required if the PUBKEY_USAGE_SIG
+ * capability is passed in USE (which gives the key usage).  TIMESTAMP
+ * is the signature creation time with 0 meaning "now".  CACHE_NONCE
+ * is passed to the agent to indentify the passphrase cache slot.  */
 static int
-write_keybinding (ctrl_t ctrl, kbnode_t root,
+write_keybinding (ctrl_t ctrl, kbnode_t keyblock,
                   PKT_public_key *pri_psk, PKT_public_key *sub_psk,
                   unsigned int use, u32 timestamp, const char *cache_nonce)
 {
@@ -1439,7 +1442,7 @@ write_keybinding (ctrl_t ctrl, kbnode_t root,
     log_info(_("writing key binding signature\n"));
 
   /* Get the primary pk packet from the tree.  */
-  node = find_kbnode (root, PKT_PUBLIC_KEY);
+  node = find_kbnode (keyblock, PKT_PUBLIC_KEY);
   if (!node)
     BUG();
   pri_pk = node->pkt->pkt.public_key;
@@ -1450,7 +1453,7 @@ write_keybinding (ctrl_t ctrl, kbnode_t root,
 
   /* Find the last subkey. */
   sub_pk = NULL;
-  for (node = root; node; node = node->next )
+  for (node = keyblock; node; node = node->next )
     {
       if (node->pkt->pkttype == PKT_PUBLIC_SUBKEY)
         sub_pk = node->pkt->pkt.public_key;
@@ -1490,7 +1493,7 @@ write_keybinding (ctrl_t ctrl, kbnode_t root,
   pkt = xmalloc_clear ( sizeof *pkt );
   pkt->pkttype = PKT_SIGNATURE;
   pkt->pkt.signature = sig;
-  add_kbnode (root, new_kbnode (pkt) );
+  add_kbnode (keyblock, new_kbnode (pkt) );
   return err;
 }
 
@@ -5712,15 +5715,16 @@ quick_generate_keypair (ctrl_t ctrl, const char *uid, const char *algostr,
 /*
  * Generate a keypair (fname is only used in batch mode) If
  * CARD_SERIALNO is not NULL the function will create the keys on an
- * OpenPGP Card.  If CARD_BACKUP_KEY has been set and CARD_SERIALNO is
- * NOT NULL, the encryption key for the card is generated on the host,
- * imported to the card and a backup file created by gpg-agent.  If
- * FULL is not set only the basic prompts are used (except for batch
+ * OpenPGP Card.  If GENFLAGS has the GENERATE_KEYPAIR_CARDBACKUP bit
+ * set and CARD_SERIALNO is NOT NULL, the encryption key for the card
+ * is generated on the host, imported to the card and a backup file
+ * created by gpg-agent.  If GENFLAGS has the GENERATE_KEYPAIR_FULL
+ * bit cleared only the basic prompts are used (except for batch
  * mode).
  */
 void
-generate_keypair (ctrl_t ctrl, int full, const char *fname,
-                  const char *card_serialno, int card_backup_key)
+generate_keypair (ctrl_t ctrl, const char *fname,
+                  const char *card_serialno, unsigned int genflags)
 {
   gpg_error_t err;
   unsigned int nbits;
@@ -5732,10 +5736,6 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
   struct para_data_s *para = NULL;
   struct para_data_s *r;
   struct output_control_s outctrl;
-
-#ifndef ENABLE_CARD_SUPPORT
-  (void)card_backup_key;
-#endif
 
   memset( &outctrl, 0, sizeof( outctrl ) );
 
@@ -5785,53 +5785,57 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
       r->next = para;
       para = r;
 
-      r = xcalloc (1, sizeof *r + 20 );
-      r->key = pSUBKEYTYPE;
-      sprintf( r->u.value, "%d", info.key_attr[1].algo );
-      r->next = para;
-      para = r;
-      r = xcalloc (1, sizeof *r + 20 );
-      r->key = pSUBKEYUSAGE;
-      strcpy (r->u.value, "encrypt");
-      r->next = para;
-      para = r;
-      if (info.key_attr[1].algo == PUBKEY_ALGO_RSA)
+      if (!(genflags & GENERATE_KEYPAIR_CARDPRIMARY))
         {
           r = xcalloc (1, sizeof *r + 20 );
-          r->key = pSUBKEYLENGTH;
-          sprintf( r->u.value, "%u", info.key_attr[1].nbits);
+          r->key = pSUBKEYTYPE;
+          sprintf( r->u.value, "%d", info.key_attr[1].algo );
           r->next = para;
           para = r;
-        }
-      else if (info.key_attr[1].algo == PUBKEY_ALGO_ECDSA
-               || info.key_attr[1].algo == PUBKEY_ALGO_EDDSA
-               || info.key_attr[1].algo == PUBKEY_ALGO_ECDH)
-        {
-          r = xcalloc (1, sizeof *r + strlen (info.key_attr[1].curve));
-          r->key = pSUBKEYCURVE;
-          strcpy (r->u.value, info.key_attr[1].curve);
+          r = xcalloc (1, sizeof *r + 20 );
+          r->key = pSUBKEYUSAGE;
+          strcpy (r->u.value, "encrypt");
           r->next = para;
           para = r;
-        }
+          if (info.key_attr[1].algo == PUBKEY_ALGO_RSA)
+            {
+              r = xcalloc (1, sizeof *r + 20 );
+              r->key = pSUBKEYLENGTH;
+              sprintf( r->u.value, "%u", info.key_attr[1].nbits);
+              r->next = para;
+              para = r;
+            }
+          else if (info.key_attr[1].algo == PUBKEY_ALGO_ECDSA
+                   || info.key_attr[1].algo == PUBKEY_ALGO_EDDSA
+                   || info.key_attr[1].algo == PUBKEY_ALGO_ECDH)
+            {
+              r = xcalloc (1, sizeof *r + strlen (info.key_attr[1].curve));
+              r->key = pSUBKEYCURVE;
+              strcpy (r->u.value, info.key_attr[1].curve);
+              r->next = para;
+              para = r;
+            }
 
-      r = xcalloc (1, sizeof *r + 20 );
-      r->key = pAUTHKEYTYPE;
-      sprintf( r->u.value, "%d", info.key_attr[2].algo );
-      r->next = para;
-      para = r;
-
-      if (card_backup_key)
-        {
-          r = xcalloc (1, sizeof *r + 1);
-          r->key = pCARDBACKUPKEY;
-          strcpy (r->u.value, "1");
+          r = xcalloc (1, sizeof *r + 20 );
+          r->key = pAUTHKEYTYPE;
+          sprintf( r->u.value, "%d", info.key_attr[2].algo );
           r->next = para;
           para = r;
+
+          if ((genflags & GENERATE_KEYPAIR_CARDBACKUP))
+            {
+              r = xcalloc (1, sizeof *r + 1);
+              r->key = pCARDBACKUPKEY;
+              strcpy (r->u.value, "1");
+              r->next = para;
+              para = r;
+            }
         }
 #endif /*ENABLE_CARD_SUPPORT*/
     }
-  else if (full)  /* Full featured key generation.  */
+  else if ((genflags & GENERATE_KEYPAIR_FULL))
     {
+      /* This is the full featured key generation.  */
       int subkey_algo;
       char *key_from_hexgrip = NULL;
       int cardkey;
@@ -6148,7 +6152,7 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
     }
 
 
-  expire = full? ask_expire_interval (0, NULL)
+  expire = (genflags & GENERATE_KEYPAIR_FULL)? ask_expire_interval (0, NULL)
                : parse_expire_string (default_expiration_interval);
   r = xcalloc (1, sizeof *r + 20);
   r->key = pKEYEXPIRE;
@@ -6161,7 +6165,7 @@ generate_keypair (ctrl_t ctrl, int full, const char *fname,
   r->next = para;
   para = r;
 
-  uid = ask_user_id (0, full, NULL);
+  uid = ask_user_id (0, !!(genflags & GENERATE_KEYPAIR_FULL), NULL);
   if (!uid)
     {
       log_error(_("Key generation canceled.\n"));
@@ -7115,6 +7119,89 @@ generate_subkeypair (ctrl_t ctrl, kbnode_t keyblock, const char *algostr,
       write_status_error (cardkey? "card_key_generate":"key_generate", err);
       print_status_key_not_created ( NULL );
     }
+  return err;
+}
+
+
+/* Append the subkey SUB_PK to the KEYBLOCK but first verify that this
+ * key is not yet part of that keyblock; return GPG_ERR_EEXIST in that
+ * case.  USE gives the usage to set for the new key (take care: no
+ * check for compatibiliy with the algorithm is done).  Return 0 if
+ * the key was sucessfully added to keyblock.  On error KEYBLOCK might
+ * be modified but missing the key binding; the caller should take
+ * care of this.  */
+gpg_error_t
+append_subkey_to_keyblock (ctrl_t ctrl, kbnode_t keyblock,
+                           PKT_public_key *sub_pk, int use)
+{
+  gpg_error_t err = 0;
+  kbnode_t node;
+  PKT_public_key *pri_pk = NULL;
+  u32 cur_time;
+  PACKET *pkt;
+
+  /* First make a copy of SUB_PK so that we do not interfere with the
+   * callers copy.  */
+  sub_pk = copy_public_key (NULL, sub_pk);
+
+  /* Break out the primary key.  */
+  node = find_kbnode (keyblock, PKT_PUBLIC_KEY);
+  if (!node)
+    {
+      log_error ("Oops; primary key missing in keyblock!\n");
+      err = gpg_error (GPG_ERR_BUG);
+      goto leave;
+    }
+  pri_pk = node->pkt->pkt.public_key;
+
+  cur_time = make_timestamp();
+  /* FIXME: Factor out the next two checks.  */
+  if (pri_pk->timestamp > cur_time)
+    {
+      ulong d = pri_pk->timestamp - cur_time;
+      log_info (d==1 ? _("key has been created %lu second "
+                         "in future (time warp or clock problem)\n")
+                     : _("key has been created %lu seconds "
+                         "in future (time warp or clock problem)\n"), d );
+	if (!opt.ignore_time_conflict)
+          {
+	    err = gpg_error (GPG_ERR_TIME_CONFLICT);
+	    goto leave;
+          }
+    }
+
+  if (pri_pk->version < 4)
+    {
+      log_info (_("Note: creating subkeys for v3 keys "
+                  "is not OpenPGP compliant\n"));
+      err = gpg_error (GPG_ERR_NOT_SUPPORTED);
+      goto leave;
+    }
+
+  /* Check that the key is not yet on the keyblock  */
+  for (node = keyblock; node; node = node->next)
+    if ((node->pkt->pkttype == PKT_PUBLIC_KEY
+         || node->pkt->pkttype == PKT_PUBLIC_SUBKEY)
+        && !cmp_public_keys (node->pkt->pkt.public_key, sub_pk))
+      {
+        log_info (_("key \"%s\" is already on this keyblock\n"),
+                  keystr_from_pk (sub_pk));
+        err = gpg_error (GPG_ERR_EEXIST);
+        goto leave;
+      }
+
+  /* Append a copy of the subkey to the keyblock.  */
+  pkt = xmalloc_clear (sizeof *pkt);
+  pkt->pkttype = PKT_PUBLIC_SUBKEY;
+  pkt->pkt.public_key = sub_pk;
+  sub_pk = NULL;
+  add_kbnode (keyblock, new_kbnode (pkt));
+  /* Write a new keybinding.  */
+  err = write_keybinding (ctrl, keyblock, pri_pk, sub_pk,
+                          use, cur_time, NULL);
+
+ leave:
+  free_public_key (sub_pk);
   return err;
 }
 

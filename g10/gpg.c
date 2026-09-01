@@ -4742,6 +4742,8 @@ main (int argc, char **argv)
 	      wrong_args("--decrypt [filename]");
 	    if( (rc = decrypt_message (ctrl, fname, NULL) ))
               {
+                /* Delete .part file. */
+                gnupg_rollback_partial_file ();
                 write_status_failure ("decrypt", rc);
                 log_error("decrypt_message failed: %s\n", gpg_strerror (rc) );
               }
@@ -4940,7 +4942,7 @@ main (int argc, char **argv)
           {
 	    if( argc > 1 )
 		wrong_args("--generate-key [parameterfile]");
-	    generate_keypair (ctrl, 0, argc? *argv : NULL, NULL, 0);
+	    generate_keypair (ctrl, argc? *argv : NULL, NULL, 0);
           }
 	else
           {
@@ -4950,12 +4952,12 @@ main (int argc, char **argv)
                   wrong_args("--generate-key [parameterfile]");
 
                 opt.batch = 1;
-                generate_keypair (ctrl, 0, argc? *argv : NULL, NULL, 0);
+                generate_keypair (ctrl, argc? *argv : NULL, NULL, 0);
               }
             else if (argc)
               wrong_args ("--generate-key");
             else
-              generate_keypair (ctrl, 0, NULL, NULL, 0);
+              generate_keypair (ctrl, NULL, NULL, 0);
           }
 	break;
 
@@ -4966,13 +4968,14 @@ main (int argc, char **argv)
           {
 	    if (argc > 1)
               wrong_args ("--full-generate-key [parameterfile]");
-	    generate_keypair (ctrl, 1, argc? *argv : NULL, NULL, 0);
+	    generate_keypair (ctrl, argc? *argv : NULL, NULL,
+                              GENERATE_KEYPAIR_FULL);
           }
 	else
           {
 	    if (argc)
               wrong_args("--full-generate-key");
-	    generate_keypair (ctrl, 1, NULL, NULL, 0);
+	    generate_keypair (ctrl, NULL, NULL, GENERATE_KEYPAIR_FULL);
 	}
 	break;
 
@@ -5678,13 +5681,13 @@ g10_exit( int rc )
   else if (opt.assert_pubkey_algos && assert_pubkey_algo_false)
     rc = 1;
 
+  gnupg_commit_partial_file ();
+
   /* If we had an error but not printed an error message, do it now.
    * Note that write_status_failure will never print a second failure
    * status line. */
   if (rc)
-    write_status_failure ("gpg-exit", gpg_error (GPG_ERR_GENERAL));
-
-  gnupg_process_partial_file (rc);
+      write_status_failure ("gpg-exit", gpg_error (GPG_ERR_GENERAL));
 
   gcry_control (GCRYCTL_UPDATE_RANDOM_SEED_FILE);
   if (DBG_CLOCK)
