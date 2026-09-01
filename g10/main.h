@@ -117,7 +117,8 @@ u32 buffer_to_u32( const byte *buffer );
 const byte *get_session_marker( size_t *rlen );
 gpg_error_t gnupg_register_partial_file (const char *fname_part,
                                          const char *fname);
-void gnupg_process_partial_file (int rc);
+gpg_error_t gnupg_rollback_partial_file (void);
+gpg_error_t gnupg_commit_partial_file (void);
 
 enum gcry_cipher_algos map_cipher_openpgp_to_gcry (cipher_algo_t algo);
 #define openpgp_cipher_open(_a,_b,_c,_d) \
@@ -321,8 +322,13 @@ unsigned int ask_key_flags (int algo, int subkey, unsigned int current);
 const char *ask_curve (int *algo, int *subkey_algo, const char *current);
 void quick_generate_keypair (ctrl_t ctrl, const char *uid, const char *algostr,
                              const char *usagestr, const char *expirestr);
-void generate_keypair (ctrl_t ctrl, int full, const char *fname,
-                       const char *card_serialno, int card_backup_key);
+
+#define GENERATE_KEYPAIR_FULL        1  /* Full key generation dialog.  */
+#define GENERATE_KEYPAIR_CARDBACKUP  2  /* Create card key with backup. */
+#define GENERATE_KEYPAIR_CARDPRIMARY 4  /* Only the primary card key.   */
+void generate_keypair (ctrl_t ctrl, const char *fname,
+                       const char *card_serialno, unsigned int genflags);
+
 int keygen_set_std_prefs (const char *string,int personal);
 PKT_user_id *keygen_get_std_prefs (void);
 int keygen_add_key_expire( PKT_signature *sig, void *opaque );
@@ -343,6 +349,8 @@ gpg_error_t generate_subkeypair (ctrl_t ctrl, kbnode_t keyblock,
                                  const char *algostr,
                                  const char *usagestr,
                                  const char *expirestr);
+gpg_error_t append_subkey_to_keyblock (ctrl_t ctrl, kbnode_t keyblock,
+                                       PKT_public_key *sub_pk, int use);
 #ifdef ENABLE_CARD_SUPPORT
 gpg_error_t generate_card_subkeypair (ctrl_t ctrl, kbnode_t pub_keyblock,
                                       int keyno, const char *serialno);
@@ -540,7 +548,8 @@ void change_pin (int no, int allow_admin);
 void card_status (ctrl_t ctrl, estream_t fp, const char *serialno);
 void card_edit (ctrl_t ctrl, strlist_t commands);
 gpg_error_t  card_generate_subkey (ctrl_t ctrl, kbnode_t pub_keyblock);
-int  card_store_subkey (KBNODE node, int use, strlist_t *processed_keys);
+int  card_store_subkey (kbnode_t node, int use, strlist_t *processed_keys,
+                        int *r_selected_use);
 #endif
 
 /*-- migrate.c --*/

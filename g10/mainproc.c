@@ -862,11 +862,25 @@ proc_encrypted (CTX c, PACKET *pkt)
       /* All is fine or for an MDC message the MDC failed but the
        * --ignore-mdc-error option is active.  For compatibility
        * reasons we issue GOODMDC also for AEAD messages.  */
-      write_status (STATUS_DECRYPTION_OKAY);
-      if (opt.verbose > 1)
-        log_info(_("decryption okay\n"));
+      int partfailed;
 
-      if (pkt->pkt.encrypted->aead_algo)
+      if (gnupg_commit_partial_file ())
+        {
+          partfailed = 1;
+          log_error ("renaming partial file failed\n");
+          write_status (STATUS_DECRYPTION_FAILED);
+        }
+      else
+        {
+          partfailed = 0;
+          write_status (STATUS_DECRYPTION_OKAY);
+          if (opt.verbose > 1)
+            log_info(_("decryption okay\n"));
+        }
+
+      if (partfailed)
+        ;
+      else if (pkt->pkt.encrypted->aead_algo)
         {
           write_status (STATUS_GOODMDC);
           compliance_de_vs |= 4;
@@ -1934,6 +1948,14 @@ print_good_bad_signature (int statno, const char *keyid_str, kbnode_t un,
                                 un? un->pkt->pkt.user_id->name:"[?]",
                                 un? un->pkt->pkt.user_id->len:3,
                                 -1);
+  if (statno == STATUS_BADSIG)
+    {
+      gnupg_isotime_t timestr;
+
+      epoch2isotime (timestr, sig->timestamp);
+      write_status_text_and_buffer (STATUS_SIGINFO, timestr,
+                                    NULL, 0, -1);
+    }
 
   if (un)
     p = utf8_to_native (un->pkt->pkt.user_id->name,
