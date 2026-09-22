@@ -689,7 +689,8 @@ force the creation of the key will show up.
 If @var{algo} or @var{usage} are given, only the primary key is
 created and no prompts are shown.  To specify an expiration date but
 still create a primary and a subkey use ``default'',
-``future-default'', or ``pqc'' for @var{algo} and ``default'' for
+``future-default'', or ``pqc''@footnote{With --allow-9980
+``pqc9980'' may also be used} for @var{algo} and ``default'' for
 @var{usage}.  For a description of these optional arguments see the
 command @code{--quick-add-key}; the value ``pqc'' create a key with a
 quantum-resistant encryption encryption subkey.  The @var{usage}
@@ -3352,6 +3353,12 @@ Change the buffer size of the IOBUFs to @var{n} kilobyte.  Using 0
 prints the current size.  Note well: This is a maintainer only option
 and may thus be changed or removed at any time without notice.
 
+@item --debug-no-libgcrypt
+@opindex debug-no-libgcrypt
+Do no use the debug flags "crypto" and "mpi" to enable similar debug
+features in Libgcrypt.  Note well: This is a maintainer only option
+and may thus be changed or removed at any time without notice.
+
 @item --debug-allow-large-chunks
 @opindex debug-allow-large-chunks
 To facilitate software tests and experiments this option allows one to
@@ -3980,6 +3987,17 @@ This is an obsolete option and is not used anywhere.
 @item --allow-multiple-messages
 @item --no-allow-multiple-messages
 These are obsolete options; they have no more effect since GnuPG 2.2.8.
+
+
+@item --allow-9980
+@opindex allow-9980
+Enabling this option allows the processing of some data formats
+specified by RFC-9980 (PQC for OpenPGP) and its dependencies.  It is
+implictly enabled when using the compliance modes ``fips'' or
+``de-vs''.  Due the bloated specification the use of this option is
+not suggested.  The standard GnuPG mode is more oriented at the
+classic PGP and thus LibrePGP specification which also provide PQC
+support but in a more lean and PGP-style way.
 
 @item --enable-special-filenames
 @opindex enable-special-filenames
