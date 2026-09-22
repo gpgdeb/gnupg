@@ -29,7 +29,7 @@ min_automake_version="1.16.3"
 m4_define([mym4_package],[gnupg])
 m4_define([mym4_major], [2])
 m4_define([mym4_minor], [5])
-m4_define([mym4_micro], [22])
+m4_define([mym4_micro], [23])
 
 # To start a new development series, i.e a new major or minor number
 # you need to mark an arbitrary commit before the first beta release
@@ -60,7 +60,7 @@ AC_DEFINE_UNQUOTED(GNUPG_SWDB_TAG, "gnupg26", [swdb tag for this branch])
 NEED_GPGRT_VERSION=1.56
 
 NEED_LIBGCRYPT_API=1
-NEED_LIBGCRYPT_VERSION=1.11.0
+NEED_LIBGCRYPT_VERSION=1.12.0
 
 NEED_LIBASSUAN_API=3
 NEED_LIBASSUAN_VERSION=3.0.0
@@ -1650,6 +1650,7 @@ if test "$GCC" = yes; then
         fi
         if test x"$_gcc_wopt" = xyes ; then
           mycflags="$mycflags -W -Wno-sign-compare -Wno-format-zero-length"
+          mycflags="$mycflags -Wformat-nonliteral"
           mycflags="$mycflags -Wno-missing-field-initializers"
         fi
 

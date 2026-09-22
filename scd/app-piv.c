@@ -18,7 +18,7 @@
  */
 
 /* Some notes:
- * - Specs for PIV are at http://dx.doi.org/10.6028/NIST.SP.800-73-4
+ * - Specs for PIV are at https://doi.org/10.6028/NIST.SP.800-73pt1-5
  * - https://developers.yubico.com/PIV/Introduction/PIV_attestation.html
  *
  * - Access control matrix:
@@ -213,6 +213,7 @@ struct app_local_s {
   struct
   {
     unsigned int yubikey:1;  /* This is on a Yubikey.  */
+    unsigned int nitrokey:1;  /* This is on a nitrokey.  */
   } flags;
 
   /* Keep track on whether we cache a certain PIN so that we get it
@@ -309,7 +310,7 @@ get_cached_data (app_t app, int tag,
 
   /* Unless the Discovery Object or the BIT Group Template is
    * requested, remove the outer container.
-   * (SP800-73.4 Part 2, section 3.1.2)   */
+   * (SP 800-73-5 Part 2, section 3.1.2)   */
   if (tag == 0x7E || tag == 0x7F61)
     ;
   else if (len && *p == 0x53 && (s = find_tlv (p, len, 0x53, &n)))
@@ -2205,8 +2206,12 @@ do_sign (app_t app, ctrl_t ctrl, const char *keyidstr, int hashalgo,
       goto leave;
     }
 
-  /* According to table 4b of SP800-73-4 the signing key always
-   * requires a verify.  */
+  /* According to table 5 of SP 800-73-5 Part 1 the signing key always
+   * requires a verify. */
+  /* On the other hand, Yubikey has an extensions of PIN/touch policy
+   * for each key.  It's user's control.
+   * https://developers.yubico.com/PIV/Introduction/Yubico_extensions.html
+   */
   switch (keyref)
     {
     case 0x9c: force_verify = 1; break;
@@ -3644,7 +3649,7 @@ do_reselect (app_t app, ctrl_t ctrl)
   /* An extra check which should not be necessary because the caller
    * should have made sure that a re-select is only called for
    * appropriate cards.  */
-  if (!app->app_local->flags.yubikey)
+  if (!app->app_local->flags.yubikey && !app->app_local->flags.nitrokey)
     return gpg_error (GPG_ERR_NOT_SUPPORTED);
 
   err = iso7816_select_application (app_get_slot (app),
@@ -3764,6 +3769,8 @@ app_select_piv (app_t app)
 
   if (app->card->cardtype == CARDTYPE_YUBIKEY)
     app->app_local->flags.yubikey = 1;
+  else if (app->card->cardtype == CARDTYPE_NITROKEY)
+    app->app_local->flags.nitrokey = 1;
 
   /* If we don't have a s/n construct it from the CHUID.  */
   if (!APP_CARD(app)->serialno)

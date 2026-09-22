@@ -1387,19 +1387,18 @@ w32_get_file_integrity_level (const char *path)
 static void
 show_version_gnupg (estream_t fp, const char *prefix)
 {
-  char *fname, *p, *p0;
+  char *fname, *p;
   size_t n;
   estream_t verfp;
   char *line = NULL;
   size_t line_len = 0;
   ssize_t length;
+  int in_build = 0;
 
-  p = gnupg_myproc_self ();
-  es_fprintf (fp, "%s%sGnuPG %s (%s)\n%s%s\n%s%s\n", prefix, *prefix?"":"* ",
+  es_fprintf (fp, "%s%sGnuPG %s (%s)\n%sOS: %s\n",
+              prefix, *prefix?"":"* ",
               gpgrt_strusage (13), BUILD_COMMITID,
-              prefix, gpgrt_strusage (17),
-              prefix, p);
-  xfree (p);
+              prefix, gpgrt_strusage (17));
 
   /* Always show the GnuPG VS-Desktop version.  */
   if (prefix)
@@ -1418,8 +1417,10 @@ show_version_gnupg (estream_t fp, const char *prefix)
           else
             {
               int lnr = 0;
+              char *p_version = NULL;
+              char *p_cidinst = NULL;
+              char *p_cidcfg  = NULL;
 
-              p0 = NULL;
               while ((length = es_read_line (verfp, &line, &line_len, NULL))>0)
                 {
                   lnr++;
@@ -1428,33 +1429,61 @@ show_version_gnupg (estream_t fp, const char *prefix)
                     {
                       /* Old file format where we look only at the
                        * first line.  */
-                      p0 = line;
+                      p_version = line;
                       break;
                     }
-                  else if (!strncmp (line, "version=", 8))
-                    {
-                      p0 = line + 8;
-                      break;
-                    }
+                  else if (!strncmp (line, "[Build]", 7))
+                    in_build = 1;
+                  else if ( *line == '[')
+                    in_build = 0;
+                  else if (!p_version && !strncmp (line, "version=", 8))
+                    p_version = xstrdup (line + 8);
+                  else if (in_build && !p_cidinst
+                           && !strncmp (line, "cidInstaller=", 13))
+                    p_cidinst = xstrdup(line + 13);
+                  else if (in_build && !p_cidcfg
+                           && !strncmp (line, "cidConfig=", 10))
+                    p_cidcfg = xstrdup (line + 10);
                 }
               if (length < 0 || es_ferror (verfp))
                 es_fprintf (fp, "%s[VERSION file read error]\n", prefix);
-              else if (p0)
+              else if (p_version)
                 {
-                  for (p=p0; *p; p++)
-                    if (*p < ' ' || *p > '~' || *p == '[')
-                      *p = '?';
-                  es_fprintf (fp, "%s%s\n", prefix, p0);
+                  es_fprintf (fp, "%sPackage: ", prefix);
+                  es_write_sanitized (fp, p_version, strlen (p_version),
+                                      "[]", NULL);
+                  es_fputc ('\n', fp);
+                  if (p_cidinst && *p_cidinst)
+                    {
+                      es_fprintf (fp, "%scidPkg: ", prefix);
+                      es_write_sanitized (fp, p_cidinst, strlen (p_cidinst),
+                                          "[]", NULL);
+                      es_fputc ('\n', fp);
+                    }
+                  if (p_cidcfg && *p_cidcfg)
+                    {
+                      es_fprintf (fp, "%scidCfg: ", prefix);
+                      es_write_sanitized (fp, p_cidcfg, strlen (p_cidcfg),
+                                          "[]", NULL);
+                      es_fputc ('\n', fp);
+                    }
                 }
               else
                 es_fprintf (fp, "%s[VERSION file is empty]\n", prefix);
 
+              xfree (p_version);
+              xfree (p_cidinst);
+              xfree (p_cidcfg);
               es_fclose (verfp);
             }
         }
       xfree (fname);
     }
   xfree (line);
+
+  p = gnupg_myproc_self ();
+  es_fprintf (fp, "%sSelf: %s\n", prefix, p);
+  xfree (p);
 
 #ifdef HAVE_W32_SYSTEM
   {
@@ -1577,6 +1606,46 @@ show_versions_via_dirmngr (estream_t fp)
 }
 
 
+static void
+show_versioninfo_txt (estream_t fp)
+{
+  char *fname;
+  estream_t infp;
+
+  es_fputs ("* Versioninfo\n", fp);
+
+  fname = make_filename (gnupg_bindir (), "../../versioninfo.txt", NULL);
+  infp = es_fopen (fname, "r");
+  if (!infp)
+    {
+      xfree (fname);
+      fname = make_filename (gnupg_bindir (),
+                             "../../Gpg4win/versioninfo.txt", NULL);
+      infp = es_fopen (fname, "r");
+    }
+  if (!infp)
+    es_fprintf (fp, "[versioninfo.txt not found]\n");
+  else
+    {
+      char *line = NULL;
+      size_t line_len = 0;
+
+      es_fprintf (fp, "# Content of '%s':\n", fname);
+      while (es_read_line (infp, &line, &line_len, NULL) > 0)
+        {
+          /* Prefix each line with a colon and a space to mark it as
+           * source code. */
+          es_fputs (": ", fp);
+          es_fputs (line, fp);
+        }
+      es_fputs ("# End of versioninfo.txt\n", fp);
+      xfree (line);
+    }
+  es_fclose (fp);
+  xfree (fname);
+}
+
+
 /* Show all kind of version information.  */
 static void
 show_versions (estream_t fp)
@@ -1588,6 +1657,11 @@ show_versions (estream_t fp)
   show_version_gpgrt (fp);
   es_fputc ('\n', fp);
   show_versions_via_dirmngr (fp);
+  if (opt.verbose)
+    {
+      es_fputc ('\n', fp);
+      show_versioninfo_txt (fp);
+    }
 }
 
 
@@ -1819,17 +1893,19 @@ show_other_registry_entries (estream_t outfp)
     { 3, "splitBCCMails" },
     { 3, "combinedOpsEnabled" },
     { 3, "encryptSubject" },
+    { 3, "noSaveBeforeDecrypt" },
+    { 3, "closeOnUnknownWriteEvent" },
+    { 3, "disableTitusHandling" },
+    { 3, "disableAutoPreview" },
+    { 3, "attachHTMLonlyOnReadAsPlain" },
+    { 3, "smimeNoCertSigErr" },
+    { 3, "smimeHtmlWarnShown" },
+    { 3, "alwaysShowApproval" },
+    { 3, "syncDec" },
+    { 3, "syncEnc" },
+    { 3, "draftEnc" },
+    { 3, "draftKey" },
     { 0, NULL }
-    /*  We should add the following key but also hide unset ones.:
-     *   "smimeNoCertSigErr"
-     *   "smimeHtmlWarnShown"
-     *   "alwaysShowApproval"
-     *   "syncDec"
-     *   "syncEnc"
-     *   "draftEnc"
-     *   "draftKey"
-     * Or we just interate over the GpgOL keys.
-     */
   };
   int idx;
   int group = 0;
@@ -1981,8 +2057,8 @@ show_configs (estream_t outfp)
   es_fprintf (outfp, "* General information\n");
   es_fprintf (outfp, "** Versions\n");
   show_version_gnupg (outfp, "  ");
-  es_fprintf (outfp, "  Libgcrypt %s\n", gcry_check_version (NULL));
-  es_fprintf (outfp, "  GpgRT %s\n", gpg_error_check_version (NULL));
+  es_fprintf (outfp, "  Libgcrypt: %s\n", gcry_check_version (NULL));
+  es_fprintf (outfp, "  GpgRT: %s\n", gpg_error_check_version (NULL));
   es_fprintf (outfp, "\n\n");
 
   es_fprintf (outfp, "** Directories\n");
