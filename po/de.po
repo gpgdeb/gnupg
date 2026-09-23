@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnupg-2.5.15\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2026-09-22 11:28+0200\n"
-"PO-Revision-Date: 2026-07-02 14:42+0200\n"
+"POT-Creation-Date: 2026-09-23 13:27+0200\n"
+"PO-Revision-Date: 2026-09-23 13:15+0200\n"
 "Last-Translator: Werner Koch <wk@gnupg.org>\n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -2384,10 +2384,9 @@ msgid "reading from '%s'\n"
 msgstr "Lesen von '%s'\n"
 
 #: g10/encrypt.c:1012 g10/encrypt.c:1290 g10/decrypt-data.c:278
-#, fuzzy, c-format
-#| msgid "problem handling encrypted packet\n"
+#, c-format
 msgid "Note: Using the %s encryption packet\n"
-msgstr "Problem beim Bearbeiten des verschlüsselten Pakets\n"
+msgstr "Hinweis: Es wird das %s Format zum Verschlüsseln benutzt.\n"
 
 #: g10/encrypt.c:1065 g10/sign.c:1348
 #, c-format
@@ -4659,10 +4658,9 @@ msgid "Can't open '%s': %s\n"
 msgstr "'%s' kann nicht geöffnet werden: %s\n"
 
 #: g10/keyedit.c:2011
-#, fuzzy, c-format
-#| msgid "Error reading backup key from '%s': %s\n"
+#, c-format
 msgid "Error reading key from '%s': %s\n"
-msgstr "Fehler beim Lesen der Sicherungskopie des Schlüssels von `%s': %s\n"
+msgstr "Fehler beim Lesen des Schlüssels von `%s': %s\n"
 
 #. TRANSLATORS: Please take care: This is about
 #. moving the key and not about removing it.
